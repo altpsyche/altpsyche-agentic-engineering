@@ -2,12 +2,18 @@
 
 Many workflow steps ask a closed question: which label fits, which docs govern this work, does this
 quote support this finding, does this output prove this claim. A thinking model spends many tokens
-on each of these. TypeSafe's Jev answers typed questions (Choice, Score, Noul) in milliseconds and
-for a fraction of the cost. **So the repo's tooling asks Jev those questions, through plain-Node
-scripts any agent runs, and every script works without it.** With no `TYPESAFE_API_KEY`, a script
-prints one skip line and exits 0, and the agent does the step itself, as before. The base stays
-the same for every agent and every model: Jev is a tool scripts call, not a harness or a model an
-agent runs on.
+on each of these. TypeSafe's Jev answers typed questions in milliseconds and for a fraction of the
+cost. It has three kinds:
+
+- a **Choice** picks one option from a set and reports its confidence;
+- a **Score** places an answer on an ordered scale of two to ten levels;
+- a **Noul** gives the probability that a yes/no statement is true.
+
+**So the repo's tooling asks Jev those questions, through plain-Node scripts any agent runs, and
+every script works without it.** With no `TYPESAFE_API_KEY`, or when a request fails, a script
+prints one line and exits 0, and the agent does the step itself, as before. The base stays the
+same for every agent and every model: Jev is a tool scripts call, not a harness or a model an agent
+runs on.
 
 ## Consequences
 
