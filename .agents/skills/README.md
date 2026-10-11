@@ -4,12 +4,11 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) at
 `7a030a8b0dcaa601bb0dda9aaf174affb3d61145` (v1.3.1). They are kept as ordinary files so every
 model, in every harness, reads the same version.
 
-- **Every harness**, including Claude Code, Codex and the DeepSeek Harness (DSH), starts at the root
-  `AGENTS.md`, which points at this folder. A skill is used by reading its `SKILL.md` and
-  following it; `/name` in any doc is shorthand for exactly that. There is deliberately no
-  `.claude/` folder, and no harness-specific wiring of any kind: every agent takes the same path.
-- DSH discovers these skills automatically and injects each `description` into context, so no
-  registration step is needed.
+Every agent, in every harness, starts at the root `AGENTS.md`, which points at this folder. A
+skill is used by reading its `SKILL.md` and following it; `/name` in any doc is shorthand for
+exactly that. There is deliberately no harness-specific folder or wiring of any kind: every agent
+gets the same base and takes the same path. See
+[ADR-0001](../../docs/adr/0001-agentic-development-workflow.md).
 
 Who runs which skill is defined in [`docs/workflow.md`](../../docs/workflow.md). Repo config
 the skills read lives in [`docs/agents/`](../../docs/agents/).
@@ -41,8 +40,21 @@ pinned commit above.
 
 1. `engineering/code-review` is vendored as **`review-pr`**, which says what it reviews and is not
    mistaken for the built-in review commands some harnesses ship. The rename is applied to the
-   frontmatter `name`, the `agents/openai.yaml` display name, and the cross-references in
-   `implement` and `tdd`.
+   frontmatter `name` and the cross-references in `implement` and `tdd`.
+2. Upstream's "call the Skill tool with X" becomes a relative link to `../X/SKILL.md`, to read
+   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. A skill
+   tool is a harness feature, and this repo assumes none, so a skill names another by its file.
+   `scripts/check-skills.mjs` checks the links. After an update,
+   `grep -rn --include=SKILL.md "Skill tool" .agents/skills` must print nothing.
+3. Upstream's per-harness `agents/` folder in each skill (display names and invocation policy for
+   one harness) is not vendored. `scripts/check-skills.mjs` fails if one comes back. The
+   `disable-model-invocation` and `argument-hint` frontmatter keys stay: any agent can read them,
+   and the first says the owner, not the model, starts that skill.
+
+**Known upstream wording, deliberately not patched:** `setup-matt-pocock-skills`, `retro` and
+`writing-for-agents` still name `CLAUDE.md` beside `AGENTS.md`, which this repo bans. They treat
+the two as alternatives: here `AGENTS.md` always exists and `CLAUDE.md` never does, so they edit
+`AGENTS.md`, and `scripts/check-skills.mjs` fails if any agent creates a `CLAUDE.md`.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are

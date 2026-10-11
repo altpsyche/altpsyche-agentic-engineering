@@ -1,19 +1,27 @@
 #!/usr/bin/env node
-// Checks the agent layer: skill frontmatter, relative links, and pointer integrity.
+// Checks the agent layer: skill frontmatter, relative links, pointer integrity, and that nothing in
+// the repo is wired for one harness.
 //
 // This is the repo's deterministic check for the class of mistake an agent makes most often when
 // editing skills or AGENTS.md: a renamed folder, a missing description, a pointer to a file that
-// moved. It is deliberately dependency-free so it runs in CI and in any sandbox.
+// moved, a context file for one harness. It is deliberately dependency-free so it runs in CI and
+// in any sandbox.
 //
 // `checkRepo(root)` is exported for check-skills.test.mjs; running the file checks this repo.
 
-import { lstat, readFile, readdir, readlink } from 'node:fs/promises';
+import { lstat, readFile, readdir } from 'node:fs/promises';
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Limits from the Agent Skills specification, https://agentskills.io/specification.
+const MAX_NAME = 64;
 const MAX_DESCRIPTION = 1024;
+const MAX_COMPATIBILITY = 500;
+// Harnesses cap how much of a context file they load, and some truncate silently; 32 KiB is the
+// smallest common default. The line budget is the tighter rule; this one catches very long lines.
+const MAX_AGENTS_BYTES = 32 * 1024;
 const KNOWN_FRONTMATTER_KEYS = new Set([
   'name',
   'description',
@@ -22,7 +30,26 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   'metadata',
   'license',
   'allowed-tools',
+  'compatibility',
 ]);
+
+// Files and folders that exist for one harness. The template gives every agent the same base
+// (ADR-0001), so none may appear: a second context file drifts from AGENTS.md, and per-harness
+// wiring means agents start from different places. Paths are relative to the repo root.
+const HARNESS_SPECIFIC = [
+  'CLAUDE.md',
+  'CLAUDE.local.md',
+  'GEMINI.md',
+  'AGENTS.override.md',
+  '.cursorrules',
+  '.windsurfrules',
+  '.claude',
+  '.codex',
+  '.cursor',
+  '.gemini',
+  '.windsurf',
+  '.github/copilot-instructions.md',
+];
 
 // A block-scalar header: style, then an optional chomping and indentation indicator in either
 // order, then an optional comment, as in `>`, `|-`, `>2`, `|+1` or `> # note`.
@@ -201,6 +228,8 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
     }
     if (!NAME_RE.test(fields.name ?? '')) {
       err(`${label}: name must be kebab-case ([a-z0-9-])`);
+    } else if (fields.name.length > MAX_NAME) {
+      err(`${label}: name is ${fields.name.length} chars, over the ${MAX_NAME} limit`);
     }
 
     const description = fields.description;
@@ -218,6 +247,11 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
       }
     }
 
+    const compatibility = fields.compatibility;
+    if (typeof compatibility === 'string' && compatibility.length > MAX_COMPATIBILITY) {
+      err(`${label}: compatibility is ${compatibility.length} chars, over the ${MAX_COMPATIBILITY} limit`);
+    }
+
     const dmi = fields['disable-model-invocation'];
     if (dmi !== undefined && dmi !== 'true' && dmi !== 'false') {
       err(`${label}: disable-model-invocation must be true or false, got "${dmi}"`);
@@ -228,6 +262,15 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
         warn(`${label}: unrecognised frontmatter key "${key}"`);
       }
     }
+  }
+}
+
+async function present(p) {
+  try {
+    await lstat(p);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -261,7 +304,6 @@ async function checkLinks(root, file, { err }) {
 export async function checkRepo(root) {
   const skillsDir = path.join(root, '.agents', 'skills');
   const agentsMd = path.join(root, 'AGENTS.md');
-  const claudeMd = path.join(root, 'CLAUDE.md');
   const docsDir = path.join(root, 'docs');
   const skillsReadme = path.join(skillsDir, 'README.md');
 
@@ -284,7 +326,7 @@ export async function checkRepo(root) {
 
   for (const name of skillNames) await checkSkill(skillsDir, name, { err, warn });
 
-  // AGENTS.md must exist and stay inside its own line budget.
+  // AGENTS.md must exist and stay inside its line and byte budgets.
   if (!existsSync(agentsMd)) {
     err('AGENTS.md does not exist');
   } else {
@@ -293,17 +335,26 @@ export async function checkRepo(root) {
     if (lines > 200) {
       err(`AGENTS.md is ${lines} lines, over its own 200-line budget (see its header)`);
     }
+    const bytes = Buffer.byteLength(agents, 'utf8');
+    if (bytes > MAX_AGENTS_BYTES) {
+      err(`AGENTS.md is ${bytes} bytes, over the ${MAX_AGENTS_BYTES}-byte budget`);
+    }
   }
 
-  // CLAUDE.md is a symlink to AGENTS.md (ADR-0001). A regular file there would drift silently.
-  if (!existsSync(claudeMd) || !(await lstat(claudeMd)).isSymbolicLink()) {
-    err('CLAUDE.md must be a symlink to AGENTS.md (ADR-0001)');
-  } else if ((await readlink(claudeMd)) !== 'AGENTS.md') {
-    err(`CLAUDE.md points at "${await readlink(claudeMd)}", not AGENTS.md`);
+  // Nothing for one harness (ADR-0001), at the root or inside a skill. lstat, so a symlink counts
+  // even when its target is gone.
+  const harnessPaths = [
+    ...HARNESS_SPECIFIC,
+    ...skillNames.map((name) => `.agents/skills/${name}/agents`),
+  ];
+  for (const rel of harnessPaths) {
+    if (await present(path.join(root, rel))) {
+      err(`${rel}: harness-specific; every agent gets the same base (ADR-0001)`);
+    }
   }
 
   // Every root-level .md (AGENTS.md, README.md, and GLOSSARY.md or CODING_STANDARDS.md once a skill
-  // creates them), plus everything under docs/ and the skills. CLAUDE.md is a symlink, so it is skipped.
+  // creates them), plus everything under docs/ and the skills.
   const rootDocs = (await readdir(root, { withFileTypes: true }))
     .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => path.join(root, e.name))

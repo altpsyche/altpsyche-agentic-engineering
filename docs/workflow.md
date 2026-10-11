@@ -74,6 +74,9 @@ releases the claim. Two axes, run as parallel sub-agents and reported side by si
   full.
 - **Spec** — does it faithfully implement the originating spec, no more and no less?
 
+When a second model is available, the Reviewer runs on a different one from the author: a fresh
+session of the same model shares its blind spots, as an author grading its own work is lenient.
+
 The reviewer sets the verdict and posts the report as a PR comment; it does not push to the branch.
 Every finding names its source and quotes the line it is about. The Implementer's own `/review-pr` run
 at the end of `/implement` is a self-check, not this step.
@@ -81,9 +84,16 @@ at the end of `/implement` is a self-check, not this step.
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
 There is no "non-blocking" finding and no "approve, but consider…": a finding worth writing down is
-worth a fix round. Severity orders the list; it does not decide the verdict. On a re-review, every
-earlier finding is either fixed or closed by a dispute the reviewer accepted, and the new diff is
-reviewed in full, so new findings start another round.
+worth a fix round. Severity orders the list; it does not decide the verdict.
+
+**Re-reviews converge.** Every report opens with `Reviewed at <sha>`, the head it reviewed. A
+re-review first checks each earlier finding is either fixed or closed by a dispute the reviewer
+accepted. It then raises new findings only on lines changed since that sha
+(`git diff <sha>..HEAD`), plus any constitution violation anywhere, which always blocks. Code that
+passed one round is not re-litigated in the next. If round 3 still ends in changes requested, the
+reviewer swaps `status:changes-requested` for `ready-for-human` and says why in the report: the
+loop is not converging, and the owner decides whether to merge, rescope or close. A round's number
+is one more than the count of earlier reports on the PR.
 
 ### 4. Fix rounds
 
