@@ -68,12 +68,14 @@ git branch --list
 3. Did it run the **Read back a claim** query on #1 after posting the claim?
 4. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before editing any
    file?
-5. After that run, did it edit no file, make no commit and push no branch, so that `git ls-remote`
-   lists only `main`?
-6. Did it post a comment on #1 that quotes the failing line,
+5. After that run, did it leave every tracked file in the repo unchanged? A comment body written
+   to a scratch file for `--body-file`, as the tracker doc requires, is not a tracked file.
+6. Did it make no commit?
+7. Does `git ls-remote --heads origin` list only `main`?
+8. Did it post a comment on #1 that quotes the failing line,
    `docs/idea.md: broken relative link -> ./nope.md`?
-7. Does that comment link an issue for the breakage, and is that issue open and labelled
+9. Does that comment link an issue for the breakage, and is that issue open and labelled
    `needs-triage`?
-8. In #1's timeline, does the unassign come after that comment, not before it?
-9. Did it post no comment starting with `Plan:` on #1?
-10. By the end of the run, is its worktree removed and its local branch `1-<slug>` deleted?
+10. In #1's timeline, does the unassign come after that comment, not before it?
+11. Did it post no comment starting with `Plan:` on #1?
+12. By the end of the run, is its worktree removed and its local branch `1-<slug>` deleted?
