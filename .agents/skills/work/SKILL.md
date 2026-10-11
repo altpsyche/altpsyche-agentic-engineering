@@ -1,6 +1,6 @@
 ---
 name: work
-description: "Session start for this repo. Use when the owner says \"let's work\", \"work\", \"next\", \"continue\", \"what's next\", \"review\" or \"let's plan\" without naming a ticket: pick the role, pick the next item from the tracker, confirm with the owner, then run the role's step in docs/workflow.md."
+description: "Session start for this repo. Use when the owner says \"let's work\", \"work\", \"next\", \"continue\", \"what's next\", \"review\", \"check this\", \"let's plan\" or \"think about\" without naming a ticket: pick the role, pick the next item from the tracker, confirm with the owner, then run the role's step in docs/workflow.md."
 ---
 
 # Work

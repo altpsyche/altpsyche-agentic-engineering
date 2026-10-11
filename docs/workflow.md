@@ -19,9 +19,9 @@ One agent may hold several roles in a session, but never Implementer and Reviewe
 A review by the author of the change is not a review: the Implementer's own `/review-pr` at the end
 of `/implement` is a self-check, and the review is § 3, run by another session.
 
-In the steps below, a name in bold inside a numbered step (**Claim**, **Read back a claim** and
-the rest) is a command in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md), which holds its
-exact form.
+In the steps below, a bold name that opens a numbered step or follows "then" or "per" (**Claim**,
+**Read back a claim** and the rest) is a command in
+[`docs/agents/issue-tracker.md`](agents/issue-tracker.md), which holds its exact form.
 
 ## The loop
 
@@ -123,9 +123,8 @@ and PR steps.
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
    in review becomes a new ticket, not a bigger diff.
-4. **Return a PR for review**: swap `status:changes-requested` back to `status:in-review`, then post
-   one PR comment that answers each finding: fixed in `<sha>`, naming the test for a behaviour
-   change, or disputed with a reason and a source.
+4. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
+   for a behaviour change, or disputed with a reason and a source.
 
 ### 5. Merge and learn (Owner)
 
@@ -210,6 +209,6 @@ Before ending a session, in this order:
 1. The tracker reflects reality: claimed items claimed, and finished work handed on. An
    Implementer's PR is open and labelled `status:in-review`; a Reviewer's carries its verdict.
    The merge closes the issue, per § 5; an Implementer or Reviewer never closes it.
-2. The tree is clean, the co-located `.md` changed in the same commit as its work, and this
-   session's worktree is removed.
-3. Any convention you changed is changed in `AGENTS.md` in the same commit.
+2. The Working Agreement in `AGENTS.md` holds for everything this session committed.
+3. This session's worktree is removed, per **Worktree** in
+   [`docs/agents/issue-tracker.md`](agents/issue-tracker.md).

@@ -63,7 +63,8 @@ pinned commit above.
   to run it if the tracker config is missing: `to-spec`, `to-tickets`, `triage` and `review-pr`.
   The fifth, in `to-tickets`, says publishing "depends on the tracker `/setup-matt-pocock-skills`
   configured". The config is always present here, in [`docs/agents/`](../../docs/agents/), so
-  none of the four fires, and the fifth means the tracker `docs/agents/issue-tracker.md` names.
+  none of those four lines fires, and the fifth means the tracker
+  `docs/agents/issue-tracker.md` names.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are
