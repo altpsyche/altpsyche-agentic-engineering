@@ -22,16 +22,18 @@ const STATE = {
 };
 
 const ARROW = /\s(?:→|->)\s?/;
+const CODE_SPAN = /(`+)([\s\S]*?[^`])\1(?!`)/g;
 
 // Markdown code spans, any number of backticks, with one padding space stripped from each end.
 function codeSpans(text) {
-  const spans = [];
-  const re = /(`+)([\s\S]*?[^`])\1(?!`)/g;
-  for (let m; (m = re.exec(text)); ) {
-    const inner = m[2];
-    spans.push(/^ .* $/.test(inner) ? inner.slice(1, -1) : inner);
-  }
-  return spans;
+  return [...text.matchAll(CODE_SPAN)].map(([, , inner]) => (/^ .* $/.test(inner) ? inner.slice(1, -1) : inner));
+}
+
+// Where a claim's arrow is, ignoring any inside a code span, which belong to a command or a quote.
+function arrowAt(line) {
+  const masked = line.replace(CODE_SPAN, (span) => '`'.repeat(span.length));
+  const m = ARROW.exec(masked);
+  return m ? { start: m.index, end: m.index + m[0].length } : null;
 }
 
 /** What a claim's result says to look for: a quoted line, an empty output, or nothing usable. */
@@ -66,20 +68,22 @@ export function parseEvidence(body) {
     let rest = line;
     if (bullet) {
       const bold = /^\*\*(.+?)\*\*/.exec(bullet[1]);
-      const criterion = (bold ? bold[1] : bullet[1].split(ARROW)[0]).trim();
+      const arrow = arrowAt(bullet[1]);
+      const criterion = (bold ? bold[1] : bullet[1].slice(0, arrow ? arrow.start : undefined)).trim();
       entries.push({ criterion, lines: [] });
       rest = bold ? bullet[1].slice(bold[0].length) : bullet[1];
     }
-    if (entries.length && ARROW.test(rest)) entries.at(-1).lines.push(rest);
+    if (entries.length && arrowAt(rest)) entries.at(-1).lines.push(rest);
   }
 
   const claims = [];
   for (const { criterion, lines } of entries) {
     if (!lines.length) claims.push({ criterion, command: null, expect: null });
     for (const line of lines) {
-      const [left, ...right] = line.split(ARROW);
+      const { start, end } = arrowAt(line);
+      const left = line.slice(0, start);
       const [command = left.trim()] = codeSpans(left);
-      claims.push({ criterion, command, expect: expectation(right.join(' → ')) });
+      claims.push({ criterion, command, expect: expectation(line.slice(end)) });
     }
   }
   return claims.map((claim, index) => ({ id: `E${index + 1}`, ...claim }));
@@ -87,7 +91,6 @@ export function parseEvidence(body) {
 
 /** Output as a person reads it in a terminal: no colour codes, Unix line ends. */
 function clean(output) {
-  // eslint-disable-next-line no-control-regex
   return output.replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r\n?/g, '\n');
 }
 
@@ -174,8 +177,8 @@ export async function run(input, { client }) {
       else if (!Object.hasOwn(outputs, claim.command)) unasked('no-output');
       else {
         const output = clean(outputs[claim.command]);
-        const ask = question(claim, output);
-        if (!matches(claim.expect, output)) unasked('not-in-output');
+        const ask = matches(claim.expect, output) ? question(claim, output) : null;
+        if (!ask) unasked('not-in-output');
         else if (!fitsBesideState(STATE, claim.id, ask)) unasked('too-large');
         else questions[claim.id] = ask;
       }

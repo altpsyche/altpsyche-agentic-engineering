@@ -86,6 +86,14 @@ test('a quote with backticks in it, in a double-backtick span, and a second clai
   ]);
 });
 
+test('an arrow inside a code span is part of the command or the quote, not the claim\'s arrow', () => {
+  const body = '## Evidence\n\n- **Arrows**\n  `echo a -> b` → `a -> b`\n- **No arrow outside** `x -> y`\n';
+  assert.deepEqual(parseEvidence(body), [
+    { id: 'E1', criterion: 'Arrows', command: 'echo a -> b', expect: { quote: 'a -> b' } },
+    { id: 'E2', criterion: 'No arrow outside', command: null, expect: null },
+  ]);
+});
+
 test('a missing quote is flagged without a call, and so is a missing command', async () => {
   const client = fakeClient(choice('supports', 0.99));
   const body = '## Evidence\n\n- **Unquoted**\n  `node render.mjs` → it looks right\n- **No claim at all**\n';
