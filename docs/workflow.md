@@ -110,11 +110,13 @@ blind spots, as an author grading its own work is lenient.
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
      and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run the prune
      tool on the PR first, per [`docs/agents/jev.md`](agents/jev.md). The checklist is applied in
-     full.
+     full. Before checking the PR's `## Evidence`, run the evidence tool on it, per
+     [`docs/agents/jev.md`](agents/jev.md), and check the claims it flags first.
    - **Spec** — does it faithfully implement the originating spec, no more and no less? The spec
      is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
-     ask.
+     ask. Before judging the criteria, run the coverage tool on the PR, per
+     [`docs/agents/jev.md`](agents/jev.md), and check the criteria it flags first.
 4. Before posting, check each draft finding against its cited source with the verify-findings
    tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
    **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
