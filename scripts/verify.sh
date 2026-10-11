@@ -10,6 +10,8 @@ cd "$(git rev-parse --show-toplevel)"
 if command -v node >/dev/null; then
   node scripts/check-skills.mjs
   node --test scripts/check-skills.test.mjs
+  # Jev tools (ADR-0002), against a fake local server: no key, no network.
+  node --test scripts/jev/*.test.mjs
 else
   echo "verify: node not found, agent-layer check skipped (CI runs it)" >&2
 fi
