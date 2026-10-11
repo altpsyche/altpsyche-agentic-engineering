@@ -19,17 +19,20 @@ than guess.
 
 ## Suggesting a label
 
-Before deciding an issue's role and phase, run the Jev triage tool:
+Before deciding an issue's role and phase, run the Jev triage, duplicates and readiness tools:
 
 ```bash
 node scripts/jev/triage-cli.mjs <number>
+node scripts/jev/duplicates-cli.mjs <number>
+node scripts/jev/readiness-cli.mjs <number>
 ```
 
-Its confident answers become your recommendation to the owner; the rest stay open, and you decide
-them as above. Its bands, and what a skip or error line means, are in [`jev.md`](jev.md). The tool
-never applies a label, and its answer never applies a frontier label either: only the owner puts
-work on a frontier ([`issue-tracker.md`](issue-tracker.md) § Untrusted text), so `/triage` still
-waits for the owner as it always does.
+Triage's confident answers become your recommendation to the owner; the rest stay open, and you
+decide them as above. Put the open issues duplicates lists, and any readiness gap, in that
+recommendation too. Each tool's bands, and what a skip or error line means, are in
+[`jev.md`](jev.md). The tools never apply a label, and their answers never apply a frontier label
+either: only the owner puts work on a frontier ([`issue-tracker.md`](issue-tracker.md) § Untrusted
+text), so `/triage` still waits for the owner as it always does.
 
 ## Creating the labels
 

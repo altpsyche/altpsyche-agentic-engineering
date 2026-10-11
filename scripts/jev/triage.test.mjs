@@ -2,17 +2,16 @@
 // returning canned Jev answers; the CLI tests run it as a subprocess, as an agent would, against a
 // fake Jev server on localhost and with a `gh` stub first on PATH. Nothing reaches Jev or needs a key.
 
-import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
 import { run } from './triage.mjs';
+import { runCli } from './cli-runner.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..', '..');
@@ -166,30 +165,8 @@ test('a table row outside the five triage roles is an error, not silently droppe
     },
   ));
 
-// The CLI, run as an agent runs it: a subprocess with a `gh` stub first on PATH that logs every call
-// and answers `gh issue view` with $GH_ISSUE. Async, so the fake server in this process can answer.
+// The CLI, run as an agent runs it, through cli-runner.mjs: a subprocess with a `gh` stub on PATH.
 const CLI = path.join(HERE, 'triage-cli.mjs');
-
-async function runCli(args, { env = {}, stdin = '' } = {}) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'jev-cli-'));
-  const log = path.join(dir, 'gh.log');
-  await writeFile(
-    path.join(dir, 'gh'),
-    `#!/bin/sh\necho "$@" >> "${log}"\nif [ "$1 $2" = "issue view" ] && [ -n "$GH_ISSUE" ]; then echo "$GH_ISSUE"; exit 0; fi\nexit 1\n`,
-  );
-  await chmod(path.join(dir, 'gh'), 0o755);
-  try {
-    const child = spawn(process.execPath, [CLI, ...args], { env: { PATH: dir, ...env } });
-    let stdout = '';
-    child.stdout.on('data', (chunk) => (stdout += chunk));
-    child.stdin.end(stdin);
-    const status = await new Promise((resolve) => child.on('close', resolve));
-    const ghCalls = existsSync(log) ? (await readFile(log, 'utf8')).trim().split('\n') : [];
-    return { status, stdout, ghCalls };
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-}
 
 const ANSWERS = {
   role: { type: 'choice', choice: 'ready-for-agent', probabilities: {}, confidence: 0.93 },
@@ -197,7 +174,7 @@ const ANSWERS = {
 };
 
 test('the CLI with no key prints one skip line, exits 0 and never calls gh', async () => {
-  const { status, stdout, ghCalls } = await runCli(['7']);
+  const { status, stdout, ghCalls } = await runCli(CLI, ['7'], { gh: { 'issue view': JSON.stringify(ISSUE) } });
   assert.equal(status, 0);
   assert.equal(stdout, 'jev triage: skipped, TYPESAFE_API_KEY is not set; triage as normal\n');
   assert.deepEqual(ghCalls, []);
@@ -206,8 +183,8 @@ test('the CLI with no key prints one skip line, exits 0 and never calls gh', asy
 test('the CLI on a failed request prints one error line and exits 0', async () => {
   const jev = await fakeJev(() => ({ status: 422, body: 'state too long' }));
   try {
-    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url, GH_ISSUE: JSON.stringify(ISSUE) };
-    const { status, stdout } = await runCli(['7'], { env });
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    const { status, stdout } = await runCli(CLI, ['7'], { env, gh: { 'issue view': JSON.stringify(ISSUE) } });
     assert.equal(status, 0);
     assert.match(stdout, /^jev triage: error, [^\n]*422[^\n]*; triage as normal\n$/);
   } finally {
@@ -218,8 +195,8 @@ test('the CLI on a failed request prints one error line and exits 0', async () =
 test('the CLI prints one line per answer, reads the issue with gh and never edits it', async () => {
   const jev = await fakeJev(() => ({ status: 200, body: { answers: ANSWERS } }));
   try {
-    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url, GH_ISSUE: JSON.stringify(ISSUE) };
-    const { status, stdout, ghCalls } = await runCli(['7'], { env });
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    const { status, stdout, ghCalls } = await runCli(CLI, ['7'], { env, gh: { 'issue view': JSON.stringify(ISSUE) } });
     assert.equal(status, 0);
     assert.equal(
       stdout,
@@ -237,7 +214,7 @@ test('the CLI prints JSON with --json, reading a plain-text issue from stdin', a
   const jev = await fakeJev(() => ({ status: 200, body: { answers: ANSWERS } }));
   try {
     const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
-    const { status, stdout, ghCalls } = await runCli(['--json'], { env, stdin: '\nAdd a dark theme\nThe body.\n' });
+    const { status, stdout, ghCalls } = await runCli(CLI, ['--json'], { env, stdin: '\nAdd a dark theme\nThe body.\n' });
     assert.equal(status, 0);
     assert.deepEqual(JSON.parse(stdout), {
       status: 'ok',
