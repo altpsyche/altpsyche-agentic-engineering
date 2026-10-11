@@ -21,6 +21,7 @@ Every tool is optional. The key, `TYPESAFE_API_KEY`, lives only in the owner's s
 | Tool | CLI | Called from | Bands |
 |---|---|---|---|
 | triage | `scripts/jev/triage-cli.mjs <issue>` | [`triage-labels.md`](triage-labels.md) § Suggesting a label | Per answer, role and phase: a confidence at or above `TRIAGE_CONFIDENT` is `recommend`, and becomes your recommendation to the owner; below it is `open`, and you decide the role yourself, or treat the phase as unclear. The tool never applies a label, and you never apply a frontier label on its say-so |
+| prune | `scripts/jev/prune-cli.mjs <issue or PR>` | [`workflow.md`](../workflow.md) § 2, step 4, and § 3, the Standards axis | Per ADR, spec, `docs/idea.md` section and co-located `.md`: a noul at or above `PRUNE_INCLUDE_NOUL` puts it on the read list; below it, skip it. `AGENTS.md` always heads the list, and a unit too large to ask about is listed unasked. The list only orders your reading: a doc you find you need is read whatever it says, and a Reviewer still applies the checklist in full |
 
 Thresholds live in [`scripts/jev/constants.mjs`](../../scripts/jev/constants.mjs), each with the
 sample it came from, or a plain note that it has none yet. Retuning one is an edit there, and the

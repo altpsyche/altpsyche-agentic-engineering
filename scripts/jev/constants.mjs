@@ -15,6 +15,14 @@ export const MODEL = 'jev-1.13.0';
  */
 export const TRIAGE_CONFIDENT = 0.8;
 
+/**
+ * The pruner puts a doc on the read list at a Noul (probability that the work needs it) at or above
+ * this; below it, the doc is skipped. A low bar: a missed doc costs more than an extra read.
+ * Sample: none. Ported unchanged from errand-knight's PRUNE_INCLUDE_NOUL, which records no sample
+ * for it either. Retune it from the first live prune runs here.
+ */
+export const PRUNE_INCLUDE_NOUL = 0.2;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.

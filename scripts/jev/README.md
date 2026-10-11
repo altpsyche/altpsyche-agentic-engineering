@@ -15,6 +15,9 @@ code works.
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
 | `triage-cli.mjs` | Its CLI: an issue number (read with `gh issue view`), or the issue on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `prune.mjs` | The doc pruner, `run(input, { client, root })`. Tests point `root` at a temp git repo |
+| `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
+| `prune.test.mjs` | Tests at the `run()` seam with a fake client over a temp git repo, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
 
@@ -51,6 +54,32 @@ on every run from the docs that own them, so an edit there cannot drift from the
 
 A choice that is not one of the options is an error. The CLI only reads the issue; it never runs
 `gh issue edit`.
+
+## Prune
+
+One Noul per unit, "should an agent doing this work read this document?", carrying the unit's
+text. The state is the work: its title, its body and the paths it changes (a PR's files; none for
+an issue), never the diff, which would crowd the documents out of the limits. The units are found
+on every run, so a new doc is judged without an edit here, and listed in `AGENTS.md`'s precedence
+order:
+
+- **Each ADR**: a tracked `docs/adr/NNNN-*.md`.
+- **Each spec**: a tracked `.md` under `docs/specs/`.
+- **Each `docs/idea.md` section**: one per `#` or `##` heading, running to the next, so a `###`
+  subsection stays inside the numbered section other docs cite. A heading in a code fence is not
+  one.
+- **Each co-located `.md`**: a tracked `.md` in a subdirectory, except under `docs/`, a
+  dot-directory or `node_modules/`.
+
+Root files are not units: `AGENTS.md` always heads the list, and `README.md` is the front page.
+The rest of `docs/` says how to work and is reached by name at the step that needs it, so pruning
+it would hide a step from the agent running it. Tracked means `git ls-files` at `root`, with any
+`GIT_*` from the caller dropped: an untracked file is not authoritative.
+
+All the questions go to one `ask`, which batches them. A unit that does not fit beside the state,
+by `fitsBesideState`, is listed unasked with reason `oversize`, since a missed doc costs more than
+a read. An answer that is not a probability, or a missing `docs/idea.md`, is an error line, never
+a shorter list.
 
 ## Testing
 
