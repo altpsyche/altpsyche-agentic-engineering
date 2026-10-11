@@ -26,6 +26,7 @@ code works.
 | `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
 | `duplicates.mjs`, `duplicates-cli.mjs`, `duplicates.test.mjs` | The duplicates tool, `run(input, { client })`, its CLI (an issue number, or a draft on stdin; open issues from `gh issue list`) and its tests, at the same seams as triage |
 | `injection.mjs`, `injection-cli.mjs`, `injection.test.mjs` | The injection screen, `run(input, { client })`, and `human(result)`, its CLI's line output; the CLI reads a PR with its comments and reviews (`gh pr view`, falling back to `gh issue view`), or the text on stdin as `gh`'s JSON or plain text with the title first; tests at the same seams as triage |
+| `grade.mjs`, `grade-cli.mjs`, `grade.test.mjs` | The grade tool, `run(input, { client })`, `human(result)` and `parsePassCriteria(text)`; the CLI reads a case file and a transcript file and never runs `gh`; tests at the same seams as triage |
 
 ## The client
 
@@ -174,6 +175,20 @@ negations literally (ADR-0002). Two kinds are not asked:
 
 The result lists every text with its decision, and `flagged`, the count of hits and uncertain
 texts. An answer that is not a probability (`noulOf`) is an error line, never a clear.
+
+## Grade
+
+Asks one request of Nouls, with the transcript, collected output included, as state: per pass
+criterion of the case, does the transcript show the answer is yes? The criteria are parsed, not
+asked about: each numbered item under the first heading naming pass criteria, up to the next
+heading, with its wrapped lines joined and its own number kept, with LF or CRLF line endings. Each
+criterion is quoted as JSON and named as data, and the transcript, which quotes issue text and
+command output, is named as data too, since Jev can be swayed by injected text (ADR-0002).
+
+A case with no criteria, a blank transcript, or a transcript too large to sit beside a criterion by
+`fitsBesideState`, is an error line before anything is asked; so is an answer that is not a
+probability (`noulOf`). Jev reads negations literally, so a criterion phrased as a negative, such
+as "did it make no commit?", is where its advice is weakest.
 
 ## Testing
 

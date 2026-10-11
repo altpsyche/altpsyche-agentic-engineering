@@ -70,6 +70,16 @@ export const DUPLICATES_BODY_CHARS = 4_000;
 export const INJECTION_CLEAR = 0.1;
 export const INJECTION_HIT = 0.7;
 
+/**
+ * The grade tool advises `yes` on an eval pass criterion at a Noul (probability that the transcript
+ * shows the answer is yes) at or above GRADE_YES, `no` below GRADE_NO, and `unsure` between, which
+ * goes to the owner. Both sit far from 0.5, so a coin flip is never advised as a pass. Sample: none.
+ * First guesses: an unsure costs the owner one look, a false yes a passed case. Retune them from
+ * the first live grade runs here.
+ */
+export const GRADE_YES = 0.8;
+export const GRADE_NO = 0.2;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.

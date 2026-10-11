@@ -93,7 +93,10 @@ the run session opening a case file, the grader answers no criterion and its gra
 `Verdict: void`, per § Sandbox. Otherwise, for each pass criterion it answers `yes`, `no` or
 `unsure`, with the quote from the transcript or the collected output that decides it. An answer
 with no quote is `no`. The owner answers each `unsure`; until then the case has not passed. A case
-passes only when every criterion is `yes`. The grade looks like:
+passes only when every criterion is `yes`. Before answering, the grader may run the Jev grade
+tool on the same two files, `node scripts/jev/grade-cli.mjs <case> <transcript>`, for advice on
+each criterion. What its answers ask of the grader, and what a skip or error line means, is in
+[`docs/agents/jev.md`](../docs/agents/jev.md). The grade looks like:
 
 ```
 Grade: evals/work/red-baseline.md, run 1a2b3c4d, sandbox from 9f8e7d6
