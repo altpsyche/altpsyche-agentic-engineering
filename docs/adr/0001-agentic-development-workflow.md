@@ -18,7 +18,11 @@ layout precisely because those are the skills' defaults, which means zero path r
 - Work is spec-driven: idea → grill → spec → tickets → implement test-first → two-axis review. The
   loop is defined once, in [`docs/workflow.md`](../workflow.md).
 - The tracker must be machine-readable, because agents claim and close their own work. That is why
-  GitHub issues, not prose, hold state.
+  GitHub issues, not prose, hold state. Agents reach it through the `gh` CLI, not a GitHub MCP
+  server: models already know `gh`, and a server's tool definitions cost context in every session.
+- `.agents/skills/` is the only skills path. Harnesses that discover it natively get commands and
+  triggering; the rest, Claude Code among them, read a skill's file because `AGENTS.md` says to.
+  Skills name each other by relative link, not by a harness's skill tool.
 
 ## Considered options
 
@@ -26,5 +30,8 @@ layout precisely because those are the skills' defaults, which means zero path r
   machine state that is invisible in review, and it breaks for a contributor or a fresh CI runner.
 - **Ship as a Claude Code plugin only.** Rejected: the project is meant to be built by whatever
   agent the contributor has, and a plugin manifest privileges one vendor.
+- **Link each harness's own skills path to `.agents/skills/`** (such as `.claude/skills`).
+  Rejected: it adds a path per harness to keep in step, for native triggering that `AGENTS.md`
+  already covers by pointer.
 - **Write bespoke skills instead of vendoring.** Rejected: the vendored suite is battle-tested, and
   the writing-for-agents discipline it encodes is the expensive part to reproduce.
