@@ -371,3 +371,16 @@ test('the CLI takes the first non-blank stdin line as the title, and never calls
     await jev.close();
   }
 });
+
+test('the CLI reads plain text with CRLF line endings from stdin, leaving no CR in the body', async () => {
+  const jev = await fakeJev(nouls(0));
+  try {
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    const { status, ghCalls } = await runCli([], { env, stdin: 'Some title\r\nthe body\r\nmore body\r\n' });
+    assert.equal(status, 0);
+    assert.deepEqual(ghCalls, []);
+    assert.deepEqual(jev.requests[0].body.state, { work: { title: 'Some title', body: 'the body\nmore body', changed_files: [] } });
+  } finally {
+    await jev.close();
+  }
+});

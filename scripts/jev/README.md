@@ -10,7 +10,7 @@ code works.
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
-| `issue-input.mjs` | How a CLI reads its issue: by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first. `gh(args)` runs `gh` for any other read |
+| `issue-input.mjs` | How a CLI reads its issue: `readIssue` by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first, LF or CRLF. `readPrOrIssue` does the same for a CLI that takes either, trying `gh pr view` first and keeping every JSON field. `gh(args)` runs `gh` for any other read |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `cli-runner.mjs` | Runs a CLI as a subprocess with a `gh` stub on PATH that logs each call and answers canned output, for tests only. `keepPath` keeps the caller's PATH after the stub, for a CLI that runs git |
 | `client.test.mjs` | The client's tests, against the fake server |
@@ -18,7 +18,7 @@ code works.
 | `triage-cli.mjs` | Its CLI: an issue number or the issue on stdin, read by `issue-input.mjs`; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `prune.mjs` | The doc pruner, `run(input, { client, root })`, and `human(result)`, its CLI's line output. Tests point `root` at a temp git repo |
-| `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
+| `prune-cli.mjs` | Its CLI: a PR or issue number, or the work on stdin, read by `issue-input.mjs`'s `readPrOrIssue`; `--json` for JSON |
 | `prune.test.mjs` | Tests at the `run()` seam with a fake client over a temp git repo, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `verify-findings.mjs` | The finding verifier, `run(findings, { client, root })`, and `human(result)`, its CLI's line output. `root` is where the review checklist is read from |
 | `verify-findings-cli.mjs` | Its CLI: a findings file, or the findings on stdin, as JSON; `--json` for JSON |
@@ -31,7 +31,7 @@ code works.
 | `coverage.mjs` | The coverage checker, `run({ issue, diff }, { client })`, plus `parseCriteria(body)`, `parseDiff(diff)` and `human(result)`, its CLI's line output |
 | `coverage-cli.mjs` | Its CLI: a PR number (the PR, the issue it closes and its diff read with `gh`), or an issue file and a diff file; `--json` for JSON |
 | `coverage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
-| `injection.mjs`, `injection-cli.mjs`, `injection.test.mjs` | The injection screen, `run(input, { client })`, and `human(result)`, its CLI's line output; the CLI reads a PR with its comments and reviews (`gh pr view`, falling back to `gh issue view`), or the text on stdin as `gh`'s JSON or plain text with the title first; tests at the same seams as triage |
+| `injection.mjs`, `injection-cli.mjs`, `injection.test.mjs` | The injection screen, `run(input, { client })`, and `human(result)`, its CLI's line output; the CLI reads a PR with its comments and reviews, or an issue with its comments, or the text on stdin, by `issue-input.mjs`'s `readPrOrIssue`; tests at the same seams as triage |
 | `grade.mjs`, `grade-cli.mjs`, `grade.test.mjs` | The grade tool, `run(input, { client })`, `human(result)` and `parsePassCriteria(text)`; the CLI reads a case file and a transcript file and never runs `gh`; tests at the same seams as triage |
 
 ## The client
