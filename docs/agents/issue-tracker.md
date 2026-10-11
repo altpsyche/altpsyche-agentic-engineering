@@ -30,9 +30,10 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
   while its newest counted comment starts with `Claimed:`, which is what **List PRs** filters on.
-  The session posts nothing else until its report or its answer to the findings, which it posts
-  after the label swap, and that comment releases the claim. Any other counted comment releases it
-  too, so the owner frees a claim left by a dead session by commenting.
+  The session posts nothing else until its report or its answer to the findings, and that comment
+  releases the claim. **Label first, then that comment**: the other way round, the PR sits
+  unclaimed under its old label, and another session can pick it up mid-swap. Any other counted
+  comment releases the claim too, so the owner frees a claim left by a dead session by commenting.
 - **Whose comments count**: only comments by the account `gh` is logged in as, which every
   session and the owner share. Claim logic skips every other author, so a CI bot, Dependabot, an
   app or an outside commenter can neither release a claim nor forge one.
@@ -60,17 +61,18 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `Closes #<number>` so merging closes the issue.
 - **Check out a PR** for review or a fix round: `git fetch origin`, then
   `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
-  `gh pr checkout <number>`. A Reviewer uses `origin/main`, not `main`, as the fixed point.
+  `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
+  `main` gives an empty diff.
 - **Post a review**:
-  `gh pr edit <number> --remove-label status:in-review --add-label status:changes-requested` (or
-  `status:approved` when the report has zero open findings, or `ready-for-human` when round 3
-  still has findings), then
-  `gh pr comment <number> --body-file <file>`. The label goes first so the report, which releases
-  the claim, is the last write. GitHub forbids approving your own PR and every session is the
-  owner's account, so the label, not a GitHub review, carries the verdict.
+  `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
+  is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
+  `gh pr comment <number> --body-file <file>`, in that order per **Claim a PR**. GitHub forbids
+  approving your own PR and every session is the owner's account, so the label, not a GitHub
+  review, carries the verdict.
 - **Return a PR for review** after a fix round, per [`docs/workflow.md`](../workflow.md) § 4:
   `gh pr edit <number> --remove-label status:changes-requested --add-label status:in-review`, then
-  `gh pr comment <number> --body-file <file>` with the answer to each finding.
+  `gh pr comment <number> --body-file <file>` with the answer to each finding, in that order per
+  **Claim a PR**.
 
 `gh` infers the repo from `git remote -v` when run inside the clone.
 
