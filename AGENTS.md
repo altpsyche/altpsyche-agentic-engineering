@@ -11,8 +11,8 @@ tools.> <License>, solo owner. Repo: `<owner>/<repo>`.
 tunable defaults. Mirror them in the review checklist, `docs/workflow.md` § The constitution.>
 
 > **Stay under 200 lines** — this loads into every session. Detail belongs in a co-located `.md`.
-> **Session start:** owner says "let's work" / "next" / "review" with no ticket → follow
-> [`.agents/skills/work/SKILL.md`](.agents/skills/work/SKILL.md).
+> **Session start:** the owner says a trigger word, as listed in `/work`'s `description`, with no
+> ticket → follow [`.agents/skills/work/SKILL.md`](.agents/skills/work/SKILL.md).
 > **Skills:** `/name` anywhere in this repo means read `.agents/skills/name/SKILL.md` and follow it.
 > Every agent reads the file, whatever its harness does with the folder.
 > **Pre-work:** Phase 0 has not landed. [`docs/idea.md`](docs/idea.md) is the source of truth, and
@@ -79,16 +79,13 @@ Adding a system requires an ADR. An ADR outranks co-located docs and outranks th
 ## Working Agreement
 
 - **Roles — [`docs/workflow.md`](docs/workflow.md).** One ticket → one worktree, one branch, one
-  PR. The reviewer is a different session from the author, on a different model when one is
-  available. It posts findings on the PR, approves only with zero open findings, and never edits
-  the branch; the owner merges. A re-review raises new findings only on lines changed since the
-  last report's `Reviewed at <sha>`, and a PR whose round 3 still ends in changes requested goes
-  to `ready-for-human`. Implementer → `/implement` driving `/tdd` at seams agreed up front, then a
-  PR labelled `status:in-review`. Planner → `/grill-with-docs`, then `/to-spec` and `/to-tickets`.
-  Queue and session start → `/work`.
-- **Claims — [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).** Only comments by
-  the owner's account count toward a claim; a bot's or an outsider's comment neither takes nor
-  releases one.
+  PR. Each role's steps and done-when live there, once:
+  - Planner → § 1, Plan.
+  - Implementer → § 2, Implement; on a `status:changes-requested` PR, § 4, Fix rounds.
+  - Reviewer → § 3, Review, including the verdict and when a PR goes to `ready-for-human`.
+  - Owner → § 5, Merge and learn.
+  - Session start and the queue → `/work`.
+- **Claims and tracker commands — [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).**
 - **Update the co-located `.md` in the same commit** as the work, and update the issue. Do not
   batch either to the end of a sprint.
 - **One concern per commit** — do not mix a cleanup with new work.

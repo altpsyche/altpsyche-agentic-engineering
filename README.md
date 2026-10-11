@@ -39,7 +39,8 @@ was built and used.
    - `docs/idea.md`: easiest via `/grill-with-docs` in an agent session.
    - This `README.md` and the `LICENSE` holder.
 4. **Check**: `scripts/verify.sh`.
-5. Tell an agent "let's plan". From then on, "let's work", "next" and "review" drive the loop.
+5. Tell an agent "let's plan". From then on, the words in `/work`'s `description`, such as
+   "let's work", "next" and "review", drive the loop.
    If your harness does not load `AGENTS.md` on its own, tell it to read `AGENTS.md` first, in
    your message or your own user-level settings. The repo carries no per-harness file, so every
    agent starts from the same base.

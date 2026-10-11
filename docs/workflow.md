@@ -3,8 +3,8 @@
 How work moves from idea to merged change. Skills live in
 [`.agents/skills/`](../.agents/skills/README.md); the human is the index that reaches for them.
 
-Session start is [`/work`](../.agents/skills/work/SKILL.md): it picks the role, picks the next item
-from the tracker, and confirms both before anything is written.
+Session start is [`/work`](../.agents/skills/work/SKILL.md): it picks the role and the next item,
+confirms both with the owner, then runs the role's step below. See § Starting a session.
 
 ## Roles
 
@@ -16,7 +16,12 @@ from the tracker, and confirms both before anything is written.
 | **Reviewer** | Two-axis review of the diff since a fixed point | Edits the branch under review |
 
 One agent may hold several roles in a session, but never Implementer and Reviewer for the same diff.
-A review by the author of the change is not a review.
+A review by the author of the change is not a review: the Implementer's own `/review-pr` at the end
+of `/implement` is a self-check, and the review is § 3, run by another session.
+
+In the steps below, a bold name that opens a numbered step or follows "then" or "per" (**Claim**,
+**Read back a claim** and the rest) is a command in
+[`docs/agents/issue-tracker.md`](agents/issue-tracker.md), which holds its exact form.
 
 ## The loop
 
@@ -46,18 +51,25 @@ has confirmed the spec's testing seams.
 
 ### 2. Implement (Implementer) — `/implement`
 
-Claim the ticket as the first write, then read the claim back, so two sessions never collide: the
-earliest open claim wins and the other session backs off, per **Read back a claim** in
-[`docs/agents/issue-tracker.md`](agents/issue-tracker.md). Then branch as `<n>-<slug>`; nothing is
-committed to `main`. Read `AGENTS.md` and the ADRs that touch the area. Then drive `/tdd` at the
-seams agreed during planning: the check that proves the work is written before the work.
-
-- Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
-  code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
-- `scripts/verify.sh` runs regularly, and once more at the end.
-- Look at the real result for anything a person will see or use. A green check is not evidence it
-  works in front of them.
-- Commit to the branch; one concern per commit.
+1. **Claim** the issue as the first write, then **Read back a claim**, so two sessions never
+   collide. If you do not hold it, back off as that command says.
+2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`.
+   Nothing is committed to `main`.
+3. Read `AGENTS.md` and the ADRs that touch the area.
+4. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
+   proves the work is written before the work. On a bug ticket, which reports something broken
+   rather than asking for something new, run `/diagnosing-bugs` first for its reproduction loop.
+   The failing check that loop ends with becomes the first `/tdd` slice.
+   - Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
+     code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
+   - `scripts/verify.sh` runs regularly, and once more at the end.
+   - Look at the real result for anything a person will see or use. A green check is not evidence
+     it works in front of them.
+   - Commit to the branch; one concern per commit.
+5. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
+   it is not the review (§ Roles).
+6. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
+   Without that label no Reviewer finds it.
 
 **Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
 made stale is corrected in the same commit, and a PR whose body says `Closes #<n>` is open and labelled
@@ -65,21 +77,26 @@ made stale is corrected in the same commit, and a PR whose body says `Closes #<n
 
 ### 3. Review (Reviewer) — `/review-pr`
 
-Run by a session that did not write the diff. It claims the PR first and reads the claim back, as
-an Implementer claims a ticket, and posts the report last, after setting the verdict; the report
-releases the claim. Two axes, run as parallel sub-agents and reported side by side:
+Run by a session that did not write the diff (§ Roles). When a second model is available, the
+Reviewer runs on a different one from the author: a fresh session of the same model shares its
+blind spots, as an author grading its own work is lenient.
 
-- **Standards** — does the diff follow `AGENTS.md`, `docs/workflow.md`'s checklist below, the ADRs that
-  touch it, and `CODING_STANDARDS.md` once `/retro` has created it? The checklist is applied in
-  full.
-- **Spec** — does it faithfully implement the originating spec, no more and no less?
-
-When a second model is available, the Reviewer runs on a different one from the author: a fresh
-session of the same model shares its blind spots, as an author grading its own work is lenient.
-
-The reviewer sets the verdict and posts the report as a PR comment; it does not push to the branch.
-Every finding names its source and quotes the line it is about. The Implementer's own `/review-pr` run
-at the end of `/implement` is a self-check, not this step.
+1. **Claim a PR** with `Claimed: review`, then **Read back a claim**.
+2. **Check out a PR** in its own worktree.
+3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
+   local `main` adds already-merged commits to the diff. On a re-review, scope new findings from
+   the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
+   and reported side by side:
+   - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
+     and `CODING_STANDARDS.md` once `/retro` has created it? The checklist is applied in full.
+   - **Spec** — does it faithfully implement the originating spec, no more and no less? The spec
+     is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
+     the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
+     ask.
+4. Set the verdict, then post the report, per **Post a review**. The report is a PR comment that
+   opens with `Reviewed at <sha>`, per "Re-reviews converge" below. Every finding names its source
+   and quotes the line it is about. The Reviewer never pushes to the branch. A finding that stays
+   in the chat does not exist.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
@@ -91,22 +108,30 @@ re-review first checks each earlier finding is either fixed or closed by a dispu
 accepted. It then raises new findings only on lines changed since that sha
 (`git diff <sha>..HEAD`), plus any constitution violation anywhere, which always blocks. Code that
 passed one round is not re-litigated in the next. If round 3 still ends in changes requested, the
-reviewer swaps `status:changes-requested` for `ready-for-human` and says why in the report: the
-loop is not converging, and the owner decides whether to merge, rescope or close. A round's number
-is one more than the count of earlier reports on the PR.
+reviewer sets `ready-for-human` instead of `status:changes-requested` and says why in the report:
+the loop is not converging, and the owner decides whether to merge, rescope or close. A round's
+number is one more than the count of earlier reports on the PR.
 
-### 4. Fix rounds
+**Done when:** the PR carries the verdict label this section sets, and the report, opening with
+`Reviewed at <sha>`, is posted on the PR after it, every finding naming its source and quoting its
+line.
 
-The implementer claims the PR first, and reads the claim back as § 2 does, then addresses every
-finding on the same branch, whatever its severity. The issue is already claimed and the branch and
-PR exist, so a fix round skips claiming the issue, branching and opening a PR. A finding may be
-disputed, with a reason and a source; "it works" and "it is minor" are not disputes. The reviewer
-either accepts the dispute, which closes the finding, or holds it, which keeps the PR in changes
-requested. Scope creep found in review becomes a new ticket, not a bigger diff.
+### 4. Fix rounds (Implementer)
 
-When the round is done, swap `status:changes-requested` back to `status:in-review`, then post one PR
-comment that answers each finding: fixed in `<sha>`, naming the test for a behaviour change, or
-disputed with a reason and a source. That comment is the last write, and it releases the claim.
+The issue is already claimed and the branch and PR exist, so a fix round skips § 2's claim, branch
+and PR steps.
+
+1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
+2. **Check out a PR** in its own worktree, on the same branch.
+3. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
+   source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
+   which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
+   in review becomes a new ticket, not a bigger diff.
+4. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
+   for a behaviour change, or disputed with a reason and a source.
+
+**Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
+pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
 
 ### 5. Merge and learn (Owner)
 
@@ -114,8 +139,13 @@ The owner merges. Then `/retro` looks back over the session and proposes changes
 rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
 standard where it was a judgement call.
 
-**Done when:** the issue is closed with a comment linking the PR, and every accepted retro action has
-either landed or become its own issue.
+**Unblocking.** When an issue closes, the session closing it removes `status:blocked` from every
+issue whose native blockers are now all closed, per **Unblock** in
+[`docs/agents/issue-tracker.md`](agents/issue-tracker.md). When a merge closes the issue, that is
+whoever merged it: the owner, or the session the owner merged through.
+
+**Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
+`status:blocked`, and every accepted retro action has either landed or become its own issue.
 
 ## Review checklist
 
@@ -174,6 +204,18 @@ Tracker operations: [`docs/agents/issue-tracker.md`](agents/issue-tracker.md).
 
 ## Starting a session
 
-The owner says "let's work", "next", "continue", "review", or "what's next" without naming a ticket.
-That is the `/work` trigger: pick the role, pick the next item, state it in one line, and **wait for
-confirmation** before claiming it.
+The words that start a session are listed once, in the `description` of
+[`/work`](../.agents/skills/work/SKILL.md). When the owner says one without naming a ticket, follow
+`/work`: it picks the role and the next item, and waits for the owner's confirmation before
+anything is claimed.
+
+## Ending a session
+
+Before ending a session, in this order:
+
+1. The tracker reflects reality: claimed items claimed, and finished work handed on. An
+   Implementer's PR is open and labelled `status:in-review`; a Reviewer's carries its verdict.
+   The merge closes the issue, per § 5; an Implementer or Reviewer never closes it.
+2. The Working Agreement in `AGENTS.md` holds for everything this session committed.
+3. This session's worktree is removed, per **Worktree** in
+   [`docs/agents/issue-tracker.md`](agents/issue-tracker.md).

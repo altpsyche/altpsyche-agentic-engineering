@@ -8,7 +8,7 @@ string this repo actually uses.
 | `needs-triage` | `needs-triage` | Owner needs to evaluate this issue |
 | `needs-info` | `needs-info` | Waiting on the reporter for more information |
 | `ready-for-agent` | `ready-for-agent` | Fully specified; an implementer model can start |
-| `ready-for-human` | `ready-for-human` | Needs human hands: credentials, consent screens, store listings, testing on real hardware, signing identities. On a PR: review did not converge in 3 rounds, and the owner decides ([`workflow.md`](../workflow.md) § 3) |
+| `ready-for-human` | `ready-for-human` | Needs human hands: credentials, consent screens, store listings, testing on real hardware, signing identities. On a PR: review is not converging, and the owner decides ([`workflow.md`](../workflow.md) § 3) |
 | `wontfix` | `wontfix` | Will not be actioned |
 
 **Moving an issue to `ready-for-agent` or `ready-for-human` also applies exactly one `phase:N`**,

@@ -1,12 +1,14 @@
 # Issue tracker
 
-Issues and specs for this repo live as **GitHub issues** on this repo's GitHub remote. Issues
-are authoritative and public. Use the `gh` CLI for all operations.
+Issues for this repo live as **GitHub issues** on this repo's GitHub remote. Specs live in
+[`docs/specs/`](../specs/), not the tracker; see the spec case under **When a skill says "publish
+to the issue tracker"** below. Issues are authoritative and public. Use the `gh` CLI for all
+operations.
 
 `.scratch/` is a local, gitignored scratch area for in-flight thinking that is not ready to be
-public: draft specs, ticket breakdowns mid-edit, wayfinding notes. **Nothing authoritative lives
-in `.scratch/`**; promote it to a GitHub issue when it stabilises. If the two ever disagree,
-the GitHub issue wins.
+public: draft specs, ticket breakdowns mid-edit, notes from an investigation. **Nothing
+authoritative lives in `.scratch/`**; promote it when it stabilises, a spec to `docs/specs/` and
+anything else to a GitHub issue. If the two ever disagree, the promoted copy wins.
 
 ## Conventions
 
@@ -21,6 +23,12 @@ the GitHub issue wins.
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Unblock**, straight after an issue closes, per [`docs/workflow.md`](../workflow.md) § 5. List
+  the open issues it was blocking:
+  `gh api 'repos/{owner}/{repo}/issues/<closed>/dependencies/blocking' --jq '.[] | select(.state == "open") | .number'`.
+  For each, check its native blockers:
+  `gh api 'repos/{owner}/{repo}/issues/<n>/dependencies/blocked_by' --jq 'all(.[]; .state == "closed")'`.
+  Where that prints `true`, run `gh issue edit <n> --remove-label status:blocked`.
 - **Claim**: `gh issue edit <number> --add-assignee @me` then
   `gh issue comment <number> --body "Claimed: branch <number>-<slug> (session <token>)"`, then
   **Read back a claim**. Every session shares the owner's account, so the comment is the claim and
@@ -30,9 +38,10 @@ the GitHub issue wins.
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
   while its newest counted comment starts with `Claimed:`, which is what **List PRs** filters on.
-  The session posts nothing else until its report or its answer to the findings, which it posts
-  after the label swap, and that comment releases the claim. Any other counted comment releases it
-  too, so the owner frees a claim left by a dead session by commenting.
+  The session posts nothing else until its report or its answer to the findings, and that comment
+  releases the claim. **Label first, then that comment**: the other way round, the PR sits
+  unclaimed under its old label, and another session can pick it up mid-swap. Any other counted
+  comment releases the claim too, so the owner frees a claim left by a dead session by commenting.
 - **Whose comments count**: only comments by the account `gh` is logged in as, which every
   session and the owner share. Claim logic skips every other author, so a CI bot, Dependabot, an
   app or an outside commenter can neither release a claim nor forge one.
@@ -60,17 +69,18 @@ the GitHub issue wins.
   `Closes #<number>` so merging closes the issue.
 - **Check out a PR** for review or a fix round: `git fetch origin`, then
   `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
-  `gh pr checkout <number>`. A Reviewer uses `origin/main`, not `main`, as the fixed point.
+  `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
+  `main` gives an empty diff.
 - **Post a review**:
-  `gh pr edit <number> --remove-label status:in-review --add-label status:changes-requested` (or
-  `status:approved` when the report has zero open findings, or `ready-for-human` when round 3
-  still has findings), then
-  `gh pr comment <number> --body-file <file>`. The label goes first so the report, which releases
-  the claim, is the last write. GitHub forbids approving your own PR and every session is the
-  owner's account, so the label, not a GitHub review, carries the verdict.
+  `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
+  is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
+  `gh pr comment <number> --body-file <file>`, in that order per **Claim a PR**. GitHub forbids
+  approving your own PR and every session is the owner's account, so the label, not a GitHub
+  review, carries the verdict.
 - **Return a PR for review** after a fix round, per [`docs/workflow.md`](../workflow.md) § 4:
   `gh pr edit <number> --remove-label status:changes-requested --add-label status:in-review`, then
-  `gh pr comment <number> --body-file <file>` with the answer to each finding.
+  `gh pr comment <number> --body-file <file>` with the answer to each finding, in that order per
+  **Claim a PR**.
 
 `gh` infers the repo from `git remote -v` when run inside the clone.
 
@@ -105,7 +115,7 @@ Two families, both defined up front so agents never invent a label:
 When GitHub is unreachable (offline, or no network in the sandbox), fall back to local markdown
 and say so in your reply:
 
-- One file per feature or effort: `.scratch/<effort-slug>/spec.md`.
+- The spec stays at `docs/specs/<slug>.md`, as it does online.
 - One file per ticket: `.scratch/<effort-slug>/issues/NN-<slug>.md`, numbered from `01`, with a
   `Blocked by:` line at the top when it depends on another ticket.
 - The **frontier** is the open ticket with the lowest number whose blockers are all closed.
@@ -129,14 +139,11 @@ number,title,body,labels,author,authorAssociation`, `gh pr comment`, `gh pr edit
 Create a GitHub issue and apply the label the skill names, **plus exactly one `phase:N`**. The
 vendored skills do not know about phase labels, so this line is the only thing that adds them.
 
+**A spec is the exception.** `/to-spec` says to publish the spec to the tracker and label it
+`ready-for-agent`. Here it writes `docs/specs/<slug>.md` instead, with no tracker issue and no
+frontier label, so a frontier never hands a spec to an Implementer. The tickets `/to-tickets`
+cuts from it are the issues.
+
 ## When a skill says "fetch the relevant ticket"
 
 Run `gh issue view <number> --comments`.
-
-## Wayfinding operations
-
-Not currently used: `/wayfinder` is not vendored (see
-[`.agents/skills/README.md`](../../.agents/skills/README.md)). If it is vendored later, the map
-is a single issue labelled `wayfinder:map`, children are GitHub sub-issues labelled
-`wayfinder:<research|prototype|grilling|task>`, and blocking uses GitHub's native issue
-dependencies, with a `Blocked by: #<n>` line in the child body as the fallback.
