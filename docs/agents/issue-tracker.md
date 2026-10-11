@@ -53,7 +53,8 @@ the GitHub issue wins.
   A Reviewer uses `origin/main`, not `main`, as the fixed point.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label status:changes-requested` (or
-  `status:approved` when the report has zero open findings), then
+  `status:approved` when the report has zero open findings, or `ready-for-human` when round 3
+  still has findings), then
   `gh pr comment <number> --body-file <file>`. The label goes first so the report, which releases
   the claim, is the last write. GitHub forbids approving your own PR and every session is the
   owner's account, so the label, not a GitHub review, carries the verdict.

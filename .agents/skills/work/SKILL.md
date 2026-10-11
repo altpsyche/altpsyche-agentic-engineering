@@ -79,9 +79,12 @@ issue is already claimed, and the branch and the PR already exist.
    diff, and `CODING_STANDARDS.md` if `/retro` has created it. The originating spec is the issue
    in `Closes #<n>`. When the PR closes no issue, review the Spec axis against the PR body, say so
    in the report, and flag the missing issue as a finding; do not stop to ask.
+   On a re-review, use the sha from the last report's `Reviewed at <sha>` line to scope new
+   findings, per **Re-reviews converge** in [`docs/workflow.md`](../../../docs/workflow.md) § 3.
 4. **Set the state**: swap `status:in-review` for `status:approved` only when no finding is open.
    Any finding, however minor, means `status:changes-requested`; see the verdict rule in
-   [`docs/workflow.md`](../../../docs/workflow.md) § 3. Never push to the branch.
+   [`docs/workflow.md`](../../../docs/workflow.md) § 3. If this was round 3 and findings remain,
+   use `ready-for-human` instead and say why. Never push to the branch.
 5. **Post the report** on the PR as a comment. It is the last write, so it releases the claim only
    once the label is set. A finding that stays in the chat does not exist.
 
