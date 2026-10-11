@@ -78,8 +78,9 @@ test('with a plan, asks one Noul per acceptance criterion, naming the criterion,
   ]);
   const [request] = client.calls;
   assert.deepEqual(request.state, { ticket: TICKET, plan: PLAN });
-  assert.match(request.questions.criterion_1.instructions, /The settings page has a dark theme toggle/);
-  assert.match(request.questions.criterion_2.instructions, /The choice survives a reload/);
+  // Quoted as JSON, since ticket text is untrusted (ADR-0002).
+  assert.ok(request.questions.criterion_1.instructions.includes('"The settings page has a dark theme toggle"'));
+  assert.ok(request.questions.criterion_2.instructions.includes('"The choice survives a reload"'));
 });
 
 test('criteria are read from numbered or starred lists too, and end at the next heading', async () => {

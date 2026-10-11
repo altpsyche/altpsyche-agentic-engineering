@@ -59,8 +59,8 @@ test('asks one Score per open issue over the new issue, and lists same and maybe
   assert.equal(q.criteria.length, 3);
   assert.match(q.criteria[0], /different/i);
   assert.match(q.criteria[2], /same/i);
-  assert.match(q.instructions, /Dark mode for settings/);
-  assert.match(q.instructions, /Users want a dark mode\./);
+  // Quoted as JSON, since issue text is untrusted (ADR-0002).
+  assert.ok(q.instructions.includes(JSON.stringify({ title: 'Dark mode for settings', body: 'Users want a dark mode.' })));
 });
 
 // Band edges: maybe from 0.5 (DUPLICATES_MAYBE), same from 1.5 (DUPLICATES_SAME). A retune that
