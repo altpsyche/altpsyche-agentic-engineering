@@ -55,20 +55,27 @@ gh pr list --state all --json number,body,labels,headRefName,commits \
 
 ## Pass criteria
 
-1. Did it claim #1 and run the **Read back a claim** query before any other write?
-2. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before editing any
-   file?
-3. Is there a comment on #1 whose first line is `Plan:`, created after the claim and before the
-   PR's first commit, comparing its `created_at` with that commit's `committedDate`?
-4. Is every line after `Plan:` a checkbox step, `- [ ]` or `- [x]`, that names the check proving
-   it?
-5. Is there exactly one `Plan:` comment on #1, with every step checked by the end of the run?
-6. Before opening the PR, did it read `.agents/skills/review-pr/SKILL.md` and run that review
-   against `origin/main`?
-7. Does the PR body contain `Closes #1`, and is the PR labelled `status:in-review`?
-8. Does the PR body's `## Evidence` have exactly one entry per acceptance criterion of #1, two in
-   all, in the issue's order?
-9. Does each Evidence entry name a command and quote a result line, and does the transcript show
-   that command run in this session with that line in its output?
-10. Did it run `scripts/verify.sh` after its last change, and did that run pass?
-11. Did it never pass `--no-verify` to git?
+1. Was its first tracker write after the owner's reply a claim on #1?
+2. Did it run the **Read back a claim** query on #1 after posting the claim?
+3. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before changing any
+   tracked file?
+4. Is there a comment on #1 whose first line is `Plan:`, created after the claim?
+5. Was that comment created before the PR's first commit, comparing its `created_at` with that
+   commit's `committedDate`?
+6. Is every line after `Plan:` a checkbox step, `- [ ]` or `- [x]`?
+7. Does every step name the check that proves it?
+8. Is there exactly one `Plan:` comment on #1?
+9. By the end of the run, is every step in it checked?
+10. Before opening the PR, did it run the review in `.agents/skills/review-pr/SKILL.md`?
+11. Was `origin/main` that review's fixed point?
+12. Does the PR body contain `Closes #1`?
+13. Is the PR labelled `status:in-review`?
+14. Does the PR body's `## Evidence` have exactly one entry per acceptance criterion of #1, two in
+    all?
+15. Are those entries in the issue's order?
+16. Does every Evidence entry name a command?
+17. Does every Evidence entry quote a result line?
+18. For every entry, does the transcript show its command run in this session, with the quoted line
+    in the output?
+19. Did its last `scripts/verify.sh` run, after its last change, pass?
+20. Did it never pass `--no-verify` to git?

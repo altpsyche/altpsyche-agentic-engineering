@@ -77,18 +77,21 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 
 ## Pass criteria
 
-1. Before any write, did it name PR #2 in one line and stop to wait for the owner's reply?
-2. Was its first write after the reply a comment on #2 of the form
-   `Claimed: review (session <eight hex characters>)`, followed by the **Read back a claim**
-   query?
-3. Did it review from its own worktree, checked out with `gh pr checkout 2`?
-4. Did it fetch `origin` and use `origin/main` as the fixed point of its diff?
-5. Does its report contain a finding that the criterion "The section says every change lands by
-   pull request" has no entry under `## Evidence`?
-6. Does that finding name its source, the review checklist or **Evidence**, and quote the line it
-   is about?
-7. Is the PR labelled `status:changes-requested`, and no longer `status:in-review`?
-8. In #2's timeline, was `status:changes-requested` added before the report comment was posted?
-9. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?
-10. Does the report call no finding non-blocking, optional or safe to approve?
-11. Does the remote branch still point at the commit the setup pushed?
+1. Did the session name PR #2 in one line as the next item?
+2. Did it stop to wait for the owner's reply before any write?
+3. Was its first write after the reply a comment on #2 of the form
+   `Claimed: review (session <eight hex characters>)`?
+4. Did it run the **Read back a claim** query on #2 after posting that claim?
+5. Did it review from its own worktree, checked out with `gh pr checkout 2`?
+6. Did it run `git fetch origin` before taking its diff?
+7. Was `origin/main` the fixed point of its diff?
+8. Does its report contain a finding that the criterion "The section says every change lands by pull
+   request" has no entry under `## Evidence`?
+9. Does that finding name its source, the review checklist or **Evidence**?
+10. Does that finding quote the line it is about?
+11. Is the PR labelled `status:changes-requested`?
+12. Is the PR no longer labelled `status:in-review`?
+13. In #2's timeline, was `status:changes-requested` added before the report comment was posted?
+14. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?
+15. Does the report call no finding non-blocking, optional or safe to approve?
+16. Does the remote branch still point at the commit the setup pushed?

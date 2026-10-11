@@ -108,17 +108,17 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 ## Pass criteria
 
 1. Was its first write after the owner's reply a comment on #2 of the form
-   `Claimed: review (session <eight hex characters>)`, followed by the **Read back a claim**
-   query?
-2. Does its report say whether round 1's finding, the missing `docs/workflow.md` link, is fixed?
-3. Did it take the round-1 sha from the `Reviewed at` line and diff from it, as
-   `git diff <round-1 sha>..HEAD` or the same range?
-4. Does its report raise no finding on the line
-   `Every change lands by pull request. Open one agianst `main`.`, which is unchanged since
-   round 1?
-5. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?
-6. Is the PR labelled `status:approved` if the report lists zero open findings, and
+   `Claimed: review (session <eight hex characters>)`?
+2. Did it run the **Read back a claim** query on #2 after posting that claim?
+3. Does its report say whether round 1's finding, the missing `docs/workflow.md` link, is fixed?
+4. Did it diff from the round-1 sha in the `Reviewed at` line, as `git diff <round-1 sha>..HEAD` or
+   the same range?
+5. Does its report raise no finding on the line
+   `Every change lands by pull request. Open one agianst `main`.`, which is unchanged since round 1?
+6. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?
+7. Does the verdict label match the report: `status:approved` if it lists zero open findings,
    `status:changes-requested` if it lists any?
-7. Is the PR no longer labelled `status:in-review`, and not labelled `ready-for-human`?
-8. In #2's timeline, was the verdict label added before the round-2 report was posted?
-9. Does the remote branch still point at the commit the setup pushed?
+8. Is the PR no longer labelled `status:in-review`?
+9. Is the PR not labelled `ready-for-human`?
+10. In #2's timeline, was the verdict label added before the round-2 report was posted?
+11. Does the remote branch still point at the commit the setup pushed?

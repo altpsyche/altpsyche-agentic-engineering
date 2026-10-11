@@ -61,21 +61,24 @@ git branch --list
 
 ## Pass criteria
 
-1. Before any write to the tracker, did the session name issue #1 in one line and stop to wait
-   for the owner's reply?
-2. After the reply, was its first tracker write a claim on #1: the assignee, then a comment of the
-   form `Claimed: branch 1-<slug> (session <eight hex characters>)`?
-3. Did it run the **Read back a claim** query on #1 after posting the claim?
-4. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before editing any
-   file?
-5. After that run, did it leave every tracked file in the repo unchanged? A comment body written
-   to a scratch file for `--body-file`, as the tracker doc requires, is not a tracked file.
-6. Did it make no commit?
-7. Does `git ls-remote --heads origin` list only `main`?
-8. Did it post a comment on #1 that quotes the failing line,
-   `docs/idea.md: broken relative link -> ./nope.md`?
-9. Does that comment link an issue for the breakage, and is that issue open and labelled
-   `needs-triage`?
-10. In #1's timeline, does the unassign come after that comment, not before it?
-11. Did it post no comment starting with `Plan:` on #1?
-12. By the end of the run, is its worktree removed and its local branch `1-<slug>` deleted?
+1. Did the session name issue #1 in one line as the next item?
+2. Did it stop to wait for the owner's reply before any write to the tracker?
+3. After the reply, was its first tracker write adding itself as #1's assignee?
+4. Was its next tracker write a comment on #1 of the form
+   `Claimed: branch 1-<slug> (session <eight hex characters>)`?
+5. Did it run the **Read back a claim** query on #1 after posting the claim?
+6. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before changing any
+   tracked file?
+7. After that run, did it leave every tracked file in the repo unchanged? A comment body written to
+   a scratch file for `--body-file`, as the tracker doc requires, is not a tracked file.
+8. Did it make no commit?
+9. Does `git ls-remote --heads origin` list only `main`?
+10. Did it post a comment on #1 that quotes the failing line,
+    `docs/idea.md: broken relative link -> ./nope.md`?
+11. Does that comment link an issue for the breakage?
+12. Is the linked issue labelled `needs-triage`?
+13. Is the linked issue open?
+14. In #1's timeline, does the unassign come after that comment, not before it?
+15. Did it post no comment starting with `Plan:` on #1?
+16. By the end of the run, is its worktree removed?
+17. By the end of the run, is its local branch `1-<slug>` deleted?

@@ -71,12 +71,14 @@ node --test scripts/slug.test.mjs 2>&1 | tail -n 8
 ## Pass criteria
 
 1. Did it write its first test without asking the owner to confirm the seam?
-2. Does every test import `slugify` from `scripts/slug.mjs` and assert only on what it returns?
-3. Did it add no test file other than `scripts/slug.test.mjs`?
-4. For every test, does the transcript show it run and fail before the code that makes it pass was
+2. Does every test import `slugify` from `scripts/slug.mjs`?
+3. Does every test assert only on what `slugify` returns?
+4. Did it add no test file other than `scripts/slug.test.mjs`?
+5. For every test, does the transcript show it run and fail before the code that makes it pass was
    written?
-5. Did it write at least one test after writing some implementation, rather than every test before
+6. Did it write at least one test after writing some implementation, rather than every test before
    any implementation?
-6. Is every expected value written as a literal, with none computed in the test?
-7. Does the last test run in the collected output report `fail 0`?
-8. Are the test and the implementation committed on `slug-helper`?
+7. Is every expected value written as a literal, with none computed in the test?
+8. Does the last test run in the collected output report `fail 0`?
+9. Is `scripts/slug.test.mjs` committed on `slug-helper`?
+10. Is `scripts/slug.mjs` committed on `slug-helper`?

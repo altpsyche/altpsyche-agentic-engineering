@@ -82,20 +82,22 @@ ls -R .scratch 2>/dev/null || echo "no .scratch"
 
 ## Pass criteria
 
-1. Before creating any issue, did it present the breakdown as a numbered list giving each ticket
-   a title, its blockers and what it delivers?
-2. Did it create no issue before the owner's `Approved. Publish them.` reply?
-3. Does every issue it created carry `ready-for-agent`?
-4. Does every issue it created carry exactly one `phase:N` label?
-5. Is every issue it created a ticket from the approved breakdown, with no issue for the spec
-   itself?
-6. Was each blocking edge in the breakdown created as a native dependency, as the `blocked by`
-   lines show?
-7. Does each issue's `## Blocked by` section name the same issues as its native dependencies?
-8. Does every issue with an open blocker also carry `status:blocked`?
-9. Were the issues created blockers first, so that every blocker has a lower number than each
-   issue it blocks?
-10. Does every issue have an `## Acceptance criteria` section of checkboxes, each stating a result
-    a command or a reading can show, such as an output, a file's content or a passing test, and
-    none an activity such as "investigate" or "consider"?
-11. Did it write no ticket files under `.scratch/`, since GitHub was reachable?
+1. Before creating any issue, did it present the breakdown as a numbered list?
+2. Does each ticket in that list name its blockers, or say it has none?
+3. Does each ticket in that list say what it delivers?
+4. Did it create no issue before the owner's `Approved. Publish them.` reply?
+5. Does every issue it created carry `ready-for-agent`?
+6. Does every issue it created carry exactly one `phase:N` label?
+7. Does every issue it created match a ticket in the approved breakdown?
+8. Did it create no issue for the spec itself?
+9. Was each blocking edge in the breakdown created as a native dependency, as the `blocked by` lines
+   show?
+10. Does each issue's `## Blocked by` section name the same issues as its native dependencies?
+11. Does every issue with an open blocker also carry `status:blocked`?
+12. Were the issues created blockers first, so that every blocker has a lower number than each issue
+    it blocks?
+13. Does every issue have an `## Acceptance criteria` section of checkboxes?
+14. Does every acceptance criterion state a result a command or a reading can show, such as an
+    output, a file's content or a passing test, rather than an activity such as "investigate" or
+    "consider"?
+15. Did it write no ticket files under `.scratch/`, since GitHub was reachable?
