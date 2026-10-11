@@ -47,9 +47,8 @@ pre-push hook, and scans every commit for secrets with gitleaks. Phase 0 adds th
 checks to it. Update this block and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the
 same commit that wires them.
 
-The pre-push hook in [`.githooks/`](.githooks/pre-push) runs it before every push and blocks the
-push when it fails. [`scripts/install-hooks.sh`](scripts/install-hooks.sh) switches it on, once per
-clone; `scripts/bootstrap.sh` calls it.
+A pre-push hook, [`.githooks/pre-push`](.githooks/pre-push), runs it before every push and blocks
+a red push. How it is switched on: [`scripts/install-hooks.sh`](scripts/install-hooks.sh).
 
 ## Structure
 

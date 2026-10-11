@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Runs scripts/verify.sh before every push and blocks the push if it fails, so red work never
 # leaves this machine. It checks the working tree, so commit everything before pushing. Switched on
-# by scripts/install-hooks.sh. An agent never skips it with --no-verify; the owner may (AGENTS.md
-# § Anti-Patterns).
+# by scripts/install-hooks.sh. Who may skip it: AGENTS.md § Anti-Patterns.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 if ! scripts/verify.sh </dev/null; then
