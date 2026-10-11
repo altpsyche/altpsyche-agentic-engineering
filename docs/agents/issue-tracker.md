@@ -5,8 +5,8 @@ are authoritative and public. Use the `gh` CLI for all operations.
 
 `.scratch/` is a local, gitignored scratch area for in-flight thinking that is not ready to be
 public: draft specs, ticket breakdowns mid-edit, notes from an investigation. **Nothing
-authoritative lives in `.scratch/`**; promote it to a GitHub issue when it stabilises. If the two
-ever disagree, the GitHub issue wins.
+authoritative lives in `.scratch/`**; promote it when it stabilises, a spec to `docs/specs/` and
+anything else to a GitHub issue. If the two ever disagree, the promoted copy wins.
 
 ## Conventions
 
@@ -105,7 +105,7 @@ Two families, both defined up front so agents never invent a label:
 When GitHub is unreachable (offline, or no network in the sandbox), fall back to local markdown
 and say so in your reply:
 
-- One file per feature or effort: `.scratch/<effort-slug>/spec.md`.
+- The spec stays at `docs/specs/<slug>.md`, as it does online.
 - One file per ticket: `.scratch/<effort-slug>/issues/NN-<slug>.md`, numbered from `01`, with a
   `Blocked by:` line at the top when it depends on another ticket.
 - The **frontier** is the open ticket with the lowest number whose blockers are all closed.
@@ -128,6 +128,11 @@ number,title,body,labels,author,authorAssociation`, `gh pr comment`, `gh pr edit
 
 Create a GitHub issue and apply the label the skill names, **plus exactly one `phase:N`**. The
 vendored skills do not know about phase labels, so this line is the only thing that adds them.
+
+**A spec is the exception.** `/to-spec` says to publish the spec to the tracker and label it
+`ready-for-agent`. Here it writes `docs/specs/<slug>.md` instead, with no tracker issue and no
+frontier label, so a frontier never hands a spec to an Implementer. The tickets `/to-tickets`
+cuts from it are the issues.
 
 ## When a skill says "fetch the relevant ticket"
 
