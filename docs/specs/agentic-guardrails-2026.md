@@ -154,20 +154,31 @@ the fix round, `Reviewed at <sha>`, standards sources, self-review, and the labe
 order.
 
 **Vendored skills.** Local changes 1-3 in `.agents/skills/README.md` stay. This spec adds one:
-`setup-matt-pocock-skills` is removed and listed under "Deliberately left out". Four vendored skills
-(`to-spec`, `to-tickets`, `triage`, `review-pr`) still say to run it if the tracker config is
-missing. They stay byte-identical: the config is never missing here, and the skills README's
-"Known upstream wording" note lists those lines. The wayfinding seed text in
-`docs/agents/issue-tracker.md` is not vendored; it is deleted as part of the DRY pass.
+`setup-matt-pocock-skills` is removed and listed under "Deliberately left out". Five lines in four
+vendored skills still name it:
+
+- four say to run it if the tracker config is missing: `to-spec`, `to-tickets`, `triage` and
+  `review-pr`;
+- the fifth, in `to-tickets`, says publishing "depends on the tracker `/setup-matt-pocock-skills`
+  configured".
+
+They stay byte-identical: the config is always present here, in `docs/agents/`. The DRY pass adds
+those five lines to the skills README's "Known upstream wording" note, and drops the removed skill
+from that note's `CLAUDE.md` list. The wayfinding seed text in `docs/agents/issue-tracker.md` is not
+vendored; it is deleted as part of the DRY pass.
 
 **Overrides of vendored behaviour live in `docs/agents/`**, which the vendored skills already read:
 
 - `to-spec` publishes to `docs/specs/<slug>.md`: no tracker issue, no frontier label. This is the
   "When a skill says publish to the issue tracker" section, which gains a spec case.
-- Before any issue is created, by `/to-tickets`, `/triage` or by hand, the same section runs the
-  duplicates check against open issues. That section is the one place every skill's publish step
-  passes through. `/triage`'s own redundancy check searches the codebase, not issues, so it is not
-  the hook.
+- The duplicates check runs at two points, so it covers issues agents file and issues people file:
+  - **Before an agent creates an issue.** The same publish section runs it against open issues;
+    every skill's publish step passes through that section.
+  - **When an issue is triaged.** `docs/agents/triage-labels.md` runs it for the issue being
+    triaged, beside the triage tool. That catches issues the owner or a reporter filed through the
+    GitHub UI or `gh issue create`, which never pass through a skill.
+
+  `/triage`'s own redundancy check searches the codebase, not issues, so it is not the hook.
 - The spec's agreed testing seams count as `tdd`'s confirmation (`docs/agents/domain.md`).
 - `/research` saves notes under `.scratch/research/` (`docs/agents/domain.md`).
 
@@ -233,7 +244,7 @@ re-reads and decides.
 | evidence | `docs/workflow.md` § 3 | Exact string match of the quoted result in the output, then Choice: supports, contradicts or silent | A missing quote or a contradicts is flagged for the Reviewer to check first; supports is noted. The Reviewer still checks every entry, and the finding rule is theirs |
 | coverage | `docs/workflow.md` § 3, Spec axis | Per criterion, Choice over diff hunks and test names plus Noul "is it covered" | uncovered and uncertain flagged for the Reviewer; covered noted with its line |
 | readiness | `docs/agents/triage-labels.md`, `docs/workflow.md` § 2 | Nouls: has acceptance criteria, names seams; per criterion, does a plan step cover it | gaps flagged for the agent to fix or raise |
-| duplicates | `docs/agents/issue-tracker.md`, before any issue is created | Score: different, maybe, same, against open issues | same and maybe listed for the agent to decide |
+| duplicates | `docs/agents/issue-tracker.md` before an agent creates an issue; `docs/agents/triage-labels.md` for the issue being triaged | Score: different, maybe, same, against open issues | same and maybe listed for the agent to decide |
 | injection | `docs/agents/issue-tracker.md` § Untrusted text | Nouls for injected instructions | a hit or an uncertain answer is flagged; the agent re-reads that text under § Untrusted text and, if it finds an attempt, stops and tells the owner |
 | grade | `evals/README.md` | Noul per pass criterion, over the transcript | each answer is advice to the grading session, which records the grade; uncertain answers are graded by a person |
 
