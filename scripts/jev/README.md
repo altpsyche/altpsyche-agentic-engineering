@@ -10,6 +10,9 @@ in [ADR-0002](../../docs/adr/0002-jev-optional-dev-tooling.md). This file is how
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })` |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `client.test.mjs` | The client's tests, against the fake server |
+| `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
+| `triage-cli.mjs` | Its CLI: an issue number (read with `gh issue view`), or the issue on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
+| `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
 
@@ -32,6 +35,19 @@ Inside `ask`:
   error, so a tool never acts on half its answers.
 - **Retries.** A 429 or 529 is retried with exponential backoff, up to `JEV_MAX_ATTEMPTS` in all.
   Any other status, a network failure, a timeout or a 200 without `answers` is an error at once.
+
+## Triage
+
+Asks two Choices in one request, over the issue's title and body as state. Their options are read
+on every run from the docs that own them, so an edit there cannot drift from the tool:
+
+- **Role**: each row of the table in `docs/agents/triage-labels.md`, its label (second column)
+  with its "Meaning", in table order, `needs-triage` left out as the state being left. A row
+  outside the five canonical roles, or a missing one, is an error line, never silently dropped.
+- **Phase**: each `### Phase N — Title` heading under `docs/idea.md` § Roadmap, with its bullets.
+
+A choice that is not one of the options is an error. The CLI only reads the issue; it never runs
+`gh issue edit`.
 
 ## Testing
 
