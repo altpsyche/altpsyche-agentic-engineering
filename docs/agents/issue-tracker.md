@@ -66,6 +66,21 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
   after `issuecomment-` in the URL that posting the claim printed, then picks again. On an issue
   it leaves the assignee, which the winner shares.
+- **Plan**: one comment per issue, posted after **Read back a claim** and before the first
+  commit, then edited in place, never posted again. `Plan:` is the first line; each line after it
+  is a checkbox step naming the check that proves it:
+
+  ```
+  Plan:
+  - [ ] <step> (check: <the test, command or criterion that proves it>)
+  ```
+
+  Post it from a file with `gh issue comment <number> --body-file <file>`. Edit it with
+  `gh api -X PATCH 'repos/{owner}/{repo}/issues/comments/<id>' -F body=@<file>`, where `<id>` is
+  the number after `issuecomment-` in the URL that posting it printed. A later session finds it
+  with `gh api 'repos/{owner}/{repo}/issues/<number>/comments' --paginate --jq '.[] | select(.body | startswith("Plan:")) | {id, author: .user.login}'`
+  and keeps the one by this account, per **Whose comments count**. Claim logic skips it, per
+  **Read back a claim**. A plan lives on the issue only, never on a PR.
 - **Worktree**: one item, one worktree, one branch. Sessions run in parallel, and two sessions in
   one checkout switch branches under each other. So a session never works in the main clone: it
   adds a sibling worktree, works only there, and removes it once its last write is posted, with
