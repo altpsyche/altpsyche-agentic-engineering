@@ -103,10 +103,14 @@ for (const status of [401, 422]) {
   });
 }
 
-test('an unreachable server is an error, never a throw', async () => {
-  const client = createClient({ env: { TYPESAFE_API_KEY: KEY, TYPESAFE_BASE_URL: 'http://127.0.0.1:9' } });
+test('an unreachable server is an error naming why, never a throw', async () => {
+  // A port that was just listening and is now closed refuses the connection.
+  const gone = await fakeJev(() => ({ status: 200 }));
+  await gone.close();
+  const client = createClient({ env: { TYPESAFE_API_KEY: KEY, TYPESAFE_BASE_URL: gone.url } });
   const result = await client.ask({ state: {}, questions: QUESTIONS });
   assert.equal(result.status, 'error');
+  assert.match(result.reason, /ECONNREFUSED/);
   assert.ok(!result.reason.includes('\n'));
 });
 
