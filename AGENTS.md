@@ -77,9 +77,14 @@ Adding a system requires an ADR. An ADR outranks co-located docs and outranks th
 
 ## Working Agreement
 
-- **Roles — [`docs/workflow.md`](docs/workflow.md).** One ticket → one branch + PR. The reviewer
-  is a different session from the author, posts findings on the PR, approves only with zero open
-  findings, and never edits the branch; the owner merges. Implementer → `/implement` driving `/tdd`
+- **Roles — [`docs/workflow.md`](docs/workflow.md).** One ticket → one worktree, one branch, one
+  PR. The reviewer is a different session from the author, on a different model when one is
+  available. It posts findings on the PR, approves only with zero open findings, and never edits
+  the branch; the owner merges. A re-review raises new findings only on lines changed since the
+  last report's `Reviewed at <sha>`, and a PR still open after round 3 goes to `ready-for-human`.
+- **Claims — [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).** Only comments by
+  the owner's account count toward a claim; a bot's or an outsider's comment neither takes nor
+  releases one. Implementer → `/implement` driving `/tdd`
   at seams agreed up front, then a PR labelled `status:in-review`. Planner → `/grill-with-docs`,
   then `/to-spec` and `/to-tickets`. Queue and session start → `/work`.
 - **Update the co-located `.md` in the same commit** as the work, and update the issue. Do not
