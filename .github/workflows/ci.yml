@@ -14,9 +14,10 @@ permissions:
   contents: read
 
 jobs:
-  # Runs scripts/verify.sh: the agent-layer check (plain Node, no packages, plus the runner's jq for
-  # the claim read-back test), the gitleaks secret scan, and whatever project checks Phase 0 adds to
-  # it. Update AGENTS.md § Verifying your work in the same commit.
+  # Runs scripts/verify.sh: the agent-layer check, the pre-push hook's test and the claim read-back
+  # test (plain Node, no packages, plus the runner's jq for the claim test), the gitleaks secret
+  # scan, and whatever project checks Phase 0 adds to it. Update AGENTS.md § Verifying your work in
+  # the same commit.
   verify:
     runs-on: ubuntu-latest
     steps:
