@@ -4,14 +4,11 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) at
 `7a030a8b0dcaa601bb0dda9aaf174affb3d61145` (v1.3.1). They are kept as ordinary files so every
 model, in every harness, reads the same version.
 
-- **Every harness**, including Claude Code, Codex and the DeepSeek Harness (DSH), starts at the root
-  `AGENTS.md`, which points at this folder. A skill is used by reading its `SKILL.md` and
-  following it; `/name` in any doc is shorthand for exactly that. There is deliberately no
-  `.claude/` folder, and no harness-specific wiring of any kind: every agent takes the same path.
-- Harnesses that read `.agents/skills/` natively (Codex, Gemini CLI, Cursor, Copilot, OpenCode,
-  Amp and DSH among them) discover these skills and inject each `description` into context, so no
-  registration step is needed. Claude Code reads only `.claude/skills/`, so it follows the pointer
-  in `AGENTS.md` instead; see [ADR-0001](../../docs/adr/0001-agentic-development-workflow.md).
+Every agent, in every harness, starts at the root `AGENTS.md`, which points at this folder. A
+skill is used by reading its `SKILL.md` and following it; `/name` in any doc is shorthand for
+exactly that. There is deliberately no harness-specific folder or wiring of any kind: every agent
+gets the same base and takes the same path. See
+[ADR-0001](../../docs/adr/0001-agentic-development-workflow.md).
 
 Who runs which skill is defined in [`docs/workflow.md`](../../docs/workflow.md). Repo config
 the skills read lives in [`docs/agents/`](../../docs/agents/).
@@ -46,9 +43,8 @@ pinned commit above.
    frontmatter `name`, the `agents/openai.yaml` display name, and the cross-references in
    `implement` and `tdd`.
 2. Upstream's "call the Skill tool with X" becomes a relative link to `../X/SKILL.md`, to read
-   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. Not every
-   harness registers `.agents/skills/` (Claude Code reads only `.claude/skills/`), and this repo
-   adds no harness-specific path, so a skill names another by its file. The links are also checked
+   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. A skill tool is a
+   harness feature, and this repo assumes none, so a skill names another by its file. The links are also checked
    by `scripts/check-skills.mjs`. After an update, `grep -rn "Skill tool" .agents/skills` must be
    empty.
 

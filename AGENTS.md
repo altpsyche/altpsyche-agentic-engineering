@@ -14,8 +14,7 @@ tunable defaults. Mirror them in the review checklist, `docs/workflow.md` § The
 > **Session start:** owner says "let's work" / "next" / "review" with no ticket → follow
 > [`.agents/skills/work/SKILL.md`](.agents/skills/work/SKILL.md).
 > **Skills:** `/name` anywhere in this repo means read `.agents/skills/name/SKILL.md` and follow it.
-> Codex, Gemini CLI, Cursor and others also discover them natively; Claude Code does not, so it
-> reads the file. Either way the file is the skill.
+> Every agent reads the file, whatever its harness does with the folder.
 > **Pre-work:** Phase 0 has not landed. [`docs/idea.md`](docs/idea.md) is the source of truth, and
 > the layout below is the plan, not a description of files on disk.
 

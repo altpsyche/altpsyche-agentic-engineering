@@ -266,5 +266,5 @@ test('AGENTS.md over 32 KiB is reported even under the line budget', () =>
   withRepo(async (root) => {
     await writeFile(path.join(root, 'AGENTS.md'), `${'x'.repeat(33 * 1024)}\n`);
     const { errors } = await checkRepo(root);
-    assert.deepEqual(errors, ['AGENTS.md is 33793 bytes, over the 32768-byte limit Codex truncates at']);
+    assert.deepEqual(errors, ['AGENTS.md is 33793 bytes, over the 32768-byte budget']);
   }));

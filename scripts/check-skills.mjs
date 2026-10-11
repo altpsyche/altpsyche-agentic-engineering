@@ -17,8 +17,8 @@ const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_NAME = 64;
 const MAX_DESCRIPTION = 1024;
 const MAX_COMPATIBILITY = 500;
-// Codex concatenates the AGENTS.md chain and silently truncates it past `project_doc_max_bytes`,
-// 32 KiB by default. The line budget is the tighter rule; this one catches very long lines.
+// Harnesses cap how much of a context file they load, and some truncate silently; 32 KiB is the
+// smallest common default. The line budget is the tighter rule; this one catches very long lines.
 const MAX_AGENTS_BYTES = 32 * 1024;
 const KNOWN_FRONTMATTER_KEYS = new Set([
   'name',
@@ -309,7 +309,7 @@ export async function checkRepo(root) {
     }
     const bytes = Buffer.byteLength(agents, 'utf8');
     if (bytes > MAX_AGENTS_BYTES) {
-      err(`AGENTS.md is ${bytes} bytes, over the ${MAX_AGENTS_BYTES}-byte limit Codex truncates at`);
+      err(`AGENTS.md is ${bytes} bytes, over the ${MAX_AGENTS_BYTES}-byte budget`);
     }
   }
 

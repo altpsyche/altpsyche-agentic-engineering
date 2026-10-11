@@ -1,10 +1,10 @@
 # Agentic development workflow
 
-This project is built primarily by coding agents driven by one human owner, across several harnesses
-(Claude Code, Codex, DeepSeek Harness and others). We standardise on the open conventions the ecosystem converged
-on: a root `AGENTS.md` (stewarded by the Agentic AI Foundation) as the always-loaded context file, and
-[Agent Skills](https://agentskills.io/) `SKILL.md` folders for task-specific instruction. Rather than
-symlink a global skill install, we **vendor** the skill suite at a pinned commit into
+This project is built primarily by coding agents driven by one human owner, across several
+harnesses. We standardise on the open conventions the ecosystem converged on: a root `AGENTS.md`
+(stewarded by the Agentic AI Foundation) as the always-loaded context file, and
+[Agent Skills](https://agentskills.io/) `SKILL.md` folders for task-specific instruction. Rather
+than symlink a global skill install, we **vendor** the skill suite at a pinned commit into
 `.agents/skills/` as ordinary files, so every harness and every model reads one version and a skill
 change is a reviewable diff. We keep the upstream lowercase `docs/`, `docs/adr/`, `docs/agents/`
 layout precisely because those are the skills' defaults, which means zero path rewrites on update.
@@ -20,9 +20,10 @@ layout precisely because those are the skills' defaults, which means zero path r
 - The tracker must be machine-readable, because agents claim and close their own work. That is why
   GitHub issues, not prose, hold state. Agents reach it through the `gh` CLI, not a GitHub MCP
   server: models already know `gh`, and a server's tool definitions cost context in every session.
-- `.agents/skills/` is the only skills path. Harnesses that discover it natively get commands and
-  triggering; the rest, Claude Code among them, read a skill's file because `AGENTS.md` says to.
-  Skills name each other by relative link, not by a harness's skill tool.
+- **Every agent gets the same base.** The template holds nothing for one harness: no
+  harness-specific folder, config, hook or skill path. `.agents/skills/` is the only skills path,
+  every agent reads a skill's file because `AGENTS.md` says to, and skills name each other by
+  relative link, not by a harness's skill tool.
 
 ## Considered options
 
@@ -30,8 +31,8 @@ layout precisely because those are the skills' defaults, which means zero path r
   machine state that is invisible in review, and it breaks for a contributor or a fresh CI runner.
 - **Ship as a Claude Code plugin only.** Rejected: the project is meant to be built by whatever
   agent the contributor has, and a plugin manifest privileges one vendor.
-- **Link each harness's own skills path to `.agents/skills/`** (such as `.claude/skills`).
-  Rejected: it adds a path per harness to keep in step, for native triggering that `AGENTS.md`
-  already covers by pointer.
+- **Add per-harness wiring** (a harness's own skills path, settings, hooks or plugin manifest).
+  Rejected: agents would start from different bases, and each harness adds a path to keep in step,
+  for native features that `AGENTS.md` already covers by pointer.
 - **Write bespoke skills instead of vendoring.** Rejected: the vendored suite is battle-tested, and
   the writing-for-agents discipline it encodes is the expensive part to reproduce.
