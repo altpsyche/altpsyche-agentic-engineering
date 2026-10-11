@@ -98,6 +98,25 @@ function tokens(value) {
 }
 
 /**
+ * Whether one question fits beside its state within `JEV_QUESTION_TOKENS`: the rule `ask` refuses
+ * on. A tool sets aside what does not fit before asking, so one oversize item never turns the whole
+ * call into an error.
+ */
+export function fitsBesideState(state, id, question) {
+  return tokens(state) + tokens({ [id]: question }) <= JEV_QUESTION_TOKENS;
+}
+
+/**
+ * The probability a Noul answer carries, or a throw: NaN, a string or a missing answer would
+ * compare false against a threshold and decide silently, so a tool never compares one.
+ */
+export function noulOf(answer) {
+  const noul = answer?.noul;
+  if (typeof noul !== 'number' || !(noul >= 0 && noul <= 1)) throw new Error('Jev returned no usable answer');
+  return noul;
+}
+
+/**
  * Packs questions first-fit, in order, into as few requests as the limits allow: the state plus
  * every question in a request within `JEV_REQUEST_TOKENS`, and the state plus any one question
  * within `JEV_QUESTION_TOKENS`. Throws, before anything is sent, on a question that cannot fit.
@@ -109,7 +128,7 @@ function batches(state, questions) {
   let size = base;
   for (const [id, question] of Object.entries(questions)) {
     const cost = tokens({ [id]: question });
-    if (base + cost > JEV_QUESTION_TOKENS) {
+    if (!fitsBesideState(state, id, question)) {
       throw new Error(`question ${id} is too large to ask beside its state (over ${JEV_QUESTION_TOKENS} tokens)`);
     }
     if (size + cost > JEV_REQUEST_TOKENS) {

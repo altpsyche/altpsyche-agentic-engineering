@@ -60,7 +60,8 @@ has confirmed the spec's testing seams.
    per **Release a claim**, with a comment that quotes the failing line and links an issue for the
    breakage. When none exists, file one per **Create**, labelled `needs-triage`. The fix is its
    own ticket, not part of this one.
-4. Read `AGENTS.md` and the ADRs that touch the area.
+4. Read `AGENTS.md` and the ADRs that touch the area. To find them, run the prune tool on the
+   issue first, per [`docs/agents/jev.md`](agents/jev.md).
 5. **Plan**: post the `Plan:` comment before the first commit, so intent is reviewable before the
    work. Before posting it, run the Jev readiness tool on the draft,
    `node scripts/jev/readiness-cli.mjs <n> --plan <file>`, and fix each gap it flags in the plan,
@@ -101,15 +102,18 @@ blind spots, as an author grading its own work is lenient.
    the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
-     and `CODING_STANDARDS.md` once `/retro` has created it? The checklist is applied in full.
+     and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run the prune
+     tool on the PR first, per [`docs/agents/jev.md`](agents/jev.md). The checklist is applied in
+     full.
    - **Spec** — does it faithfully implement the originating spec, no more and no less? The spec
      is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
      ask.
-4. Set the verdict, then post the report, per **Post a review**. The report is a PR comment that
-   opens with `Reviewed at <sha>`, per "Re-reviews converge" below. Every finding names its source
-   and quotes the line it is about. The Reviewer never pushes to the branch. A finding that stays
-   in the chat does not exist.
+4. Before posting, check each draft finding against its cited source with the verify-findings
+   tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
+   **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
+   "Re-reviews converge" below. Every finding names its source and quotes the line it is about.
+   The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
