@@ -1,0 +1,24 @@
+{
+  "name": "altpsyche-agentic-engineering",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Template: an agent-built repo with vendored skills, a spec-driven workflow and a two-axis review loop.",
+  "license": "MIT",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "verify": "pnpm run skills:check && pnpm run scripts:test",
+    "bootstrap": "bash scripts/bootstrap.sh",
+    "skills:check": "node scripts/check-skills.mjs",
+    "scripts:test": "node --test \"scripts/**/*.test.mjs\"",
+    "jev:triage": "node scripts/jev/triage-cli.mjs",
+    "jev:prune": "node scripts/jev/prune-cli.mjs",
+    "jev:verify": "node scripts/jev/verify-cli.mjs"
+  },
+  "devDependencies": {
+    "@typesafe-ai/sdk": "0.6.0"
+  }
+}
