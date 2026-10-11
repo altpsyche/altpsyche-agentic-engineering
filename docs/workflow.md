@@ -62,7 +62,10 @@ has confirmed the spec's testing seams.
    own ticket, not part of this one.
 4. Read `AGENTS.md` and the ADRs that touch the area. To find them, run the prune tool on the
    issue first, per [`docs/agents/jev.md`](agents/jev.md).
-5. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
+5. **Plan**: post the `Plan:` comment before the first commit, so intent is reviewable before the
+   work. A session resuming the ticket reads it first and starts at its first unchecked step. At
+   the end of each session, edit it in place so its checked steps are the ones committed.
+6. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
    proves the work is written before the work. On a bug ticket, which reports something broken
    rather than asking for something new, run `/diagnosing-bugs` first for its reproduction loop.
    The failing check that loop ends with becomes the first `/tdd` slice.
@@ -72,9 +75,9 @@ has confirmed the spec's testing seams.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-6. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
+7. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
    it is not the review (§ Roles).
-7. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
+8. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
    Without that label no Reviewer finds it.
 
 **Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
@@ -228,7 +231,8 @@ anything is claimed.
 Before ending a session, in this order:
 
 1. The tracker reflects reality: claimed items claimed, and finished work handed on. An
-   Implementer's PR is open and labelled `status:in-review`; a Reviewer's carries its verdict.
+   Implementer's `Plan:` comment is current, per § 2, and its PR is open and labelled
+   `status:in-review`; the PR a Reviewer checked carries its verdict.
    The merge closes the issue, per § 5; an Implementer or Reviewer never closes it.
 2. The Working Agreement in `AGENTS.md` holds for everything this session committed.
 3. This session's worktree is removed, per **Worktree** in
