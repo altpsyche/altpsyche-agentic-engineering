@@ -47,6 +47,8 @@ layer (skill frontmatter, doc links, no harness-specific files, this file's budg
 tools in [`scripts/jev/`](scripts/jev/README.md) against a fake server, and scans every commit for
 secrets with gitleaks. Phase 0 adds the project's own checks to it. Update this block and
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires them.
+An Implementer also runs it before changing anything, per [`docs/workflow.md`](docs/workflow.md)
+§ 2, step 3.
 
 ## Structure
 
