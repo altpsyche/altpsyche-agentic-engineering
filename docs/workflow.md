@@ -55,8 +55,13 @@ has confirmed the spec's testing seams.
    collide. If you do not hold it, back off as that command says.
 2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`.
    Nothing is committed to `main`.
-3. Read `AGENTS.md` and the ADRs that touch the area.
-4. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
+3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
+   breakage you inherit is never mistaken for yours. If it is red, do not start. Give up the item
+   per **Release a claim**, with a comment that quotes the failing line and links an issue for the
+   breakage. When none exists, file one per **Create**, labelled `needs-triage`. The fix is its
+   own ticket, not part of this one.
+4. Read `AGENTS.md` and the ADRs that touch the area.
+5. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
    proves the work is written before the work. On a bug ticket, which reports something broken
    rather than asking for something new, run `/diagnosing-bugs` first for its reproduction loop.
    The failing check that loop ends with becomes the first `/tdd` slice.
@@ -66,9 +71,9 @@ has confirmed the spec's testing seams.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-5. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
+6. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
    it is not the review (§ Roles).
-6. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
+7. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
    Without that label no Reviewer finds it.
 
 **Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
