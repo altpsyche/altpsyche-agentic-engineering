@@ -1,7 +1,9 @@
 # Issue tracker
 
-Issues and specs for this repo live as **GitHub issues** on this repo's GitHub remote. Issues
-are authoritative and public. Use the `gh` CLI for all operations.
+Issues for this repo live as **GitHub issues** on this repo's GitHub remote. Specs live in
+[`docs/specs/`](../specs/), not the tracker; see the spec case under **When a skill says "publish
+to the issue tracker"** below. Issues are authoritative and public. Use the `gh` CLI for all
+operations.
 
 `.scratch/` is a local, gitignored scratch area for in-flight thinking that is not ready to be
 public: draft specs, ticket breakdowns mid-edit, notes from an investigation. **Nothing
