@@ -307,6 +307,7 @@ export async function checkRepo(root) {
   const agentsMd = path.join(root, 'AGENTS.md');
   const docsDir = path.join(root, 'docs');
   const skillsReadme = path.join(skillsDir, 'README.md');
+  const evalsDir = path.join(root, 'evals');
 
   const errors = [];
   const warnings = [];
@@ -355,7 +356,7 @@ export async function checkRepo(root) {
   }
 
   // Every root-level .md (AGENTS.md, README.md, and GLOSSARY.md or CODING_STANDARDS.md once a skill
-  // creates them), plus everything under docs/ and the skills.
+  // creates them), plus everything under docs/, the skills and their evals.
   const rootDocs = (await readdir(root, { withFileTypes: true }))
     .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => path.join(root, e.name))
@@ -364,6 +365,7 @@ export async function checkRepo(root) {
     ...rootDocs,
     ...(await markdownFiles(docsDir)),
     ...(await markdownFiles(skillsDir)),
+    ...(await markdownFiles(evalsDir)),
   ];
   for (const file of linked) if (existsSync(file)) await checkLinks(root, file, { err });
 
@@ -381,7 +383,6 @@ export async function checkRepo(root) {
 
   // Every eval folder must name a skill, so a renamed or removed skill cannot leave cases that no
   // PR ever runs (evals/README.md).
-  const evalsDir = path.join(root, 'evals');
   if (existsSync(evalsDir)) {
     const skills = new Set(skillNames);
     const folders = (await readdir(evalsDir, { withFileTypes: true }))

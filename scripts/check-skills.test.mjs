@@ -304,3 +304,11 @@ test('an evals/ folder that names no skill is reported; one naming a skill, and 
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, ['evals/gone/: names no skill in .agents/skills/']);
   }));
+
+test('a broken link in an eval case is reported', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await writeFile(path.join(root, 'evals', 'demo', 'case.md'), '[gone](../nope.md)\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['evals/demo/case.md: broken relative link -> ../nope.md']);
+  }));
