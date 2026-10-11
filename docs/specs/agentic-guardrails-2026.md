@@ -18,7 +18,7 @@ things go wrong:
   is done and what is next, and nobody checks the plan before the code.
 - **Nothing tests the skills.** A skill edit or an upstream update can break the loop silently.
 - **The same rule is written in many places, and the copies drift.** The round-3 review rule
-  appears five times. `/work` restates most of `docs/workflow.md`. Two vendored skills conflict
+  appears five times. `/work` restates much of `docs/workflow.md`. Two vendored skills conflict
   with local docs: `to-spec` puts specs in the tracker instead of `docs/specs/`, and labels them
   `ready-for-agent` so the frontier hands a spec to an implementer.
 
@@ -117,14 +117,14 @@ Every agent, in every harness, on every model, gets the same base, now with:
 
 **Jev tools**
 
-30. As a triager, I want a suggested role label and phase for an issue, so that clear cases are
-    labelled without deliberation.
+30. As a triager, I want a suggested role label and phase for an issue, so that I can recommend
+    clear cases to the owner without deliberating.
 31. As an agent starting work, I want a list of the ADRs, specs and docs relevant to my item, so
     that I read what governs it and skip the rest.
 32. As a Reviewer, I want each draft finding checked against its cited source, with weak ones
     flagged for a re-read and none dropped, so that false findings do not cost a fix round.
 33. As a Reviewer, I want each `## Evidence` claim checked against its pasted output, an exact
-    match first, so that a claim the output does not support is flagged.
+    match first, so that I check the claims the output does not support first.
 34. As a Reviewer on the Spec axis, I want each acceptance criterion matched to the diff line or
     test that covers it, so that uncovered criteria surface before I reason about them.
 35. As an Implementer, I want a readiness check on a ticket (criteria present, seams named) and a
@@ -132,57 +132,78 @@ Every agent, in every harness, on every model, gets the same base, now with:
 36. As a triager or Planner, I want likely duplicates of a new issue or ticket flagged, so that the
     same work is not filed twice.
 37. As an agent about to act on outside text, I want issue and PR text screened for injected
-    instructions, so that a hit stops me and goes to the owner.
-38. As a grader, I want eval transcripts scored against each case's rubric, with the uncertain band
-    sent to a person, so that evals are cheap to run and never pass on a coin flip.
+    instructions, so that I re-read anything flagged and stop for the owner if it is an attempt.
+38. As a grading session, I want each rubric criterion pre-answered over the transcript, with the
+    uncertain band sent to a person, so that grading is cheap and never passes on a coin flip.
 
 ## Implementation Decisions
 
 **Layering.** Each kind of content has one owner:
 
 - `docs/workflow.md`: the steps and done-when for each role, including the new baseline,
-  plan, evidence and eval rules.
+  plan, evidence, eval and bug-ticket rules.
 - `docs/agents/issue-tracker.md`: commands and formats, including the `Plan:` format, the claim
-  rule that skips it, and the override of `to-spec`'s publish step.
+  rule that skips it, the PR body's Evidence format, and the override of `to-spec`'s publish step.
 - `/work`: only the role table, the frontier queries, confirm-and-stop, the empty-frontier
-  fallback, and "run `docs/workflow.md` § N".
+  fallback, and "run `docs/workflow.md` § N". Its `description` owns the session trigger words;
+  `AGENTS.md` and `docs/workflow.md` § Starting a session point at it instead of listing them.
 - `AGENTS.md`: one pointer line per role and the conventions list.
 
 Every restated copy becomes a pointer: the round-3 rule, the strict verdict, claims and read-back,
 the fix round, `Reviewed at <sha>`, standards sources, self-review, and the label-then-report
 order.
 
-**Vendored skills stay byte-identical**, with two exceptions. `setup-matt-pocock-skills` is
-removed, listed under "Deliberately left out", and the seed text it left behind (wayfinding
-operations) goes too. Local overrides of vendored behaviour live in `docs/agents/`, because the
-vendored skills already read it:
+**Vendored skills.** Local changes 1-3 in `.agents/skills/README.md` stay. This spec adds one:
+`setup-matt-pocock-skills` is removed and listed under "Deliberately left out". Four vendored skills
+(`to-spec`, `to-tickets`, `triage`, `review-pr`) still say to run it if the tracker config is
+missing. They stay byte-identical: the config is never missing here, and the skills README's
+"Known upstream wording" note lists those lines. The wayfinding seed text in
+`docs/agents/issue-tracker.md` is not vendored; it is deleted as part of the DRY pass.
 
-- `to-spec` publishes to `docs/specs/<slug>.md`: no tracker issue, no frontier label.
-- The spec's agreed testing seams count as `tdd`'s confirmation.
-- `/research` saves notes under `.scratch/research/`.
+**Overrides of vendored behaviour live in `docs/agents/`**, which the vendored skills already read:
 
-**Pre-push hook.** Lives under `.githooks/`, runs `scripts/verify.sh`, and is switched on by
-`scripts/bootstrap.sh` with `core.hooksPath`. A git hook belongs to git, not to any harness, so
-ADR-0001's same-base rule holds; ADR-0001 says so in one line. `AGENTS.md` lists `--no-verify` by
-an agent as an anti-pattern.
+- `to-spec` publishes to `docs/specs/<slug>.md`: no tracker issue, no frontier label. This is the
+  "When a skill says publish to the issue tracker" section, which gains a spec case.
+- Before any issue is created, by `/to-tickets`, `/triage` or by hand, the same section runs the
+  duplicates check against open issues. That section is the one place every skill's publish step
+  passes through. `/triage`'s own redundancy check searches the codebase, not issues, so it is not
+  the hook.
+- The spec's agreed testing seams count as `tdd`'s confirmation (`docs/agents/domain.md`).
+- `/research` saves notes under `.scratch/research/` (`docs/agents/domain.md`).
 
-**Clean baseline.** `docs/workflow.md` §§ 2 and 4: after the worktree is created and before any
-change, run `scripts/verify.sh`. If it is red, stop, as in user story 11.
+Story 19 needs no change: `/handoff` already says to reference plans and issues by URL instead of
+restating them.
+
+**Bug tickets.** `docs/workflow.md` § 2 sends an Implementer on a bug ticket to `/diagnosing-bugs`
+for the reproduction loop. Its failing check becomes the first slice of `/tdd`.
+
+**Pre-push hook.** Lives under `.githooks/`, runs `scripts/verify.sh`, and is switched on by a small
+install script that `scripts/bootstrap.sh` calls, which sets `core.hooksPath`. `AGENTS.md` lists
+`--no-verify` by an agent as an anti-pattern. A git hook belongs to git, not to any harness.
+ADR-0001 records that as an amendment, which the owner signs off by merging that ticket's PR.
+
+**Clean baseline.** `docs/workflow.md` § 2: after the worktree is created from `origin/main` and
+before any change, run `scripts/verify.sh`. If it is red, stop, as in user story 11. In a fix round
+(§ 4) the branch carries the Implementer's own work, so red there is theirs to fix. It counts as
+inherited, and story 11 applies, only if `scripts/verify.sh` is also red on `origin/main`.
 
 **`Plan:` comment.** One per issue, posted after the claim and before the first commit. Format:
 `Plan:` on the first line, then checkbox steps, each naming its check. Sessions edit it in place.
-Both claim queries filter out comments that start with `Plan:`.
+The **Read back a claim** query skips comments that start with `Plan:`. **List PRs** needs no
+change: `Plan:` comments live only on issues.
 
-**Evidence.** The vendored `pr` skill already writes `## Evidence`. `docs/workflow.md` § 2's
-done-when adds: one entry per acceptance criterion, each the command run this session and its
-decisive result line. The review checklist adds the matching finding rule.
+**Evidence.** The vendored `pr` skill's `## Evidence` is one Before/After pair. This repo's
+format, in `docs/agents/issue-tracker.md` beside **Open a PR**, replaces it with one entry per
+acceptance criterion: the criterion, the command run this session, and its decisive result line,
+with Before/After where a change is visible. `docs/workflow.md` § 2's done-when points at that
+format. The review checklist adds the matching rule: a criterion without an entry is a finding.
 
 **Evals.** `evals/README.md` defines the case format and how to run and grade one. Cases live at
 `evals/<skill>/<case>.md`, each with a prompt, a starting state, and pass criteria phrased as yes/no
-questions, so Jev can grade them as Noul questions. Grading is done by a session other than the one
-that ran the case. `docs/workflow.md` requires the affected skills' evals on any PR touching
-`.agents/skills/` or `AGENTS.md`. `scripts/check-skills.mjs` checks that every `evals/<skill>/`
-names an existing skill.
+questions. Grading is done by a session other than the one that ran the case, and that session's
+grade is what goes under Evidence. `docs/workflow.md` requires the affected skills' evals on any PR
+touching `.agents/skills/` or `AGENTS.md`. `scripts/check-skills.mjs` checks that every
+`evals/<skill>/` names an existing skill.
 
 **Jev tools** ([ADR-0002](../adr/0002-jev-optional-dev-tooling.md)). Plain-Node CLIs under
 `scripts/jev/`:
@@ -194,20 +215,27 @@ names an existing skill.
 - **Batching.** Questions go in as few requests as those limits allow.
 - **Output.** Every CLI prints one line per answer by default, or JSON with `--json`, and exits 0
   on skip or error.
+- **Error means skip.** An error line is handled exactly like a missing key: the agent does the step
+  itself, as it would without Jev, and mentions the error line in its report. No tool's failure
+  ever stops work or counts as a result.
 - **Registry.** `docs/agents/jev.md` lists each tool, the step that calls it and its bands. Steps
   name the tool and point there.
 
+Every band in the table follows ADR-0002: an answer can save the agent work, or point it at
+something to check. It never decides on the session's behalf. Where the table says "flag", the agent
+re-reads and decides.
+
 | Tool | Called from | Question shape | Bands |
 |---|---|---|---|
-| triage | `docs/agents/triage-labels.md` | Choice over role labels, Choice over phases; options read live from the docs | apply at high confidence, else defer |
+| triage | `docs/agents/triage-labels.md` | Choice over role labels, Choice over phases; options read live from the docs | Confident answers become the agent's recommendation, the rest are left open. The owner still directs (`/triage` step 2 waits); the tool never applies a frontier label, since only the owner puts work on a frontier |
 | prune | `docs/workflow.md` §§ 2–3 | Noul per ADR, spec, `idea.md` section and co-located `.md` | include at a low bar; `AGENTS.md` always |
-| verify-findings | `docs/workflow.md` § 3 | Noul: does the cited excerpt support the finding | keep or flag for one re-read; never drop; constitution findings skip |
-| evidence | `docs/workflow.md` § 3 | Exact string match of the quoted result in the output, then Choice: supports, contradicts or silent | supports acts; else flag |
-| coverage | `docs/workflow.md` § 3, Spec axis | Per criterion, Choice over diff hunks and test names plus Noul "is it covered" | covered, uncovered, or uncertain to the Reviewer |
-| readiness | `docs/agents/triage-labels.md`, `docs/workflow.md` § 2 | Nouls: has acceptance criteria, names seams; per criterion, does a plan step cover it | gaps listed; uncertain to the agent |
-| duplicates | `/triage`'s redundancy check, `/to-tickets` | Score: different, maybe, same, against open issues | same and maybe listed for the agent to decide |
-| injection | `docs/agents/issue-tracker.md` § Untrusted text | Nouls for injected instructions | a hit stops and goes to the owner; uncertain is treated as a hit |
-| grade | `evals/README.md` | Noul per pass criterion, over the transcript | pass, fail, or uncertain to a person |
+| verify-findings | `docs/workflow.md` § 3 | Noul: does the cited excerpt support the finding | keep, or flag for one re-read; never drop; constitution findings skip |
+| evidence | `docs/workflow.md` § 3 | Exact string match of the quoted result in the output, then Choice: supports, contradicts or silent | A missing quote or a contradicts is flagged for the Reviewer to check first; supports is noted. The Reviewer still checks every entry, and the finding rule is theirs |
+| coverage | `docs/workflow.md` § 3, Spec axis | Per criterion, Choice over diff hunks and test names plus Noul "is it covered" | uncovered and uncertain flagged for the Reviewer; covered noted with its line |
+| readiness | `docs/agents/triage-labels.md`, `docs/workflow.md` § 2 | Nouls: has acceptance criteria, names seams; per criterion, does a plan step cover it | gaps flagged for the agent to fix or raise |
+| duplicates | `docs/agents/issue-tracker.md`, before any issue is created | Score: different, maybe, same, against open issues | same and maybe listed for the agent to decide |
+| injection | `docs/agents/issue-tracker.md` § Untrusted text | Nouls for injected instructions | a hit or an uncertain answer is flagged; the agent re-reads that text under § Untrusted text and, if it finds an attempt, stops and tells the owner |
+| grade | `evals/README.md` | Noul per pass criterion, over the transcript | each answer is advice to the grading session, which records the grade; uncertain answers are graded by a person |
 
 Thresholds start from `errand-knight`'s calibration where a tool is ported (triage, prune,
 verify-findings) and are first guesses elsewhere. Each guess is recorded in the constants file with
@@ -218,13 +246,18 @@ the sample it came from, so live runs can retune it.
 - **Behaviour at seams, not internals.** Each Jev tool is tested at its `run(input, deps)` seam with
   a fake client, and its CLI as a subprocess against a fake HTTP server on localhost, reached
   through the base-URL override. Every tool has a no-key test proving one skip line and exit 0
-  before any other work.
+  before any other work, and a failed-request test proving the same handling as a skip.
+- **Bands at their edges.** Each tool's tests feed fake answers just above and just below every
+  threshold it reads from the constants file, so a retune that moves a band shows up as a failing
+  test.
 - **Prior art.** `scripts/check-skills.test.mjs` builds real temp trees instead of mocks.
   `errand-knight`'s `scripts/jev/*.test.mjs` show the fake-client and fake-server pattern.
-- **Checker rules** get a test that fails without them, as today: eval folders name real skills,
-  and claim filters skip `Plan:`. The claim jq is tested on fixture comment lists.
-- **The pre-push hook** is tested by a script that installs it in a temp repo and checks a red
-  `verify.sh` blocks the push.
+- **Checker rules** get a test that fails without them, as today. Eval folders name real skills,
+  and every Jev CLI under `scripts/jev/` is listed in `docs/agents/jev.md`. The claim read-back
+  jq is tested on fixture comment lists that include a `Plan:` comment.
+- **The pre-push hook** is tested through its install script, the one `scripts/bootstrap.sh`
+  calls. In a temp repo, the test checks the script sets `core.hooksPath`, a red `verify.sh`
+  blocks the push, and a green one lets it through.
 - **Doc-only tickets** (DRY pass, baseline, plan, evidence) are proven by `scripts/verify.sh` and
   by the `work` and `review-pr` evals once they exist. Until then, by a Reviewer walking the step
   from its single owner.
