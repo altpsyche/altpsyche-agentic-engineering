@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Everything CI runs. Phase 0 appends the project's own checks below the agent-layer block.
+# Everything CI runs. Phase 0 appends the project's own checks at the end.
 #
 #   scripts/verify.sh
 set -euo pipefail
@@ -12,6 +12,15 @@ if command -v node >/dev/null; then
   node --test scripts/check-skills.test.mjs
 else
   echo "verify: node not found, agent-layer check skipped (CI runs it)" >&2
+fi
+
+# Secrets: every commit on this branch, not just the tree, because a secret deleted in a later
+# commit is still published. Known false positives go in .gitleaksignore with a reason. Skipped
+# locally without gitleaks; CI always installs it.
+if command -v gitleaks >/dev/null; then
+  gitleaks git --redact --no-banner .
+else
+  echo "verify: gitleaks not found, secret scan skipped (CI runs it)" >&2
 fi
 
 # Project checks: add them here in Phase 0.

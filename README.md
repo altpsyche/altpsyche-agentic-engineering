@@ -6,8 +6,9 @@ project from it and the agent layer is already there. You get vendored skills an
 router. You get the loop that takes an idea to a spec, then to tickets, then to check-first work,
 then to a two-sided review. You also get tracker conventions, label setup, a skill checker and CI.
 
-It installs no packages and assumes no stack. The only tools are `git`, the `gh` CLI, and plain Node
-for the skill checker. CI always runs the checker; locally it is skipped if Node is missing.
+It installs no packages and assumes no stack. The only tools are `git`, the `gh` CLI, plain Node for
+the skill checker, and [gitleaks](https://github.com/gitleaks/gitleaks) for the secret scan. CI
+always runs both; locally each is skipped if its tool is missing.
 
 Extracted from [`altpsyche/errand-knight`](https://github.com/altpsyche/errand-knight), where it
 was built and used.
