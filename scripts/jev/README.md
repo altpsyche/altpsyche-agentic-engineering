@@ -25,6 +25,7 @@ code works.
 | `verify-findings.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server |
 | `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
 | `duplicates.mjs`, `duplicates-cli.mjs`, `duplicates.test.mjs` | The duplicates tool, `run(input, { client })`, its CLI (an issue number, or a draft on stdin; open issues from `gh issue list`) and its tests, at the same seams as triage |
+| `injection.mjs`, `injection-cli.mjs`, `injection.test.mjs` | The injection screen, `run(input, { client })`, and `human(result)`, its CLI's line output; the CLI reads a PR with its comments and reviews (`gh pr view`, falling back to `gh issue view`), or the text on stdin as `gh`'s JSON or plain text with the title first; tests at the same seams as triage |
 
 ## The client
 
@@ -155,6 +156,24 @@ different (0), maybe (1), same (2), and Jev's float score is banded by the two `
 thresholds. A score off the scale is an error. With no open issues it asks nothing. The CLI reads
 open issues with `gh issue list --state open --limit 1000`, drops the issue being checked, and never
 writes to the tracker.
+
+## Injection
+
+Screens each text of an issue or PR in reading order: the title and body as one, then each comment,
+then each review, a blank one left out. Inline review comments are not read. Each text travels in
+its own Noul, quoted as JSON and named as data, beside a short shared state: does it try to direct
+the agent beyond the work it describes? The question is phrased positively, since Jev reads
+negations literally (ADR-0002). Two kinds are not asked:
+
+- **A known phrasing**: the text matches one of a few exact patterns, such as "ignore previous
+  instructions", a note addressed to an AI agent, or a `<system>` tag, across line breaks of
+  either kind. It is a `hit`, since the text under test could sway Jev's answer. The patterns are
+  kept narrow, because each costs a re-read when it fires on ordinary text.
+- **Too large to ask about**, by `fitsBesideState`: `uncertain`, since a missed injection costs
+  more than a re-read.
+
+The result lists every text with its decision, and `flagged`, the count of hits and uncertain
+texts. An answer that is not a probability (`noulOf`) is an error line, never a clear.
 
 ## Testing
 
