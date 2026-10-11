@@ -294,3 +294,21 @@ test('Jev CLIs with no registry at all are each reported', () =>
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, ['scripts/jev/triage-cli.mjs: Jev CLI not listed in docs/agents/jev.md']);
   }));
+
+test('an evals/ folder that names no skill is reported; one naming a skill, and a file, are not', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await mkdir(path.join(root, 'evals', 'gone'));
+    await writeFile(path.join(root, 'evals', 'README.md'), '# Evals\n');
+    await writeFile(path.join(root, 'evals', 'demo', 'case.md'), '# Case\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['evals/gone/: names no skill in .agents/skills/']);
+  }));
+
+test('a broken link in an eval case is reported', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await writeFile(path.join(root, 'evals', 'demo', 'case.md'), '[gone](../nope.md)\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['evals/demo/case.md: broken relative link -> ../nope.md']);
+  }));

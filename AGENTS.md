@@ -30,6 +30,7 @@ tunable defaults. Mirror them in the review checklist, `docs/workflow.md` § The
 | Issues, PR state | **GitHub issues** — see [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) |
 | Local scratch, never authoritative | `.scratch/` (gitignored) |
 | Skills | [`.agents/skills/README.md`](.agents/skills/README.md) |
+| Skill evals | [`evals/README.md`](evals/README.md); when a PR runs them: `docs/workflow.md` § 2 |
 | Jev tools, optional (ADR-0002) | [`docs/agents/jev.md`](docs/agents/jev.md): each tool, the step that calls it, its bands |
 
 **Precedence when sources disagree:** ADR → spec → `docs/idea.md` → co-located `.md` → this file.
@@ -43,10 +44,10 @@ scripts/verify.sh     # everything CI runs
 ```
 
 **Prefer running it over reasoning about whether your change is correct.** Today it checks the agent
-layer (skill frontmatter, doc links, no harness-specific files, this file's budget, the tracker's
-claim read-back query), tests the pre-push hook and the Jev tools in
-[`scripts/jev/`](scripts/jev/README.md), the latter against a fake server, and scans every commit
-for secrets with gitleaks. Phase 0 adds the project's own checks to it. Update this block and
+layer (skill frontmatter, doc links, no harness-specific files, eval folders that name a skill,
+this file's budget, the tracker's claim read-back query), tests the pre-push hook and the Jev
+tools in [`scripts/jev/`](scripts/jev/README.md), the latter against a fake server, and scans every
+commit for secrets with gitleaks. Phase 0 adds the project's own checks to it. Update this block and
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires them. An
 Implementer also runs it before changing anything, per [`docs/workflow.md`](docs/workflow.md) § 2,
 step 3.

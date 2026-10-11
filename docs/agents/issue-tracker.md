@@ -104,6 +104,11 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   - **The vendored `pr` skill is unchanged**
     `git diff --stat origin/main -- .agents/skills/pr/` → prints nothing
   ```
+
+  After the criteria comes one entry per eval case that [`docs/workflow.md`](../workflow.md) § 2
+  requires: the case's path, the run's token and the grade's `Verdict:` line, with the whole grade
+  beneath it in a `<details>` block. The grade is defined in
+  [`evals/README.md`](../../evals/README.md) § Grading a case.
 - **Check out a PR** for review or a fix round: `git fetch origin`, then
   `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
   `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
