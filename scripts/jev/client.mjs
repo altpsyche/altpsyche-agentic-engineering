@@ -16,6 +16,7 @@ import {
   JEV_TIMEOUT_MS,
   MODEL,
 } from './constants.mjs';
+import { jevEnv } from './env-file.mjs';
 
 const KEY_VAR = 'TYPESAFE_API_KEY';
 const BASE_URL_VAR = 'TYPESAFE_BASE_URL';
@@ -25,11 +26,11 @@ const RETRY_STATUSES = new Set([429, 529]);
 /**
  * @param {object} [options]
  * @param {Record<string, string | undefined>} [options.env]  where the key and base-URL override
- *   are read; default `process.env`
+ *   are read; default `process.env`, with any it lacks from the main clone's `.env` (env-file.mjs)
  * @param {(ms: number) => Promise<void>} [options.sleep]  waits out a backoff; tests record it
  * @param {number} [options.timeoutMs]  how long one attempt may take
  */
-export function createClient({ env = process.env, sleep = defaultSleep, timeoutMs = JEV_TIMEOUT_MS } = {}) {
+export function createClient({ env = jevEnv(), sleep = defaultSleep, timeoutMs = JEV_TIMEOUT_MS } = {}) {
   const key = env[KEY_VAR]?.trim();
   const endpoint = `${(env[BASE_URL_VAR]?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, '')}/v1/systemone`;
   const redact = (line) => (key ? line.replaceAll(key, '[redacted]') : line);

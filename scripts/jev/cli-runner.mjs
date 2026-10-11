@@ -30,7 +30,7 @@ export async function runCli(cli, args, { env = {}, stdin = '', gh = {}, keepPat
   await chmod(path.join(dir, 'gh'), 0o755);
   try {
     const PATH = keepPath ? `${dir}:${process.env.PATH}` : dir;
-    const child = spawn(process.execPath, [cli, ...args], { env: { ...env, PATH } });
+    const child = spawn(process.execPath, [cli, ...args], { env: { ...env, TYPESAFE_ENV_FILE: 'none', PATH } });
     let stdout = '';
     child.stdout.on('data', (chunk) => (stdout += chunk));
     child.stdin.end(stdin);
