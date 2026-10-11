@@ -23,6 +23,24 @@ export const TRIAGE_CONFIDENT = 0.8;
  */
 export const READINESS_PASS = 0.7;
 
+/**
+ * Duplicates places each open issue on a three-level Score against the issue being checked: 0
+ * different, 1 maybe, 2 same. Jev's score is a float on that scale, so these cut it into bands: at
+ * or above DUPLICATES_SAME is `same`, at or above DUPLICATES_MAYBE is `maybe`, and both are listed
+ * for the agent to decide; below is `different`. Sample: none. First guesses, at the midpoints
+ * between levels, as rounding to the nearest level would give. Retune them from the first live
+ * duplicates runs here.
+ */
+export const DUPLICATES_MAYBE = 0.5;
+export const DUPLICATES_SAME = 1.5;
+
+/**
+ * How much of each open issue's body duplicates puts in its question, in characters; the rest is
+ * cut. A size limit, not a threshold: about 1,300 tokens at JEV_CHARS_PER_TOKEN, so many open
+ * issues pack into one request. Sample: none.
+ */
+export const DUPLICATES_BODY_CHARS = 4_000;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.

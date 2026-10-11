@@ -17,6 +17,7 @@ code works.
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
 | `triage-cli.mjs` | Its CLI: an issue number or the issue on stdin, read by `issue-input.mjs`; `--json` for JSON |
 | `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
+| `duplicates.mjs`, `duplicates-cli.mjs`, `duplicates.test.mjs` | The duplicates tool, `run(input, { client })`, its CLI (an issue number, or a draft on stdin; open issues from `gh issue list`) and its tests, at the same seams as triage |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
@@ -68,6 +69,15 @@ Asks one request of Nouls, with the ticket's title and body as state, and the pl
 
 Each question is phrased positively, since Jev reads negations literally (ADR-0002). A noul outside
 0 to 1 is an error. A blank plan is an error before anything is asked.
+
+## Duplicates
+
+Asks one Score per open issue, with the issue or draft as state and the open issue's title and
+body, cut to `DUPLICATES_BODY_CHARS`, in its question, so batching packs them. The levels run
+different (0), maybe (1), same (2), and Jev's float score is banded by the two `DUPLICATES_`
+thresholds. A score off the scale is an error. With no open issues it asks nothing. The CLI reads
+open issues with `gh issue list --state open --limit 1000`, drops the issue being checked, and never
+writes to the tracker.
 
 ## Testing
 
