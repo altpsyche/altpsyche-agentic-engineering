@@ -15,9 +15,9 @@ the GitHub issue wins.
   `gh issue view <n> --json number,title,body,labels,comments`.
 - **List**: `gh issue list --state open --json number,title,body,labels,assignees --jq '[.[] | {number, title, labels: [.labels[].name], assignees: [.assignees[].login]}]'`
 - **List PRs** for a PR frontier, open, carrying one label and unclaimed, oldest first. It asks
-  GraphQL for each PR's newest comment directly, because `gh pr list --json comments` reads only
-  a PR's first 100 comments:
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -f query='query($owner:String!,$repo:String!,$label:String!){repository(owner:$owner,name:$repo){pullRequests(states:OPEN,labels:[$label],first:100,orderBy:{field:CREATED_AT,direction:ASC}){nodes{number title comments(last:1){nodes{body}}}}}}' --jq '.data.repository.pullRequests.nodes[] | select(.comments.nodes[0].body // "" | startswith("Claimed:") | not) | {number, title}'`
+  GraphQL for each PR's newest comments directly, because `gh pr list --json comments` reads only
+  a PR's first 100 comments, and keeps only those by this account (**Whose comments count**):
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -f query='query($owner:String!,$repo:String!,$label:String!){viewer{login} repository(owner:$owner,name:$repo){pullRequests(states:OPEN,labels:[$label],first:100,orderBy:{field:CREATED_AT,direction:ASC}){nodes{number title comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.pullRequests.nodes[] | select([.comments.nodes[] | select(.author.login == $me)] | last | (.body // "") | startswith("Claimed:") | not) | {number, title}'`
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
@@ -29,16 +29,19 @@ the GitHub issue wins.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
-  while its newest comment starts with `Claimed:`, which is what **List PRs** filters on. The
-  session posts nothing else until its report or its answer to the findings, which it posts after
-  the label swap, and that comment releases the claim. Any other comment releases it too, so the
-  owner frees a claim left by a dead session by commenting.
+  while its newest counted comment starts with `Claimed:`, which is what **List PRs** filters on.
+  The session posts nothing else until its report or its answer to the findings, which it posts
+  after the label swap, and that comment releases the claim. Any other counted comment releases it
+  too, so the owner frees a claim left by a dead session by commenting.
+- **Whose comments count**: only comments by the account `gh` is logged in as, which every
+  session and the owner share. Claim logic skips every other author, so a CI bot, Dependabot, an
+  app or an outside commenter can neither release a claim nor forge one.
 - **Session token**: eight random hex characters, generated once per session with
   `openssl rand -hex 4`, and carried by every claim the session posts.
-- **Read back a claim**, straight after posting it, for an issue or a PR alike. The claims that
-  count are the `Claimed:` comments after the newest comment that is not one, and the earliest of
-  them wins. This prints the winner and the item's labels:
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body}}}}}}' --jq '.data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: (.comments.nodes | .[((map(.body | startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first | .body)}'`
+- **Read back a claim**, straight after posting it, for an issue or a PR alike. Among counted
+  comments, the claims that count are the `Claimed:` ones after the newest one that is not, and
+  the earliest of them wins. This prints the winner and the item's labels:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){viewer{login} repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: ([.comments.nodes[] | select(.author.login == $me) | .body] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first)}'`
   The session holds the item only if the winner carries its token and the item still carries the
   label that put it on the frontier. Otherwise it backs off: it deletes its own claim with
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
