@@ -24,6 +24,8 @@ was built and used.
 | [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way |
 | [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
 | [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
+| [`.githooks/pre-push`](.githooks/pre-push) | A git pre-push hook that runs `scripts/verify.sh` and blocks the push when it fails. It belongs to git, so it binds every harness alike |
+| [`scripts/install-hooks.sh`](scripts/install-hooks.sh) | Switches the hook on by setting `core.hooksPath`; run it once per clone |
 | [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, that nothing is wired for one harness, and the `AGENTS.md` line and byte budgets; no packages |
 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label and protects `main`: changes land only by PR with `verify` green |
 
