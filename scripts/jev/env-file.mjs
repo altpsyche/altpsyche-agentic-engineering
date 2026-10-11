@@ -1,7 +1,7 @@
 // Where a Jev tool finds its key when the shell has none: a gitignored `.env` at the root of the
 // main clone, so one file serves the clone and every sibling worktree a ticket runs in. The one
-// home of that rule: set-key.sh and bootstrap.sh ask this file through its CLI below. See
-// README.md beside this file, § The client.
+// home of that rule: set-key.sh asks this file through its CLI below, for itself and for
+// bootstrap.sh's offer. See README.md beside this file, § The client.
 //
 //   TYPESAFE_ENV_FILE unset    .env in the parent of `git rev-parse --git-common-dir`
 //   TYPESAFE_ENV_FILE=none     no file; tests set it, so a developer's real key never reaches them

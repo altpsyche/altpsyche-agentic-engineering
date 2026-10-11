@@ -107,6 +107,56 @@ test('the check hint names injection-cli.mjs by an absolute path, so it runs fro
   });
 });
 
+// --offer, as bootstrap.sh calls it: ask first, only when no key is set, and always exit 0.
+const offer = (cwd, input, env = {}) =>
+  spawnSync('bash', [SCRIPT, '--offer'], { cwd, env: { ...ENV, ...env }, input, encoding: 'utf8' });
+
+test('--offer with a yes saves the key that follows', async () => {
+  await withRepo(async ({ main }) => {
+    const result = offer(main, 'y\nsk-1\n');
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(await readFile(path.join(main, '.env'), 'utf8'), "TYPESAFE_API_KEY='sk-1'\n");
+  });
+});
+
+test('--offer with anything but yes writes nothing and says how to add one later', async () => {
+  await withRepo(async ({ main }) => {
+    for (const answer of ['n\n', '\n', '']) {
+      const result = offer(main, answer);
+      assert.equal(result.status, 0);
+      assert.match(result.stdout, /Skipped; run scripts\/jev\/set-key.sh later/);
+    }
+    await assert.rejects(stat(path.join(main, '.env')));
+  });
+});
+
+test('--offer asks nothing when the shell or the file already has a key', async () => {
+  await withRepo(async ({ main }) => {
+    const fromShell = offer(main, 'y\nsk-new\n', { TYPESAFE_API_KEY: 'sk-shell' });
+    assert.equal(fromShell.status, 0);
+    assert.equal(fromShell.stdout, '');
+    await writeFile(path.join(main, '.env'), 'export TYPESAFE_API_KEY=sk-old\n');
+    const fromFile = offer(main, 'y\nsk-new\n');
+    assert.equal(fromFile.status, 0);
+    assert.equal(fromFile.stdout, '');
+    assert.equal(await readFile(path.join(main, '.env'), 'utf8'), 'export TYPESAFE_API_KEY=sk-old\n');
+  });
+});
+
+test('--offer exits 0 with a hint when saving fails, so bootstrap goes on', async () => {
+  await withRepo(async ({ main }) => {
+    const result = offer(main, 'y\nsk-1\n');
+    assert.equal(result.status, 0);
+    assert.match(result.stderr, /not gitignored/);
+    assert.match(result.stderr, /No key saved; run scripts\/jev\/set-key.sh later/);
+  }, { ignored: false });
+});
+
+test('bootstrap.sh offers the key through --offer, on a terminal only, and never stops on it', async () => {
+  const bootstrap = await readFile(path.join(path.dirname(SCRIPT), '..', 'bootstrap.sh'), 'utf8');
+  assert.match(bootstrap, /^if \[ -t 0 \]; then scripts\/jev\/set-key\.sh --offer \|\| true; fi$/m);
+});
+
 test('a key with a single quote is refused, and the file is unchanged', async () => {
   await withRepo(async ({ main }) => {
     await writeFile(path.join(main, '.env'), 'TYPESAFE_API_KEY=old\n');

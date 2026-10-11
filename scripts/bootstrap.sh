@@ -15,16 +15,9 @@ cd "$(git rev-parse --show-toplevel)"
 # Local git config, so first: it needs no network, and a gh failure below must not skip it.
 scripts/install-hooks.sh
 
-# The optional Jev key (ADR-0002), offered once on a terminal when neither the shell nor the key
-# file has one; env-file.mjs owns where that file is. Skipping is normal: every Jev tool works
-# without it, so no answer and no failure here stops the setup below.
-if [ -t 0 ] && command -v node >/dev/null && ! node scripts/jev/env-file.mjs has-key; then
-  read -rp "Add a TypeSafe key for the optional Jev tools now? [y/N] " answer || answer=
-  case "$answer" in
-    [yY]*) scripts/jev/set-key.sh || echo "No key saved; run scripts/jev/set-key.sh later." >&2 ;;
-    *) echo "Skipped; run scripts/jev/set-key.sh later." ;;
-  esac
-fi
+# The optional Jev key (ADR-0002), offered on a terminal; set-key.sh --offer asks only when no key
+# is set, and always exits 0, so no answer and no failure there stops the setup below.
+if [ -t 0 ]; then scripts/jev/set-key.sh --offer || true; fi
 
 repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 echo "Creating workflow labels on $repo"

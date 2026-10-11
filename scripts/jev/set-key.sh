@@ -4,14 +4,29 @@
 # main clone, which serves the clone and every sibling worktree. Reads the key without echoing it,
 # writes it single-quoted so a `#` or a space in it survives, replaces any earlier
 # TYPESAFE_API_KEY line, keeps every other line, and leaves the file readable by you only. It
-# refuses a file inside a repo that does not ignore it. scripts/bootstrap.sh offers it. Rerun it to
-# change the key; an empty answer changes nothing.
+# refuses a file inside a repo that does not ignore it. Rerun it to change the key; an empty answer
+# changes nothing.
 #
-#   scripts/jev/set-key.sh
-#   printf '%s\n' "$KEY" | scripts/jev/set-key.sh   # no terminal: the key is read from stdin
+# With --offer, as scripts/bootstrap.sh calls it, it first asks whether to add a key at all, and
+# only when neither the shell nor the file has one. It always exits 0 then, since the key is
+# optional and setup goes on without it.
+#
+#   scripts/jev/set-key.sh [--offer]
+#   printf '%s\n' "$KEY" | scripts/jev/set-key.sh   # no terminal: answers are read from stdin
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
+
+if [ "${1:-}" = --offer ]; then
+  if ! command -v node >/dev/null || node "$here/env-file.mjs" has-key; then exit 0; fi
+  [ -t 0 ] && printf 'Add a TypeSafe key for the optional Jev tools now? [y/N] '
+  IFS= read -r answer || answer=
+  case "$answer" in
+    [yY]*) "$0" || echo "No key saved; run scripts/jev/set-key.sh later." >&2 ;;
+    *) echo "Skipped; run scripts/jev/set-key.sh later." ;;
+  esac
+  exit 0
+fi
 
 if ! file="$(node "$here/env-file.mjs" path)"; then
   echo "set-key: no key file in use (TYPESAFE_ENV_FILE=none, or not in a repo); nothing written." >&2
