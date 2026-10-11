@@ -43,7 +43,8 @@ fi
 # Protect the default branch: changes land only through a PR with `verify` green, and its history is
 # never rewritten or deleted. Prose says "never commit to main"; this makes it true. No bypass
 # actors: every agent session runs as the owner's account, so an owner bypass would exempt agents
-# too. Rulesets on private repos need a paid plan; there this warns, and only the prose rule holds.
+# too. If the API refuses (a private repo on a plan without rulesets, auth, network), this warns
+# with gh's error, and only the prose rule holds.
 ruleset_name="default-branch"
 ruleset="$(cat <<JSON
 {
@@ -77,5 +78,6 @@ fi
 if gh api -X "$method" "$endpoint" --input - <<<"$ruleset" >/dev/null; then
   echo "Ruleset $ruleset_name: the default branch takes changes only by PR with verify green"
 else
-  echo "Could not set ruleset $ruleset_name (a private repo needs a paid plan); main is unprotected" >&2
+  echo "Could not set ruleset $ruleset_name; main is unprotected. The gh error above says why; on a" >&2
+  echo "private repo, a plan without rulesets is the usual cause." >&2
 fi
