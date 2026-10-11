@@ -15,6 +15,14 @@ export const MODEL = 'jev-1.13.0';
  */
 export const TRIAGE_CONFIDENT = 0.8;
 
+/**
+ * Readiness passes a check (has acceptance criteria, names seams, a plan step covers a criterion)
+ * at a Noul at or above this; below it, the check is a gap the agent fixes or raises. Sample: none.
+ * A first guess, set high because a false gap costs one look and a false pass lets work start on a
+ * gap. Retune it from the first live readiness runs here.
+ */
+export const READINESS_PASS = 0.7;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.

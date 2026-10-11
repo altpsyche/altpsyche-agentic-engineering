@@ -16,6 +16,7 @@ code works.
 | `client.test.mjs` | The client's tests, against the fake server |
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
 | `triage-cli.mjs` | Its CLI: an issue number or the issue on stdin, read by `issue-input.mjs`; `--json` for JSON |
+| `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
@@ -52,6 +53,21 @@ on every run from the docs that own them, so an edit there cannot drift from the
 
 A choice that is not one of the options is an error. The CLI only reads the issue; it never runs
 `gh issue edit`.
+
+## Readiness
+
+Asks one request of Nouls, with the ticket's title and body as state, and the plan beside it when
+`--plan` gives one:
+
+- **criteria**: does the ticket state acceptance criteria a reviewer can check?
+- **seams**: does it name the seams its work is checked at? A pointer to agreed seams counts.
+- **criterion_N**, with a plan only: does a plan step cover criterion N? The criteria are parsed,
+  not asked about: each list item under the first heading naming acceptance criteria, up to the
+  next heading, checkbox stripped. No such section means no coverage questions, and the CLI says
+  so in one line.
+
+Each question is phrased positively, since Jev reads negations literally (ADR-0002). A noul outside
+0 to 1 is an error. A blank plan is an error before anything is asked.
 
 ## Testing
 
