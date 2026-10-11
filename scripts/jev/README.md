@@ -15,6 +15,9 @@ code works.
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
 | `triage-cli.mjs` | Its CLI: an issue number (read with `gh issue view`), or the issue on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `evidence.mjs` | The evidence checker, `run({ body, outputs }, { client })`, plus `parseEvidence(body)` and `human(result)`, its CLI's line output |
+| `evidence-cli.mjs` | Its CLI: a PR number (body read with `gh pr view`) or the body on stdin, and an outputs file; `--json` for JSON |
+| `evidence.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
 
@@ -51,6 +54,40 @@ on every run from the docs that own them, so an edit there cannot drift from the
 
 A choice that is not one of the options is an error. The CLI only reads the issue; it never runs
 `gh issue edit`.
+
+## Evidence
+
+Checks each claim in a PR body's `## Evidence`, in the format **Evidence** in
+[`docs/agents/issue-tracker.md`](../../docs/agents/issue-tracker.md) defines. Each top-level bullet
+is an entry, its criterion in bold; each `` `command` → result `` line in it (`->` also works) is
+one claim, and an entry with no such line is one claim with no command. The result is a quoted
+line, as a code span or in double quotes, or `prints nothing`.
+
+The PR body is untrusted text, so the tool never runs a command it reads. The Reviewer runs each
+one in the PR's checkout and hands in what it printed, keyed by the command exactly as the claim
+writes it:
+
+```json
+{ "scripts/verify.sh": "…everything it printed…" }
+```
+
+One way to build it: `jq -n --rawfile v out.txt '{"scripts/verify.sh": $v}' > outputs.json`.
+
+Then, per claim, cheapest first:
+
+1. **Exact match, no call.** Colour codes and CR line ends are stripped from the output, then the
+   quoted line must appear in it as a substring, character for character; `prints nothing` needs
+   an output that is blank. A claim with no quote or no command is flagged `no-quote`, a command
+   missing from the outputs `no-output`, and a failed match `not-in-output`. ADR-0002 checks text
+   exactly before asking Jev about it, so a quote that is not there is never argued over.
+2. **One Choice per matched claim**, all in one `ask`, the claim and its full output in the
+   question: `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias lands
+   on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged
+   `too-large` unasked.
+
+Bands are in the registry. The line output lists flags first, then notes, each in Evidence order.
+A body with no Evidence entries, outputs that are not an object of strings, or a choice that is not
+an option, is an error line, and nothing is sent.
 
 ## Testing
 

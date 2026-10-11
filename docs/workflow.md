@@ -99,6 +99,8 @@ blind spots, as an author grading its own work is lenient.
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
      and `CODING_STANDARDS.md` once `/retro` has created it? The checklist is applied in full.
+     Before checking the PR's `## Evidence`, run the evidence tool on it, per
+     [`docs/agents/jev.md`](agents/jev.md), and check the claims it flags first.
    - **Spec** — does it faithfully implement the originating spec, no more and no less? The spec
      is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
