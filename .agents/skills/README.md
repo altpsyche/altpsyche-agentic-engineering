@@ -43,6 +43,12 @@ pinned commit above.
    mistaken for the built-in review commands some harnesses ship. The rename is applied to the
    frontmatter `name`, the `agents/openai.yaml` display name, and the cross-references in
    `implement` and `tdd`.
+2. Upstream's "call the Skill tool with X" becomes a relative link to `../X/SKILL.md`, to read
+   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. Not every
+   harness registers `.agents/skills/` (Claude Code reads only `.claude/skills/`), and this repo
+   adds no harness-specific path, so a skill names another by its file. The links are also checked
+   by `scripts/check-skills.mjs`. After an update, `grep -rn "Skill tool" .agents/skills` must be
+   empty.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are
