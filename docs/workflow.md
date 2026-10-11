@@ -146,7 +146,8 @@ and PR steps.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
-   in review becomes a new ticket, not a bigger diff.
+   in review becomes a new ticket, not a bigger diff. A fix that touches an eval case's paths
+   reruns that case, per § 2, step 8.
 5. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
    for a behaviour change, or disputed with a reason and a source.
 
