@@ -2,7 +2,9 @@
 
 Plain-Node command-line tools that hand closed-set workflow questions to TypeSafe's Jev, so a
 thinking model does not spend tokens on them. Why, and the limits on what an answer may decide, are
-in [ADR-0002](../../docs/adr/0002-jev-optional-dev-tooling.md). This file is how the code works.
+in [ADR-0002](../../docs/adr/0002-jev-optional-dev-tooling.md). Which step calls each tool, and its
+bands, are in the registry, [`docs/agents/jev.md`](../../docs/agents/jev.md). This file is how the
+code works.
 
 | File | What it is |
 |---|---|
@@ -54,3 +56,10 @@ A choice that is not one of the options is an error. The CLI only reads the issu
 Every test runs in `scripts/verify.sh`, so CI runs them with no key and no network. Tests reach
 the fake server through `TYPESAFE_BASE_URL`, both in-process and when they run a CLI as a
 subprocess. Fake keys are short and obviously fake, so the secret scan stays clean.
+
+## Adding a tool
+
+A tool is `<name>.mjs`, exporting `run(input, { client, ... })`, and `<name>-cli.mjs`, its CLI.
+Every CLI prints one line per answer, or JSON with `--json`, and exits 0 on a skip or an error,
+with one line naming the tool. List it in [`docs/agents/jev.md`](../../docs/agents/jev.md):
+`scripts/check-skills.mjs` fails on a CLI the registry does not name.

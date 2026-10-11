@@ -30,6 +30,7 @@ tunable defaults. Mirror them in the review checklist, `docs/workflow.md` § The
 | Issues, PR state | **GitHub issues** — see [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) |
 | Local scratch, never authoritative | `.scratch/` (gitignored) |
 | Skills | [`.agents/skills/README.md`](.agents/skills/README.md) |
+| Jev tools, optional (ADR-0002) | [`docs/agents/jev.md`](docs/agents/jev.md): each tool, the step that calls it, its bands |
 
 **Precedence when sources disagree:** ADR → spec → `docs/idea.md` → co-located `.md` → this file.
 An issue is a request; an ADR is a decision. When they conflict the ADR wins and the issue is wrong.
