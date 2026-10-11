@@ -3,14 +3,13 @@
 // against a fake Jev server on localhost and with a `gh` stub first on PATH. Nothing reaches Jev or
 // needs a key.
 
-import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runCli as runShared } from './cli-runner.mjs';
 import { createClient } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
 import { parseCriteria, parseDiff, run } from './coverage.mjs';
@@ -208,37 +207,20 @@ test('a failed request is an error, handled like a skip', async () => {
   }
 });
 
-// The CLI, run as an agent runs it: a subprocess with a `gh` stub first on PATH that logs every call
-// and answers `gh pr view`, `gh issue view` and `gh pr diff` from $GH_PR, $GH_ISSUE and $GH_DIFF.
+// The CLI, run as an agent runs it, through the shared runner (cli-runner.mjs): $GH_PR, $GH_ISSUE
+// and $GH_DIFF in `env` become the stub's answers to `gh pr view`, `gh issue view` and
+// `gh pr diff`, and ISSUE and DIFF in `args` the paths of files holding ISSUE and DIFF.
 const CLI = path.join(HERE, 'coverage-cli.mjs');
 
-async function runCli(args, { env = {} } = {}) {
+async function runCli(args, { env: { GH_PR, GH_ISSUE, GH_DIFF, ...env } = {} } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'jev-coverage-'));
-  const log = path.join(dir, 'gh.log');
-  await writeFile(path.join(dir, 'issue.md'), ISSUE);
-  await writeFile(path.join(dir, 'pr.diff'), DIFF);
-  await writeFile(
-    path.join(dir, 'gh'),
-    `#!/bin/sh
-echo "$@" >> "${log}"
-case "$1 $2" in
-  "pr view") printf '%s\\n' "$GH_PR" ;;
-  "issue view") printf '%s\\n' "$GH_ISSUE" ;;
-  "pr diff") printf '%s' "$GH_DIFF" ;;
-  *) exit 1 ;;
-esac
-`,
-  );
-  await chmod(path.join(dir, 'gh'), 0o755);
+  const files = { ISSUE: path.join(dir, 'issue.md'), DIFF: path.join(dir, 'pr.diff') };
+  await writeFile(files.ISSUE, ISSUE);
+  await writeFile(files.DIFF, DIFF);
+  const answers = { 'pr view': GH_PR, 'issue view': GH_ISSUE, 'pr diff': GH_DIFF };
+  const gh = Object.fromEntries(Object.entries(answers).filter(([, out]) => out !== undefined));
   try {
-    const argv = args.map((a) => (a === 'ISSUE' || a === 'DIFF' ? path.join(dir, a === 'ISSUE' ? 'issue.md' : 'pr.diff') : a));
-    const child = spawn(process.execPath, [CLI, ...argv], { env: { PATH: dir, ...env } });
-    let stdout = '';
-    child.stdout.on('data', (chunk) => (stdout += chunk));
-    child.stdin.end();
-    const status = await new Promise((resolve) => child.on('close', resolve));
-    const ghCalls = existsSync(log) ? (await readFile(log, 'utf8')).trim().split('\n') : [];
-    return { status, stdout, ghCalls };
+    return await runShared(CLI, args.map((a) => files[a] ?? a), { env, gh });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

@@ -8,10 +8,10 @@
 // CLI never runs a command itself. Always exits 0: a skip or an error is one line, and the Reviewer
 // checks every entry as normal.
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createClient, errorLine } from './client.mjs';
 import { human, run } from './evidence.mjs';
+import { gh } from './issue-input.mjs';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
@@ -20,11 +20,7 @@ const outputsFile = args.find((a) => !a.startsWith('--') && a !== number);
 
 function readBody() {
   if (number) {
-    const out = execFileSync('gh', ['pr', 'view', number, '--json', 'body'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return JSON.parse(out).body ?? '';
+    return JSON.parse(gh(['pr', 'view', number, '--json', 'body'])).body ?? '';
   }
   if (process.stdin.isTTY) throw new Error('give a PR number, or pipe the PR body on stdin');
   const text = readFileSync(0, 'utf8');

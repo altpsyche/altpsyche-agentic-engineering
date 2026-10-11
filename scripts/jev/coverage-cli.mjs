@@ -8,19 +8,15 @@
 // An issue file is the issue body as markdown, or `gh issue view --json body` output. Always exits
 // 0: a skip or an error is one line, and the Reviewer checks every criterion as normal.
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createClient, errorLine } from './client.mjs';
 import { human, run } from './coverage.mjs';
+import { gh } from './issue-input.mjs';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
 const paths = args.filter((a) => !a.startsWith('--'));
 const number = paths.length === 1 && /^\d+$/.test(paths[0]) ? paths[0] : null;
-
-function gh(...argv) {
-  return execFileSync('gh', argv, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-}
 
 function body(text) {
   try {
@@ -34,10 +30,10 @@ function body(text) {
 
 function readInput() {
   if (number) {
-    const pr = JSON.parse(gh('pr', 'view', number, '--json', 'body')).body ?? '';
+    const pr = JSON.parse(gh(['pr', 'view', number, '--json', 'body'])).body ?? '';
     const closes = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)\b/i.exec(pr);
     if (!closes) throw new Error(`PR #${number} closes no issue: review the Spec axis against its body`);
-    return { issue: body(gh('issue', 'view', closes[1], '--json', 'body')), diff: gh('pr', 'diff', number) };
+    return { issue: body(gh(['issue', 'view', closes[1], '--json', 'body'])), diff: gh(['pr', 'diff', number]) };
   }
   if (paths.length !== 2) throw new Error('give a PR number, or an issue file and a diff file');
   return { issue: body(readFileSync(paths[0], 'utf8')), diff: readFileSync(paths[1], 'utf8') };

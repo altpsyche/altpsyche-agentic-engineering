@@ -3,14 +3,13 @@
 // against a fake Jev server on localhost and with a `gh` stub first on PATH. Nothing reaches Jev or
 // needs a key.
 
-import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runCli as runShared } from './cli-runner.mjs';
 import { createClient } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
 import { parseEvidence, run } from './evidence.mjs';
@@ -249,29 +248,17 @@ test('a failed request is an error, handled like a skip', async () => {
   }
 });
 
-// The CLI, run as an agent runs it: a subprocess with a `gh` stub first on PATH that logs every call
-// and answers `gh pr view` with $GH_PR. Async, so the fake server in this process can answer.
+// The CLI, run as an agent runs it, through the shared runner (cli-runner.mjs): $GH_PR in `env`
+// becomes the stub's answer to `gh pr view`, and OUTPUTS in `args` the path of a file of OUTPUTS.
 const CLI = path.join(HERE, 'evidence-cli.mjs');
 
-async function runCli(args, { env = {}, stdin = '' } = {}) {
+async function runCli(args, { env: { GH_PR, ...env } = {}, stdin = '' } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'jev-evidence-'));
-  const log = path.join(dir, 'gh.log');
   const outputs = path.join(dir, 'outputs.json');
   await writeFile(outputs, JSON.stringify(OUTPUTS));
-  await writeFile(
-    path.join(dir, 'gh'),
-    `#!/bin/sh\necho "$@" >> "${log}"\nif [ "$1 $2" = "pr view" ] && [ -n "$GH_PR" ]; then echo "$GH_PR"; exit 0; fi\nexit 1\n`,
-  );
-  await chmod(path.join(dir, 'gh'), 0o755);
   try {
     const argv = args.map((a) => (a === 'OUTPUTS' ? outputs : a));
-    const child = spawn(process.execPath, [CLI, ...argv], { env: { PATH: dir, ...env } });
-    let stdout = '';
-    child.stdout.on('data', (chunk) => (stdout += chunk));
-    child.stdin.end(stdin);
-    const status = await new Promise((resolve) => child.on('close', resolve));
-    const ghCalls = existsSync(log) ? (await readFile(log, 'utf8')).trim().split('\n') : [];
-    return { status, stdout, ghCalls };
+    return await runShared(CLI, argv, { env, stdin, gh: GH_PR ? { 'pr view': GH_PR } : {} });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
