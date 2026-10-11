@@ -35,12 +35,12 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   the token tells sessions apart; the assignee only hides the issue from the frontier. The owner
   frees an issue claim left by a dead session by unassigning it and commenting.
 - **Release a claim** without finishing the item, as on a red baseline: write the comment to a
-  file, then `gh issue comment <number> --body-file <file>`, then, on an issue,
-  `gh issue edit <number> --remove-assignee @me`. A comment that does not start with `Claimed:`
-  ends the claim, per **Read back a claim**. **Comment first, then unassign**: the other way round,
-  the issue is back on the frontier while the old claim stands, so a new session's claim either
-  loses to it or is ended by the late comment. On a PR, the comment alone releases it and the
-  label stays as it was.
+  file, then `gh issue comment <number> --body-file <file>` (on a PR, `gh pr comment`), then, on
+  an issue, `gh issue edit <number> --remove-assignee @me`. A comment that does not start with
+  `Claimed:` ends the claim, per **Read back a claim**. **Comment first, then unassign**: the
+  other way round, the issue is back on the frontier while the old claim stands, so a new
+  session's claim either loses to it or is ended by the late comment. On a PR, the comment alone
+  releases it and the label stays as it was.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed

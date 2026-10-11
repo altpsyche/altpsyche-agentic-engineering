@@ -78,7 +78,7 @@ has confirmed the spec's testing seams.
 
 **Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
 made stale is corrected in the same commit, and a PR whose body says `Closes #<n>` is open and labelled
-`status:in-review`.
+`status:in-review`. On a red baseline, done is step 3's release instead.
 
 ### 3. Review (Reviewer) — `/review-pr`
 
