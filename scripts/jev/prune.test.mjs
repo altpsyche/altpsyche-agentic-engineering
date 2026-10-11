@@ -39,6 +39,8 @@ const BASE = {
   'docs/agents/jev.md': '# Registry\n\nMARK-REGISTRY\n',
   'src/sync/README.md': '# Sync\n\nMARK-COLOCATED\n',
   '.agents/skills/x/SKILL.md': '# Skill\n\nMARK-SKILL\n',
+  'evals/README.md': '# Evals\n\nMARK-EVALS\n',
+  'evals/work/red-baseline.md': '# Case\n\nMARK-EVAL-CASE\n',
 };
 const UNITS = ['MARK-ADR-1', 'MARK-ADR-2', 'MARK-SPEC', 'MARK-INTRO', 'MARK-VISION', 'MARK-SYNC', 'MARK-COLOCATED'];
 
@@ -160,7 +162,7 @@ test('units are ADRs, specs, idea.md sections at # and ## and co-located docs; n
       for (const marker of UNITS) assert.equal(asked(client).filter((q) => q.includes(marker)).length, 1, marker);
       // A ### subsection stays inside its ## section.
       assert.ok(asked(client).some((q) => q.includes('MARK-VISION') && q.includes('MARK-DETAIL')));
-      for (const marker of ['MARK-AGENTS', 'MARK-README', 'MARK-WORKFLOW', 'MARK-REGISTRY', 'MARK-SKILL', 'MARK-UNTRACKED', 'MARK-DIFF']) {
+      for (const marker of ['MARK-AGENTS', 'MARK-README', 'MARK-WORKFLOW', 'MARK-REGISTRY', 'MARK-SKILL', 'MARK-EVALS', 'MARK-EVAL-CASE', 'MARK-UNTRACKED', 'MARK-DIFF']) {
         assert.ok(!JSON.stringify(request).includes(marker), `${marker} reached Jev`);
       }
       assert.equal(Object.keys(request.questions).length, UNITS.length);

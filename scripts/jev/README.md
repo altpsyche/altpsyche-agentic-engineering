@@ -94,12 +94,13 @@ order:
 - **Each `docs/idea.md` section**: one per `#` or `##` heading, running to the next, so a `###`
   subsection stays inside the numbered section other docs cite. A heading in a code fence is not
   one.
-- **Each co-located `.md`**: a tracked `.md` in a subdirectory, except under `docs/`, a
+- **Each co-located `.md`**: a tracked `.md` in a subdirectory, except under `docs/`, `evals/`, a
   dot-directory or `node_modules/`.
 
 Root files are not units: `AGENTS.md` always heads the list, and `README.md` is the front page.
 The rest of `docs/` says how to work and is reached by name at the step that needs it, so pruning
-it would hide a step from the agent running it. Tracked means `git ls-files` at `root`, with any
+it would hide a step from the agent running it. `evals/README.md` is such a step too, and an eval
+case is read only by its grader, never as context for the work. Tracked means `git ls-files` at `root`, with any
 `GIT_*` from the caller dropped: an untracked file is not authoritative.
 
 All the questions go to one `ask`, which batches them. A unit that does not fit beside the state,

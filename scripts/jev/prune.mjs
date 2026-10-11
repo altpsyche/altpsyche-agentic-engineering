@@ -46,12 +46,13 @@ export function ideaSections(doc) {
  * Whether a tracked `.md` path is a co-located doc: one in a subdirectory, beside the work it
  * describes. Not a root file (`AGENTS.md` is always read, `README.md` is the front page), not under
  * `docs/` (ADRs, specs and `docs/idea.md` are units of their own, and the rest of `docs/` says how
- * to work, reached by name at the step that needs it), and not under a dot-directory or
+ * to work, reached by name at the step that needs it), not under `evals/` (its README is a step
+ * reached by name, and its cases are read only by a grader), and not under a dot-directory or
  * `node_modules/`.
  */
 export function isCoLocated(file) {
   const parts = file.split('/');
-  if (parts.length < 2 || parts[0] === 'docs') return false;
+  if (parts.length < 2 || parts[0] === 'docs' || parts[0] === 'evals') return false;
   return !parts.some((part) => part.startsWith('.') || part === 'node_modules');
 }
 
