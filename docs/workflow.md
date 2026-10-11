@@ -128,11 +128,15 @@ and PR steps.
 
 1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree, on the same branch.
-3. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
+3. Before any change, run `scripts/verify.sh`. The branch carries your own work, so red here is
+   yours to fix in this round. It counts as inherited only if `scripts/verify.sh` is also red on
+   `origin/main`, per **Check the base**; then § 2's clean-baseline rule applies, with the PR as
+   the item.
+4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
    in review becomes a new ticket, not a bigger diff.
-4. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
+5. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
    for a behaviour change, or disputed with a reason and a source.
 
 **Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
