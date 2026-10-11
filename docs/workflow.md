@@ -74,6 +74,9 @@ releases the claim. Two axes, run as parallel sub-agents and reported side by si
   full.
 - **Spec** — does it faithfully implement the originating spec, no more and no less?
 
+When a second model is available, the Reviewer runs on a different one from the author: a fresh
+session of the same model shares its blind spots, as an author grading its own work is lenient.
+
 The reviewer sets the verdict and posts the report as a PR comment; it does not push to the branch.
 Every finding names its source and quotes the line it is about. The Implementer's own `/review-pr` run
 at the end of `/implement` is a self-check, not this step.
