@@ -45,11 +45,16 @@ pinned commit above.
    and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. A skill
    tool is a harness feature, and this repo assumes none, so a skill names another by its file.
    `scripts/check-skills.mjs` checks the links. After an update,
-   `grep -rn "Skill tool" .agents/skills` must be empty.
+   `grep -rn --include=SKILL.md "Skill tool" .agents/skills` must print nothing.
 3. Upstream's per-harness `agents/` folder in each skill (display names and invocation policy for
    one harness) is not vendored. `scripts/check-skills.mjs` fails if one comes back. The
    `disable-model-invocation` and `argument-hint` frontmatter keys stay: any agent can read them,
    and the first says the owner, not the model, starts that skill.
+
+**Known upstream wording, deliberately not patched:** `setup-matt-pocock-skills`, `retro` and
+`writing-for-agents` still name `CLAUDE.md` beside `AGENTS.md`, which this repo bans. They treat
+the two as alternatives: here `AGENTS.md` always exists and `CLAUDE.md` never does, so they edit
+`AGENTS.md`, and `scripts/check-skills.mjs` fails if any agent creates a `CLAUDE.md`.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are
