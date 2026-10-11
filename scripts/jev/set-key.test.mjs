@@ -97,6 +97,16 @@ test('spaces and tabs around a pasted key are trimmed; inside it they are kept',
   });
 });
 
+test('the check hint names injection-cli.mjs by an absolute path, so it runs from anywhere', async () => {
+  await withRepo(async ({ main }) => {
+    const result = setKey(main, 'k\n');
+    const hint = /\| node (\S+)$/m.exec(result.stdout);
+    assert.ok(hint, result.stdout);
+    assert.ok(path.isAbsolute(hint[1]), hint[1]);
+    assert.equal(hint[1], path.join(path.dirname(SCRIPT), 'injection-cli.mjs'));
+  });
+});
+
 test('a key with a single quote is refused, and the file is unchanged', async () => {
   await withRepo(async ({ main }) => {
     await writeFile(path.join(main, '.env'), 'TYPESAFE_API_KEY=old\n');

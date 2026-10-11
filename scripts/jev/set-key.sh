@@ -11,7 +11,9 @@
 #   printf '%s\n' "$KEY" | scripts/jev/set-key.sh   # no terminal: the key is read from stdin
 set -euo pipefail
 
-if ! file="$(node "$(dirname "$0")/env-file.mjs" path)"; then
+here="$(cd "$(dirname "$0")" && pwd)"
+
+if ! file="$(node "$here/env-file.mjs" path)"; then
   echo "set-key: no key file in use (TYPESAFE_ENV_FILE=none, or not in a repo); nothing written." >&2
   exit 1
 fi
@@ -54,4 +56,4 @@ mv "$tmp" "$file"
 trap - EXIT
 
 echo "Saved TYPESAFE_API_KEY to $file (mode 600)."
-echo "Check it with one live call: echo hello | node scripts/jev/injection-cli.mjs"
+echo "Check it with one live call: echo hello | node $here/injection-cli.mjs"
