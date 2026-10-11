@@ -9,17 +9,13 @@
 // AGENTS.md first: the read list is the `read` lines.
 // Always exits 0: a skip or an error is one line, and the agent reads the docs as normal.
 
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { createClient, errorLine } from './client.mjs';
+import { issueNumber, readPrOrIssue } from './issue-input.mjs';
 import { human, run } from './prune.mjs';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
-const number = args.find((a) => /^\d+$/.test(a));
-
-const gh = (...ghArgs) =>
-  JSON.parse(execFileSync('gh', ghArgs, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+const number = issueNumber(args);
 
 // `gh` lists a PR's files as objects; piped JSON may list plain paths. Only the path is kept.
 function work({ title, body, files }) {
@@ -30,32 +26,14 @@ function work({ title, body, files }) {
   };
 }
 
-function readWork() {
-  if (number) {
-    // Issues and PRs share one number sequence: a PR first, since it carries its changed files.
-    try {
-      return work(gh('pr', 'view', number, '--json', 'title,body,files'));
-    } catch {
-      return work(gh('issue', 'view', number, '--json', 'title,body'));
-    }
-  }
-  if (process.stdin.isTTY) throw new Error('give an issue or PR number, or pipe it on stdin');
-  const text = readFileSync(0, 'utf8');
-  try {
-    const parsed = JSON.parse(text);
-    if (typeof parsed?.title === 'string') return work(parsed);
-  } catch {
-    // Not JSON: plain text, read below.
-  }
-  const [title = '', ...rest] = text.trim().split('\n');
-  return work({ title: title.trim(), body: rest.join('\n').trim() });
-}
-
 // Check the key first: a keyless run must not call gh or read stdin, and must print the skip.
 const client = createClient();
 let result = await client.available();
 try {
-  if (result.status === 'ok') result = await run(readWork(), { client });
+  if (result.status === 'ok') {
+    // A PR first, since it carries its changed files.
+    result = await run(work(readPrOrIssue(number, { prFields: 'title,body,files', issueFields: 'title,body' })), { client });
+  }
 } catch (error) {
   result = { status: 'error', reason: errorLine(error) };
 }

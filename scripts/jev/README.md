@@ -10,7 +10,7 @@ code works.
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
-| `issue-input.mjs` | How a CLI reads its issue: by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first. `gh(args)` runs `gh` for any other read |
+| `issue-input.mjs` | How a CLI reads its issue: `readIssue` by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first, LF or CRLF. `readPrOrIssue` does the same for a CLI that takes either, trying `gh pr view` first and keeping every JSON field. `gh(args)` runs `gh` for any other read |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `cli-runner.mjs` | Runs a CLI as a subprocess with a `gh` stub on PATH that logs each call and answers canned output, for tests only. `keepPath` keeps the caller's PATH after the stub, for a CLI that runs git |
 | `client.test.mjs` | The client's tests, against the fake server |
@@ -18,7 +18,7 @@ code works.
 | `triage-cli.mjs` | Its CLI: an issue number or the issue on stdin, read by `issue-input.mjs`; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `prune.mjs` | The doc pruner, `run(input, { client, root })`, and `human(result)`, its CLI's line output. Tests point `root` at a temp git repo |
-| `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
+| `prune-cli.mjs` | Its CLI: a PR or issue number, or the work on stdin, read by `issue-input.mjs`'s `readPrOrIssue`; `--json` for JSON |
 | `prune.test.mjs` | Tests at the `run()` seam with a fake client over a temp git repo, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `verify-findings.mjs` | The finding verifier, `run(findings, { client, root })`, and `human(result)`, its CLI's line output. `root` is where the review checklist is read from |
 | `verify-findings-cli.mjs` | Its CLI: a findings file, or the findings on stdin, as JSON; `--json` for JSON |
@@ -31,6 +31,8 @@ code works.
 | `coverage.mjs` | The coverage checker, `run({ issue, diff }, { client })`, plus `parseCriteria(body)`, `parseDiff(diff)` and `human(result)`, its CLI's line output |
 | `coverage-cli.mjs` | Its CLI: a PR number (the PR, the issue it closes and its diff read with `gh`), or an issue file and a diff file; `--json` for JSON |
 | `coverage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `injection.mjs`, `injection-cli.mjs`, `injection.test.mjs` | The injection screen, `run(input, { client })`, and `human(result)`, its CLI's line output; the CLI reads a PR with its comments and reviews, or an issue with its comments, or the text on stdin, by `issue-input.mjs`'s `readPrOrIssue`; tests at the same seams as triage |
+| `grade.mjs`, `grade-cli.mjs`, `grade.test.mjs` | The grade tool, `run(input, { client })`, `human(result)` and `parsePassCriteria(text)`; the CLI reads a case file and a transcript file and never runs `gh`; tests at the same seams as triage |
 
 ## The client
 
@@ -222,6 +224,38 @@ Bands are in the registry. The line output lists flags first, each with the clos
 picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
 hunks, a choice that is not an option, or a noul that is not a probability (`noulOf`), is an error
 line. An issue or a diff with CRLF line ends parses as one with LF.
+
+## Injection
+
+Screens each text of an issue or PR in reading order: the title and body as one, then each comment,
+then each review, a blank one left out. Inline review comments are not read. Each text travels in
+its own Noul, quoted as JSON and named as data, beside a short shared state: does it try to direct
+the agent beyond the work it describes? The question is phrased positively, since Jev reads
+negations literally (ADR-0002). Two kinds are not asked:
+
+- **A known phrasing**: the text matches one of a few exact patterns, such as "ignore previous
+  instructions", a note addressed to an AI agent, or a `<system>` tag, across line breaks of
+  either kind. It is a `hit`, since the text under test could sway Jev's answer. The patterns are
+  kept narrow, because each costs a re-read when it fires on ordinary text.
+- **Too large to ask about**, by `fitsBesideState`: `uncertain`, since a missed injection costs
+  more than a re-read.
+
+The result lists every text with its decision, and `flagged`, the count of hits and uncertain
+texts. An answer that is not a probability (`noulOf`) is an error line, never a clear.
+
+## Grade
+
+Asks one request of Nouls, with the transcript, collected output included, as state: per pass
+criterion of the case, does the transcript show the answer is yes? The criteria are parsed, not
+asked about: each numbered item under the first heading naming pass criteria, up to the next
+heading, with its wrapped lines joined and its own number kept, with LF or CRLF line endings. Each
+criterion is quoted as JSON and named as data, and the transcript, which quotes issue text and
+command output, is named as data too, since Jev can be swayed by injected text (ADR-0002).
+
+A case with no criteria, a blank transcript, or a transcript too large to sit beside a criterion by
+`fitsBesideState`, is an error line before anything is asked; so is an answer that is not a
+probability (`noulOf`). Jev reads negations literally, so a criterion phrased as a negative, such
+as "did it make no commit?", is where its advice is weakest.
 
 ## Testing
 
