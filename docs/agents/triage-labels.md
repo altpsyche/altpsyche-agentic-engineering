@@ -13,9 +13,9 @@ string this repo actually uses.
 
 **Moving an issue to `ready-for-agent` or `ready-for-human` also applies exactly one `phase:N`**,
 below, in the same edit, whoever filed the issue. A PR is exempt: it takes its phase from the issue
-it closes. Those two states put an issue on a frontier, and
-the vendored `/triage` does not know phase labels exist, so this line is what adds them. If the
-phase is unclear, ask the owner rather than guess.
+it closes. Those two states put an issue on a frontier, and the vendored `/triage` does not know
+phase labels exist, so this line is what adds them. If the phase is unclear, ask the owner rather
+than guess.
 
 ## Creating the labels
 
