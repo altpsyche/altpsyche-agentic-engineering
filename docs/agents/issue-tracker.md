@@ -47,13 +47,20 @@ the GitHub issue wins.
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
   after `issuecomment-` in the URL that posting the claim printed, then picks again. On an issue
   it leaves the assignee, which the winner shares.
-- **Branch**: `git fetch origin` then `git switch -c <number>-<slug> origin/main`. Branch from
-  `origin/main`, not a local `main` that may be stale.
+- **Worktree**: one item, one worktree, one branch. Sessions run in parallel, and two sessions in
+  one checkout switch branches under each other. So a session never works in the main clone: it
+  adds a sibling worktree, works only there, and removes it once its last write is posted, with
+  `git worktree remove ../<repo>-<number>`. Git refuses to check one branch out in two worktrees,
+  which is a second guard against two sessions on one branch.
+- **Branch**: `git fetch origin` then
+  `git worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, and `cd` into it. Branch
+  from `origin/main`, not a local `main` that may be stale.
 - **Open a PR**: `git push -u origin HEAD` then
   `gh pr create --title "..." --body-file <file> --label status:in-review`. The body contains
   `Closes #<number>` so merging closes the issue.
-- **Check out a PR** for review or a fix round: `git fetch origin` then `gh pr checkout <number>`.
-  A Reviewer uses `origin/main`, not `main`, as the fixed point.
+- **Check out a PR** for review or a fix round: `git fetch origin`, then
+  `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
+  `gh pr checkout <number>`. A Reviewer uses `origin/main`, not `main`, as the fixed point.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label status:changes-requested` (or
   `status:approved` when the report has zero open findings, or `ready-for-human` when round 3
