@@ -12,7 +12,7 @@ if command -v node >/dev/null; then
   node scripts/check-skills.mjs
   node --test scripts/check-skills.test.mjs scripts/install-hooks.test.mjs
 else
-  echo "verify: node not found, agent-layer check skipped (CI runs it)" >&2
+  echo "verify: node not found, agent-layer check and hook test skipped (CI runs them)" >&2
 fi
 
 # Secrets: all history reachable in this clone, not just the tree, because a secret deleted in a
