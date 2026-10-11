@@ -112,6 +112,10 @@ reviewer sets `ready-for-human` instead of `status:changes-requested` and says w
 the loop is not converging, and the owner decides whether to merge, rescope or close. A round's
 number is one more than the count of earlier reports on the PR.
 
+**Done when:** the PR carries the verdict label this section sets, and the report, opening with
+`Reviewed at <sha>`, is posted on the PR after it, every finding naming its source and quoting its
+line.
+
 ### 4. Fix rounds (Implementer)
 
 The issue is already claimed and the branch and PR exist, so a fix round skips § 2's claim, branch
@@ -125,6 +129,9 @@ and PR steps.
    in review becomes a new ticket, not a bigger diff.
 4. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
    for a behaviour change, or disputed with a reason and a source.
+
+**Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
+pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
 
 ### 5. Merge and learn (Owner)
 
