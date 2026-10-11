@@ -52,10 +52,10 @@ async function withClone(fn) {
     git(root, 'init', '-q', '-b', 'main', clone);
     await mkdir(path.join(clone, 'scripts'));
     await mkdir(path.join(clone, '.githooks'));
-    await copyFile(path.join(REPO, 'scripts', 'install-hooks.sh'), path.join(clone, 'scripts', 'install-hooks.sh'));
-    await copyFile(path.join(REPO, '.githooks', 'pre-push'), path.join(clone, '.githooks', 'pre-push'));
-    await chmod(path.join(clone, 'scripts', 'install-hooks.sh'), 0o755);
-    await chmod(path.join(clone, '.githooks', 'pre-push'), 0o755);
+    for (const file of ['scripts/install-hooks.sh', '.githooks/pre-push']) {
+      await copyFile(path.join(REPO, file), path.join(clone, file));
+      await chmod(path.join(clone, file), 0o755);
+    }
     await setVerify(clone, 0);
     git(clone, 'add', '-A');
     git(clone, 'commit', '-q', '-m', 'init');
