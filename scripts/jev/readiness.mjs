@@ -47,12 +47,13 @@ function coverQuestion(criterion) {
 
 /**
  * The acceptance criteria in a ticket body: each list item under the first heading that names
- * acceptance criteria, up to the next heading, with any checkbox stripped.
+ * acceptance criteria, up to the next heading, with any checkbox stripped. Lines may end in LF
+ * or CRLF, as the GitHub web form submits.
  */
 export function parseCriteria(body) {
   const criteria = [];
   let inSection = false;
-  for (const line of (body ?? '').split('\n')) {
+  for (const line of (body ?? '').split(/\r?\n/)) {
     if (/^#{1,6}\s/.test(line)) {
       if (inSection) break;
       inSection = /acceptance criteria/i.test(line);

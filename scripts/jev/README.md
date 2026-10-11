@@ -64,8 +64,8 @@ Asks one request of Nouls, with the ticket's title and body as state, and the pl
 - **seams**: does it name the seams its work is checked at? A pointer to agreed seams counts.
 - **criterion_N**, with a plan only: does a plan step cover criterion N? The criteria are parsed,
   not asked about: each list item under the first heading naming acceptance criteria, up to the
-  next heading, checkbox stripped. No such section means no coverage questions, and the CLI says
-  so in one line.
+  next heading, checkbox stripped, with LF or CRLF line endings. No such section means no
+  coverage questions, and the CLI says so in one line.
 
 Each question is phrased positively, since Jev reads negations literally, and a criterion's text
 is quoted as JSON and named as data, since Jev can be swayed by injected text (ADR-0002). A noul outside

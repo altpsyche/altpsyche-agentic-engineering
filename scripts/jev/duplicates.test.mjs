@@ -191,6 +191,17 @@ test('the CLI checks a draft from stdin against every open issue, and says when 
   }
 });
 
+test('the CLI reads a plain-text draft with CRLF line endings without carrying the CRs', async () => {
+  const jev = await fakeJev(scores({}));
+  try {
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    await runCli(CLI, [], { env, gh: GH, stdin: 'Add a dark theme\r\nLine one.\r\nLine two.\r\n' });
+    assert.deepEqual(jev.requests[0].body.state, { issue: { title: 'Add a dark theme', body: 'Line one.\nLine two.' } });
+  } finally {
+    await jev.close();
+  }
+});
+
 test('the CLI with no open issues says so and asks Jev nothing', async () => {
   const jev = await fakeJev(scores({}));
   try {

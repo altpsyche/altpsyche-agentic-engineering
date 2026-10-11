@@ -26,7 +26,7 @@ export function readIssue(number) {
   return parseIssue(readFileSync(0, 'utf8'));
 }
 
-/** An issue from text: `gh`'s JSON with a `title`, or plain text with the title first. */
+/** An issue from text: `gh`'s JSON with a `title`, or plain text with the title first, LF or CRLF. */
 export function parseIssue(text) {
   try {
     const parsed = JSON.parse(text);
@@ -34,6 +34,6 @@ export function parseIssue(text) {
   } catch {
     // Not JSON: plain text, read below.
   }
-  const [title = '', ...rest] = text.trim().split('\n');
+  const [title = '', ...rest] = text.trim().split(/\r?\n/);
   return { title: title.trim(), body: rest.join('\n').trim() };
 }

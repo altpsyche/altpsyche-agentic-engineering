@@ -90,6 +90,13 @@ test('criteria are read from numbered or starred lists too, and end at the next 
   assert.deepEqual(result.plan.map((p) => p.criterion), ['First thing', 'Second thing']);
 });
 
+test('criteria are read from a body with CRLF line endings, as the GitHub web form submits', async () => {
+  const body = TICKET.body.replaceAll('\n', '\r\n');
+  const client = fakeClient();
+  const result = await run({ title: TICKET.title, body, plan: PLAN }, { client });
+  assert.deepEqual(result.plan.map((p) => p.criterion), ['The settings page has a dark theme toggle', 'The choice survives a reload']);
+});
+
 test('with a plan but no acceptance criteria section, the plan list is empty and only two Nouls are asked', async () => {
   const client = fakeClient({ criteria: 0.05 });
   const result = await run({ title: 'Vague', body: 'Make it better.', plan: PLAN }, { client });
