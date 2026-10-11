@@ -18,6 +18,9 @@ code works.
 | `evidence.mjs` | The evidence checker, `run({ body, outputs }, { client })`, plus `parseEvidence(body)` and `human(result)`, its CLI's line output |
 | `evidence-cli.mjs` | Its CLI: a PR number (body read with `gh pr view`) or the body on stdin, and an outputs file; `--json` for JSON |
 | `evidence.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `coverage.mjs` | The coverage checker, `run({ issue, diff }, { client })`, plus `parseCriteria(body)`, `parseDiff(diff)` and `human(result)`, its CLI's line output |
+| `coverage-cli.mjs` | Its CLI: a PR number (the PR, the issue it closes and its diff read with `gh`), or an issue file and a diff file; `--json` for JSON |
+| `coverage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
 
@@ -88,6 +91,31 @@ Then, per claim, cheapest first:
 Bands are in the registry. The line output lists flags first, then notes, each in Evidence order.
 A body with no Evidence entries, outputs that are not an object of strings, or a choice that is not
 an option, is an error line, and nothing is sent.
+
+## Coverage
+
+Matches each acceptance criterion of the issue a PR closes to the diff hunk or added test that
+covers it. The CLI reads the PR body with `gh pr view`, takes the first `Closes #N` (or `Fixes`,
+`Resolves`), reads that issue with `gh issue view` and the diff with `gh pr diff`. A PR that closes
+no issue is an error line, as the Spec axis then reviews against the PR body.
+
+- **Criteria**: each top-level bullet under the issue's `## Acceptance criteria` heading, ticked or
+  not, with its indented continuation lines, until the next heading.
+- **Hunks**: each `@@` hunk of the unified diff, with its file. The state shows each hunk's first
+  `COVERAGE_HUNK_LINES` lines and counts the rest, so a long diff still fits.
+- **Tests**: the names the diff's added lines declare, `test('…')`, `it('…')` or `def test_…`. A
+  test the PR does not touch is not listed; another language's test syntax is one more pattern in
+  `coverage.mjs`.
+
+Per criterion, two questions go in one `ask`, over the hunks and tests as state: a Choice of the
+one hunk or test that most directly covers it, `none` first so Jev's first-option bias lands on a
+flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". A criterion whose
+questions do not fit beside the state, by `fitsBesideState`, is flagged `too-large` unasked.
+
+Bands are in the registry. The line output lists flags first, each with the closest line Jev
+picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
+hunks, a choice that is not an option, or a noul that is not a probability (`noulOf`), is an error
+line.
 
 ## Testing
 

@@ -104,7 +104,8 @@ blind spots, as an author grading its own work is lenient.
    - **Spec** — does it faithfully implement the originating spec, no more and no less? The spec
      is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
-     ask.
+     ask. Before judging the criteria, run the coverage tool on the PR, per
+     [`docs/agents/jev.md`](agents/jev.md), and check the criteria it flags first.
 4. Set the verdict, then post the report, per **Post a review**. The report is a PR comment that
    opens with `Reviewed at <sha>`, per "Re-reviews converge" below. Every finding names its source
    and quotes the line it is about. The Reviewer never pushes to the branch. A finding that stays
