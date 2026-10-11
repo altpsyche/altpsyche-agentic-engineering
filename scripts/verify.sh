@@ -14,8 +14,8 @@ else
   echo "verify: node not found, agent-layer check skipped (CI runs it)" >&2
 fi
 
-# Secrets: every commit on this branch, not just the tree, because a secret deleted in a later
-# commit is still published. Known false positives go in .gitleaksignore with a reason. Skipped
+# Secrets: all history reachable in this clone, not just the tree, because a secret deleted in a
+# later commit is still published. Known false positives go in .gitleaksignore with a reason. Skipped
 # locally without gitleaks; CI always installs it.
 if command -v gitleaks >/dev/null; then
   gitleaks git --redact --no-banner .
