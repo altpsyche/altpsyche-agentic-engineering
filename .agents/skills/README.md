@@ -17,7 +17,7 @@ the skills read lives in [`docs/agents/`](../../docs/agents/).
 
 | Planning | Building | Reviewing | Shared / reference |
 |---|---|---|---|
-| [`grill-with-docs`](./grill-with-docs/SKILL.md), [`grill-me`](./grill-me/SKILL.md), [`to-spec`](./to-spec/SKILL.md), [`to-tickets`](./to-tickets/SKILL.md), [`triage`](./triage/SKILL.md), [`research`](./research/SKILL.md) | [`implement`](./implement/SKILL.md), [`tdd`](./tdd/SKILL.md), [`diagnosing-bugs`](./diagnosing-bugs/SKILL.md), [`pr`](./pr/SKILL.md), [`prototype`](./prototype/SKILL.md), [`wizard`](./wizard/SKILL.md) | [`review-pr`](./review-pr/SKILL.md), [`retro`](./retro/SKILL.md) | [`grilling`](./grilling/SKILL.md), [`domain-modeling`](./domain-modeling/SKILL.md), [`codebase-design`](./codebase-design/SKILL.md), [`handoff`](./handoff/SKILL.md), [`writing-for-agents`](./writing-for-agents/SKILL.md), [`setup-matt-pocock-skills`](./setup-matt-pocock-skills/SKILL.md) |
+| [`grill-with-docs`](./grill-with-docs/SKILL.md), [`grill-me`](./grill-me/SKILL.md), [`to-spec`](./to-spec/SKILL.md), [`to-tickets`](./to-tickets/SKILL.md), [`triage`](./triage/SKILL.md), [`research`](./research/SKILL.md) | [`implement`](./implement/SKILL.md), [`tdd`](./tdd/SKILL.md), [`diagnosing-bugs`](./diagnosing-bugs/SKILL.md), [`pr`](./pr/SKILL.md), [`prototype`](./prototype/SKILL.md), [`wizard`](./wizard/SKILL.md) | [`review-pr`](./review-pr/SKILL.md), [`retro`](./retro/SKILL.md) | [`grilling`](./grilling/SKILL.md), [`domain-modeling`](./domain-modeling/SKILL.md), [`codebase-design`](./codebase-design/SKILL.md), [`handoff`](./handoff/SKILL.md), [`writing-for-agents`](./writing-for-agents/SKILL.md) |
 
 **Local skill (not upstream):** [`work`](./work/SKILL.md) is the session-start router behind
 "let's work". It picks the role, picks the next item from the tracker, confirms with the owner,
@@ -33,6 +33,8 @@ pinned commit above.
 - `implement-spec` — overlaps `implement`; revisit if parallel worktree subagents become routine.
 - `setup-ts-deep-modules` — a one-shot dependency-cruiser setup; run it once the frontend exists.
 - `ask-matt` — upstream's router for its own flows; [`work`](./work/SKILL.md) replaces it here.
+- `setup-matt-pocock-skills` — a one-shot that wrote `docs/agents/`. Those files are customised
+  now, and re-running it would overwrite them.
 - `teach`, `to-questionnaire`, `wait-what`, `scaffold-exercises`, `migrate-to-shoehorn`,
   `setup-pre-commit`, `git-guardrails-claude-code`, and everything under `in-progress/`.
 
@@ -51,10 +53,17 @@ pinned commit above.
    `disable-model-invocation` and `argument-hint` frontmatter keys stay: any agent can read them,
    and the first says the owner, not the model, starts that skill.
 
-**Known upstream wording, deliberately not patched:** `setup-matt-pocock-skills`, `retro` and
-`writing-for-agents` still name `CLAUDE.md` beside `AGENTS.md`, which this repo bans. They treat
-the two as alternatives: here `AGENTS.md` always exists and `CLAUDE.md` never does, so they edit
-`AGENTS.md`, and `scripts/check-skills.mjs` fails if any agent creates a `CLAUDE.md`.
+**Known upstream wording, deliberately not patched:**
+
+- `retro` and `writing-for-agents` still name `CLAUDE.md` beside `AGENTS.md`, which this repo
+  bans. They treat the two as alternatives: here `AGENTS.md` always exists and `CLAUDE.md` never
+  does, so they edit `AGENTS.md`, and `scripts/check-skills.mjs` fails if any agent creates a
+  `CLAUDE.md`.
+- Five lines in four skills still name `setup-matt-pocock-skills`, which is not vendored. Four say
+  to run it if the tracker config is missing: `to-spec`, `to-tickets`, `triage` and `review-pr`.
+  The fifth, in `to-tickets`, says publishing "depends on the tracker `/setup-matt-pocock-skills`
+  configured". The config is always present here, in [`docs/agents/`](../../docs/agents/), so
+  none of the four fires, and the fifth means the tracker `docs/agents/issue-tracker.md` names.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are
