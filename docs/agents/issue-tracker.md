@@ -40,7 +40,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `Claimed:` ends the claim, per **Read back a claim**. **Comment first, then unassign**: the
   other way round, the issue is back on the frontier while the old claim stands, so a new
   session's claim either loses to it or is ended by the late comment. On a PR, the comment alone
-  releases it and the label stays as it was.
+  releases it and the label stays as it was. On an issue, the branch was never pushed: after
+  **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`, so the
+  next claimant's **Branch** does not fail on a branch that already exists.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
