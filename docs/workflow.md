@@ -166,6 +166,8 @@ Applied in full on every review. Each line is a hard rule, not a judgement call.
 **Correctness**
 
 - Every acceptance criterion in the spec is demonstrably met.
+- Every acceptance criterion has an entry in the PR's `## Evidence`, per **Evidence** in
+  [`docs/agents/issue-tracker.md`](agents/issue-tracker.md). A criterion without one is a finding.
 - A behaviour change has a check that fails without it. Name the check.
 - No check asserts an implementation detail, and no expected value is recomputed the way the work
   computes it.
