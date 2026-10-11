@@ -41,12 +41,11 @@ layout precisely because those are the skills' defaults, which means zero path r
 
 ## Amendments
 
-- **2026-10-12: a git hook is not harness-specific.** "No harness-specific hook" above means a
-  hook inside a harness, wired through that harness's own settings. A git hook belongs to git: it
-  runs the same whichever harness, model or person pushes, so it gives every agent the same base
-  rather than splitting it. The template ships one,
-  [`.githooks/pre-push`](../../.githooks/pre-push), which runs `scripts/verify.sh` and blocks a red
-  push; `scripts/install-hooks.sh` switches it on by setting `core.hooksPath`. An agent never skips it with `--no-verify`; the owner may, as the
-  person accountable for the push. Recorded per
+- **2026-10-12: a git hook is not harness-specific.** "No harness-specific folder, config, hook or
+  skill path" above means a hook inside a harness, wired through that harness's own settings. A git
+  hook belongs to git: it runs the same whichever harness, model or person pushes, so it gives
+  every agent the same base rather than splitting it. The template ships one,
+  [`.githooks/pre-push`](../../.githooks/pre-push). An agent never skips it with `--no-verify`; the
+  owner may, as the person accountable for the push. Recorded per
   [the agentic guardrails spec](../specs/agentic-guardrails-2026.md) § Pre-push hook; the owner
   signs it off by merging.
