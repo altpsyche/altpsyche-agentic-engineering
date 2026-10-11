@@ -91,7 +91,19 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   from `origin/main`, not a local `main` that may be stale.
 - **Open a PR**: `git push -u origin HEAD` then
   `gh pr create --title "..." --body-file <file> --label status:in-review`. The body contains
-  `Closes #<number>` so merging closes the issue.
+  `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**.
+- **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
+  Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
+  criterion of the issue the body closes, in the issue's order. Each entry names the criterion,
+  the command run this session that proves it, and that command's decisive result line, quoted
+  as printed. Where the change is visible, such as rendered output or a screenshot, the entry adds
+  a **Before** and an **After**. A criterion proven by reading still names the command whose
+  output shows it; a command that proves by printing nothing says so. An entry looks like:
+
+  ```markdown
+  - **The vendored `pr` skill is unchanged**
+    `git diff --stat origin/main -- .agents/skills/pr/` → prints nothing
+  ```
 - **Check out a PR** for review or a fix round: `git fetch origin`, then
   `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
   `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
