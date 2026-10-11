@@ -87,7 +87,7 @@ test('a red verify.sh blocks the push', () =>
     await setVerify(clone, 1);
     const push = run(clone, 'git', 'push', '-q', 'origin', 'main');
     assert.notEqual(push.status, 0);
-    assert.match(push.stderr, /stand-in verify|verify\.sh failed/);
+    assert.match(push.stderr, /pre-push: scripts\/verify\.sh failed; push blocked\./);
     assert.equal(remoteHasMain(remote), false);
   }));
 
