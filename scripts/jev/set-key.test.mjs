@@ -82,11 +82,18 @@ test('it refuses to write where .env is not gitignored', async () => {
   }, { ignored: false });
 });
 
-test('a key with a # or other punctuation reads back whole through jevEnv', async () => {
+test('a key with a #, a space or other punctuation reads back whole through jevEnv', async () => {
   await withRepo(async ({ main }) => {
-    const key = 'ab#cd"e$f\\n';
+    const key = 'ab cd#ef"g$h\\n';
     assert.equal(setKey(main, `${key}\n`).status, 0);
     assert.equal(jevEnv({ env: {}, cwd: main }).TYPESAFE_API_KEY, key);
+  });
+});
+
+test('spaces and tabs around a pasted key are trimmed; inside it they are kept', async () => {
+  await withRepo(async ({ main }) => {
+    assert.equal(setKey(main, ' \tab cd \t\n').status, 0);
+    assert.equal(await readFile(path.join(main, '.env'), 'utf8'), "TYPESAFE_API_KEY='ab cd'\n");
   });
 });
 

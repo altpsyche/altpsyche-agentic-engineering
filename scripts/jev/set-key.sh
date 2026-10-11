@@ -30,7 +30,9 @@ if [ -t 0 ]; then
 else
   IFS= read -r key || true
 fi
-key="${key//[[:space:]]/}"
+# Trim the ends only: a paste often carries a newline or spaces around the key, never inside it.
+key="${key#"${key%%[![:space:]]*}"}"
+key="${key%"${key##*[![:space:]]}"}"
 if [ -z "$key" ]; then
   echo "set-key: no key given; $file is unchanged."
   exit 0
