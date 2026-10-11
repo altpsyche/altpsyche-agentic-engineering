@@ -13,8 +13,8 @@ byte-identical to upstream. `scripts/check-skills.mjs` fails if `<skill>` names 
 
 - **Runner**: the Implementer whose PR needs the case, or the owner. It builds the sandbox, starts
   the run session, plays the owner from the case's script, and collects the result.
-- **Run session**: a fresh session, in any harness, on any model, started in the sandbox. It sees
-  only the case's prompt and scripted replies. It is not told it is an eval.
+- **Run session**: a fresh session, in any harness, on any model, started in the sandbox. Of the
+  case it sees only the prompt and the scripted replies, and it is not told it is an eval.
 - **Grader**: a fresh session that is neither of the other two, on a different model when one is
   available, for the reason in [`docs/workflow.md`](../docs/workflow.md) § 3. It sees only the case
   file and the transcript.
@@ -54,16 +54,17 @@ git clone --single-branch --branch "$(git branch --show-current)" "$PWD" "../eva
 cd "../eval-$T"
 git branch -m main
 git remote remove origin
-git rm -rq evals && git commit -qm "Sandbox: drop the eval cases"
+git rm -rq evals/*/ && git commit -qm "Sandbox: drop the eval cases"
 # Here: the case's "On main, before the push" commands, if any.
 gh repo create "eval-$T" --private --source . --remote origin --push
 scripts/bootstrap.sh
 # Then: the case's "After bootstrap" commands.
 ```
 
-Dropping `evals/` keeps the run session from reading the pass criteria. `scripts/bootstrap.sh`
-creates the labels and switches on the pre-push hook. On a free private repo it also warns that it
-could not protect `main`; that is expected here.
+Dropping the case folders keeps the run session from reading the pass criteria; this file stays,
+since the docs link it. `scripts/bootstrap.sh` creates the labels and switches on the pre-push
+hook. On a free private repo it also warns that it could not protect `main`; that is expected
+here.
 
 The sandbox outlives the run, so the grader's quotes can be checked against it. Only the owner
 deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a repo.
