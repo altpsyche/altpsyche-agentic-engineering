@@ -101,10 +101,11 @@ blind spots, as an author grading its own work is lenient.
      is the issue in the PR's `Closes #<n>`. When the PR closes no issue, review this axis against
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
      ask.
-4. Set the verdict, then post the report, per **Post a review**. The report is a PR comment that
-   opens with `Reviewed at <sha>`, per "Re-reviews converge" below. Every finding names its source
-   and quotes the line it is about. The Reviewer never pushes to the branch. A finding that stays
-   in the chat does not exist.
+4. Before posting, check each draft finding against its cited source with the verify-findings
+   tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
+   **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
+   "Re-reviews converge" below. Every finding names its source and quotes the line it is about.
+   The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.

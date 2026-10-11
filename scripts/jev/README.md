@@ -18,6 +18,9 @@ code works.
 | `prune.mjs` | The doc pruner, `run(input, { client, root })`. Tests point `root` at a temp git repo |
 | `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
 | `prune.test.mjs` | Tests at the `run()` seam with a fake client over a temp git repo, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `verify-findings.mjs` | The finding verifier, `run(findings, { client, root })`, and `human(result)`, its CLI's line output. `root` is where the review checklist is read from |
+| `verify-findings-cli.mjs` | Its CLI: a findings file, or the findings on stdin, as JSON; `--json` for JSON |
+| `verify-findings.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server |
 
 ## The client
 
@@ -80,6 +83,44 @@ All the questions go to one `ask`, which batches them. A unit that does not fit 
 by `fitsBesideState`, is listed unasked with reason `oversize`, since a missed doc costs more than
 a read. An answer that is not a probability, or a missing `docs/idea.md`, is an error line, never
 a shorter list.
+
+## Verify findings
+
+One Noul per draft finding: does its quoted line, read against its cited source, support it? Each
+finding travels in its own question, beside a short shared state, so `ask` can split many findings
+across requests. Every finding comes back, in input order, as `keep` or `flag`; the tool never
+removes one. Two kinds are kept without asking:
+
+- **Constitution findings**: the `source` mentions "constitution", or the `excerpt` quotes any
+  sentence or semicolon clause of a bullet under **The constitution** in
+  [`docs/workflow.md`](../../docs/workflow.md)'s review checklist, or a bullet's first five words,
+  ignoring case, punctuation and spacing. A bullet's indented continuation lines count as part of
+  it. The bullets are read on every run; a checklist with none is an error line, never a run
+  without the exemption. The match errs towards exempting, since ADR-0002 bars Jev from judging a
+  constitution item. A finding citing the rule only through `AGENTS.md`, in none of the
+  checklist's words, is still checked, so cite one as
+  `docs/workflow.md § Review checklist, The constitution`.
+- **Too large to check**: a finding whose question does not fit beside the state, by
+  `fitsBesideState`.
+
+The input is a JSON array, from a file or stdin. Every field but `id` is a non-empty string; `id`
+defaults to `F1`, `F2`, … by position, and ids are unique:
+
+```json
+[
+  {
+    "id": "F1",
+    "text": "The finding, as the report states it.",
+    "quote": "the line under review the finding is about",
+    "source": "docs/workflow.md § Review checklist, The constitution",
+    "excerpt": "The text of the cited source the finding relies on."
+  }
+]
+```
+
+Empty input, input that is not JSON or not an array, or a finding that is not an object, has a
+blank field or repeats an id, is an error line naming the first problem, and nothing is sent. So is
+an answer that is not a probability: a NaN must never compare its way into a keep.
 
 ## Testing
 

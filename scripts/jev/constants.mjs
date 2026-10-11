@@ -23,6 +23,17 @@ export const TRIAGE_CONFIDENT = 0.8;
  */
 export const PRUNE_INCLUDE_NOUL = 0.2;
 
+/**
+ * The finding verifier keeps a draft finding at a Noul (probability that its cited source supports
+ * it) at or above this, and flags it for one re-read below it. A flag costs one re-read, a kept
+ * false finding a fix round, so the bar errs towards flagging. Sample: one, from errand-knight,
+ * whose README documents one live run of its sample findings file: the supported finding scored
+ * 0.89 and the unsupported one 0.61, so its first guess of 0.5 kept both. Ported unchanged. There
+ * the findings sat in the request's state; here each sits in its own question, a shape no live run
+ * has checked yet. Retune it from the first live runs here.
+ */
+export const VERIFY_KEEP_NOUL = 0.7;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.
