@@ -9,7 +9,7 @@ code works.
 | File | What it is |
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
-| `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })` |
+| `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `client.test.mjs` | The client's tests, against the fake server |
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
@@ -32,9 +32,10 @@ Inside `ask`:
 - **Batching.** Questions are packed first-fit into as few requests as the two limits in
   `constants.mjs` allow: the state plus every question in a request, and the state plus any one
   question. Sizes are estimated from the JSON at `JEV_CHARS_PER_TOKEN`, which overestimates. A
-  question that cannot fit beside the state is an error, and nothing is sent. The answers come
-  back merged; if any request fails, or any question is left unanswered, the whole call is one
-  error, so a tool never acts on half its answers.
+  question that cannot fit beside the state is an error, and nothing is sent. A tool that would
+  rather set such an item aside than fail checks it first with `fitsBesideState`, the same rule.
+  The answers come back merged; if any request fails, or any question is left unanswered, the
+  whole call is one error, so a tool never acts on half its answers.
 - **Retries.** A 429 or 529 is retried with exponential backoff, up to `JEV_MAX_ATTEMPTS` in all.
   Any other status, a network failure, a timeout or a 200 without `answers` is an error at once.
 
