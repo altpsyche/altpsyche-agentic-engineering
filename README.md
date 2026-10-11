@@ -25,13 +25,14 @@ was built and used.
 | [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
 | [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
 | [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, the symlink and the `AGENTS.md` line and byte budgets; no packages |
-| [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label on the new repo |
+| [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label and protects `main`: changes land only by PR with `verify` green |
 
 ## Using this template
 
 1. **Create the repo**: `gh repo create <owner>/<name> --template altpsyche/altpsyche-agentic-engineering --private --clone`
    (or **Use this template** on GitHub), then `cd` into it.
-2. **Create the labels**: `scripts/bootstrap.sh`.
+2. **Create the labels and protect `main`**: `scripts/bootstrap.sh`. On a private repo the branch
+   ruleset needs a paid plan; without one the script warns and `main` stays open.
 3. **Fill the placeholders**. `grep -rn 'TEMPLATE\|<Project>\|<owner>' .` lists every one:
    - `AGENTS.md`: name, what the project is, its constitution, anti-patterns.
    - `docs/workflow.md` § Review checklist: the constitution and the field's hard rules.

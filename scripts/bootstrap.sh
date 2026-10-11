@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # One-time setup for a repo made from this template: creates every label the workflow uses, so no
-# agent ever invents a near-duplicate. Idempotent (`--force` updates existing labels), so rerun it
-# after adding a phase to docs/idea.md § Roadmap.
+# agent ever invents a near-duplicate, then protects the default branch with a ruleset. Idempotent
+# (`--force` updates labels, the ruleset is updated by name), so rerun it after adding a phase to
+# docs/idea.md § Roadmap.
 #
 #   scripts/bootstrap.sh
 #
@@ -37,4 +38,44 @@ else
     title="$(sed -E 's/^### Phase [0-9]+[[:space:]]*[—–-][[:space:]]*//' <<<"$line")"
     label "phase:$n" c5def5 "$title"
   done <<<"$phases"
+fi
+
+# Protect the default branch: changes land only through a PR with `verify` green, and its history is
+# never rewritten or deleted. Prose says "never commit to main"; this makes it true. No bypass
+# actors: every agent session runs as the owner's account, so an owner bypass would exempt agents
+# too. Rulesets on private repos need a paid plan; there this warns, and only the prose rule holds.
+ruleset_name="default-branch"
+ruleset="$(cat <<JSON
+{
+  "name": "$ruleset_name",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+  "bypass_actors": [],
+  "rules": [
+    {"type": "deletion"},
+    {"type": "non_fast_forward"},
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": false,
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": false}},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": false,
+      "required_status_checks": [{"context": "verify"}]}}
+  ]
+}
+JSON
+)"
+existing="$(gh api "repos/$repo/rulesets" --jq ".[] | select(.name == \"$ruleset_name\") | .id" 2>/dev/null || true)"
+if [ -n "$existing" ]; then
+  method=PUT endpoint="repos/$repo/rulesets/$existing"
+else
+  method=POST endpoint="repos/$repo/rulesets"
+fi
+if gh api -X "$method" "$endpoint" --input - <<<"$ruleset" >/dev/null; then
+  echo "Ruleset $ruleset_name: the default branch takes changes only by PR with verify green"
+else
+  echo "Could not set ruleset $ruleset_name (a private repo needs a paid plan); main is unprotected" >&2
 fi
