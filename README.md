@@ -17,14 +17,14 @@ was built and used.
 
 | Path | What it is |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | The context file every agent loads first, in any harness. `CLAUDE.md` is a symlink to it |
+| [`AGENTS.md`](AGENTS.md) | The one context file every agent loads first, in any harness. There is no per-harness copy |
 | [`.agents/skills/`](.agents/skills/README.md) | [mattpocock/skills](https://github.com/mattpocock/skills), copied in at a pinned commit, plus the local `/work` session router |
 | [`docs/workflow.md`](docs/workflow.md) | Roles, the loop, the strict review verdict, the review checklist, where state lives |
 | [`docs/agents/`](docs/agents/) | Tracker commands (claiming an item, confirming the claim, finding PRs to work on), triage labels, how agents use the domain docs |
 | [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way |
 | [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
 | [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
-| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, the symlink and the `AGENTS.md` line and byte budgets; no packages |
+| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, that nothing is wired for one harness, and the `AGENTS.md` line and byte budgets; no packages |
 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label and protects `main`: changes land only by PR with `verify` green |
 
 ## Using this template
@@ -40,6 +40,9 @@ was built and used.
    - This `README.md` and the `LICENSE` holder.
 4. **Check**: `scripts/verify.sh`.
 5. Tell an agent "let's plan". From then on, "let's work", "next" and "review" drive the loop.
+   If your harness does not load `AGENTS.md` on its own, tell it to read `AGENTS.md` first, in
+   your message or your own user-level settings. The repo carries no per-harness file, so every
+   agent starts from the same base.
 
 The vendored skills are written for software, so words like "test" and "PR" appear in them. In any
 other field read "test" as "the check agreed in the spec that proves the work done". A PR is still

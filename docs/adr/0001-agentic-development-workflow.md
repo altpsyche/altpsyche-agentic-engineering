@@ -14,7 +14,8 @@ layout precisely because those are the skills' defaults, which means zero path r
 - Updating the skill suite is a deliberate, reviewable commit, not an implicit `git pull` of a global
   install. [`docs/agents/`](../agents/) and [`.agents/skills/README.md`](../../.agents/skills/README.md)
   record what was vendored and which local changes must be re-applied.
-- `CLAUDE.md` is a symlink to `AGENTS.md`, so harnesses that look for the older name cannot drift.
+- `AGENTS.md` is the only context file. A harness that does not load it on its own is pointed at
+  it by the person running it, outside the repo; the repo carries no per-harness copy or symlink.
 - Work is spec-driven: idea → grill → spec → tickets → implement test-first → two-axis review. The
   loop is defined once, in [`docs/workflow.md`](../workflow.md).
 - The tracker must be machine-readable, because agents claim and close their own work. That is why
@@ -23,7 +24,8 @@ layout precisely because those are the skills' defaults, which means zero path r
 - **Every agent gets the same base.** The template holds nothing for one harness: no
   harness-specific folder, config, hook or skill path. `.agents/skills/` is the only skills path,
   every agent reads a skill's file because `AGENTS.md` says to, and skills name each other by
-  relative link, not by a harness's skill tool.
+  relative link, not by a harness's skill tool. `scripts/check-skills.mjs` fails on any
+  harness-specific file, so the rule holds without anyone remembering it.
 
 ## Considered options
 

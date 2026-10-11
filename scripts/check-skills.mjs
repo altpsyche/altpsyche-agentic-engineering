@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// Checks the agent layer: skill frontmatter, relative links, and pointer integrity.
+// Checks the agent layer: skill frontmatter, relative links, pointer integrity, and that nothing in
+// the repo is wired for one harness.
 //
 // This is the repo's deterministic check for the class of mistake an agent makes most often when
 // editing skills or AGENTS.md: a renamed folder, a missing description, a pointer to a file that
-// moved. It is deliberately dependency-free so it runs in CI and in any sandbox.
+// moved, a context file for one harness. It is deliberately dependency-free so it runs in CI and
+// in any sandbox.
 //
 // `checkRepo(root)` is exported for check-skills.test.mjs; running the file checks this repo.
 
-import { lstat, readFile, readdir, readlink } from 'node:fs/promises';
+import { lstat, readFile, readdir } from 'node:fs/promises';
 import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +35,24 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
 
 // A block-scalar header: style, then an optional chomping and indentation indicator in either
 // order, then an optional comment, as in `>`, `|-`, `>2`, `|+1` or `> # note`.
+// Files and folders that exist for one harness. The template gives every agent the same base
+// (ADR-0001), so none may appear: a second context file drifts from AGENTS.md, and per-harness
+// wiring means agents start from different places. Paths are relative to the repo root.
+export const HARNESS_SPECIFIC = [
+  'CLAUDE.md',
+  'CLAUDE.local.md',
+  'GEMINI.md',
+  'AGENTS.override.md',
+  '.cursorrules',
+  '.windsurfrules',
+  '.claude',
+  '.codex',
+  '.cursor',
+  '.gemini',
+  '.windsurf',
+  '.github/copilot-instructions.md',
+];
+
 const BLOCK_HEADER = /^([|>])(?:[1-9][+-]?|[+-][1-9]?)?(?:[ \t]+#.*)?$/;
 
 // YAML line folding for a `>` block: a break between two text lines becomes a space, and each
@@ -245,6 +265,15 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
   }
 }
 
+async function present(p) {
+  try {
+    await lstat(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function insideRoot(root, p) {
   const rel = path.relative(root, p);
   return rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
@@ -275,7 +304,6 @@ async function checkLinks(root, file, { err }) {
 export async function checkRepo(root) {
   const skillsDir = path.join(root, '.agents', 'skills');
   const agentsMd = path.join(root, 'AGENTS.md');
-  const claudeMd = path.join(root, 'CLAUDE.md');
   const docsDir = path.join(root, 'docs');
   const skillsReadme = path.join(skillsDir, 'README.md');
 
@@ -313,15 +341,21 @@ export async function checkRepo(root) {
     }
   }
 
-  // CLAUDE.md is a symlink to AGENTS.md (ADR-0001). A regular file there would drift silently.
-  if (!existsSync(claudeMd) || !(await lstat(claudeMd)).isSymbolicLink()) {
-    err('CLAUDE.md must be a symlink to AGENTS.md (ADR-0001)');
-  } else if ((await readlink(claudeMd)) !== 'AGENTS.md') {
-    err(`CLAUDE.md points at "${await readlink(claudeMd)}", not AGENTS.md`);
+  // Nothing for one harness (ADR-0001). lstat, so a symlink counts even when its target is gone.
+  for (const rel of HARNESS_SPECIFIC) {
+    if (await present(path.join(root, rel))) {
+      err(`${rel}: harness-specific; every agent gets the same base (ADR-0001)`);
+    }
+  }
+  for (const name of skillNames) {
+    const rel = `.agents/skills/${name}/agents`;
+    if (await present(path.join(root, rel))) {
+      err(`${rel}: harness-specific skill metadata; every agent gets the same base (ADR-0001)`);
+    }
   }
 
   // Every root-level .md (AGENTS.md, README.md, and GLOSSARY.md or CODING_STANDARDS.md once a skill
-  // creates them), plus everything under docs/ and the skills. CLAUDE.md is a symlink, so it is skipped.
+  // creates them), plus everything under docs/ and the skills.
   const rootDocs = (await readdir(root, { withFileTypes: true }))
     .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => path.join(root, e.name))

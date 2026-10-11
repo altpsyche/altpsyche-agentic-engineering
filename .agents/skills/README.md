@@ -40,13 +40,16 @@ pinned commit above.
 
 1. `engineering/code-review` is vendored as **`review-pr`**, which says what it reviews and is not
    mistaken for the built-in review commands some harnesses ship. The rename is applied to the
-   frontmatter `name`, the `agents/openai.yaml` display name, and the cross-references in
-   `implement` and `tdd`.
+   frontmatter `name` and the cross-references in `implement` and `tdd`.
 2. Upstream's "call the Skill tool with X" becomes a relative link to `../X/SKILL.md`, to read
-   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. A skill tool is a
-   harness feature, and this repo assumes none, so a skill names another by its file. The links are also checked
-   by `scripts/check-skills.mjs`. After an update, `grep -rn "Skill tool" .agents/skills` must be
-   empty.
+   and follow, in `grill-me`, `grill-with-docs`, `triage`, `tdd`, `retro` and `handoff`. A skill
+   tool is a harness feature, and this repo assumes none, so a skill names another by its file.
+   `scripts/check-skills.mjs` checks the links. After an update,
+   `grep -rn "Skill tool" .agents/skills` must be empty.
+3. Upstream's per-harness `agents/` folder in each skill (display names and invocation policy for
+   one harness) is not vendored. `scripts/check-skills.mjs` fails if one comes back. The
+   `disable-model-invocation` and `argument-hint` frontmatter keys stay: any agent can read them,
+   and the first says the owner, not the model, starts that skill.
 
 Everything else is byte-identical to upstream. This repo uses lowercase `docs/`, `docs/adr/`,
 `docs/agents/`, and `GLOSSARY.md`, which are the upstream defaults, so **no path rewrites are

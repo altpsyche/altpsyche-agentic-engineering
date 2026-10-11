@@ -42,7 +42,7 @@ scripts/verify.sh     # everything CI runs
 ```
 
 **Prefer running it over reasoning about whether your change is correct.** Today it checks the agent
-layer (skill frontmatter, doc links, the `CLAUDE.md` symlink, this file's budget) and scans every
+layer (skill frontmatter, doc links, no harness-specific files, this file's budget) and scans every
 commit for secrets with gitleaks. Phase 0 adds
 the project's own checks to it. Update this block and
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires them.

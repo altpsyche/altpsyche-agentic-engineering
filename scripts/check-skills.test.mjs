@@ -27,7 +27,6 @@ async function validRepo() {
   await writeFile(path.join(root, '.agents', 'skills', 'README.md'), '[demo](./demo/SKILL.md)\n');
   await writeFile(path.join(root, 'AGENTS.md'), '# Agents\n\n[docs](docs/guide.md)\n');
   await writeFile(path.join(root, 'docs', 'guide.md'), '# Guide\n');
-  await symlink('AGENTS.md', path.join(root, 'CLAUDE.md'));
   return root;
 }
 
@@ -69,20 +68,27 @@ test('a link into a sibling directory sharing the repo name prefix escapes the r
     assert.deepEqual(errors, [`docs/guide.md: link escapes the repo: ../${sibling}`]);
   }));
 
-test('CLAUDE.md as a regular file is reported', () =>
+test('a harness-specific file or folder is reported, a dangling symlink included', () =>
   withRepo(async (root) => {
-    await rm(path.join(root, 'CLAUDE.md'));
     await writeFile(path.join(root, 'CLAUDE.md'), '# Agents\n');
+    await mkdir(path.join(root, '.claude'));
+    await symlink('gone.md', path.join(root, 'GEMINI.md'));
     const { errors } = await checkRepo(root);
-    assert.deepEqual(errors, ['CLAUDE.md must be a symlink to AGENTS.md (ADR-0001)']);
+    assert.deepEqual(errors, [
+      'CLAUDE.md: harness-specific; every agent gets the same base (ADR-0001)',
+      'GEMINI.md: harness-specific; every agent gets the same base (ADR-0001)',
+      '.claude: harness-specific; every agent gets the same base (ADR-0001)',
+    ]);
   }));
 
-test('CLAUDE.md pointing elsewhere is reported', () =>
+test('per-harness metadata inside a skill is reported', () =>
   withRepo(async (root) => {
-    await rm(path.join(root, 'CLAUDE.md'));
-    await symlink('docs/guide.md', path.join(root, 'CLAUDE.md'));
+    await mkdir(path.join(root, '.agents', 'skills', 'demo', 'agents'));
+    await writeFile(path.join(root, '.agents', 'skills', 'demo', 'agents', 'openai.yaml'), 'interface: {}\n');
     const { errors } = await checkRepo(root);
-    assert.deepEqual(errors, ['CLAUDE.md points at "docs/guide.md", not AGENTS.md']);
+    assert.deepEqual(errors, [
+      '.agents/skills/demo/agents: harness-specific skill metadata; every agent gets the same base (ADR-0001)',
+    ]);
   }));
 
 test('links inside inline and fenced code are ignored', () => {
