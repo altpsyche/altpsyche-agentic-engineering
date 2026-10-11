@@ -45,7 +45,8 @@ scripts/verify.sh     # everything CI runs
 layer (skill frontmatter, doc links, no harness-specific files, this file's budget), tests the
 pre-push hook, and scans every commit for secrets with gitleaks. Phase 0 adds the project's own
 checks to it. Update this block and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the
-same commit that wires them.
+same commit that wires them. An Implementer also runs it before changing anything, per
+[`docs/workflow.md`](docs/workflow.md) § 2, step 3.
 
 A pre-push hook, [`.githooks/pre-push`](.githooks/pre-push), runs it before every push and blocks
 a red push. How it is switched on: [`scripts/install-hooks.sh`](scripts/install-hooks.sh).
