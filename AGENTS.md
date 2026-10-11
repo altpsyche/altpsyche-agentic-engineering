@@ -81,7 +81,8 @@ Adding a system requires an ADR. An ADR outranks co-located docs and outranks th
   PR. The reviewer is a different session from the author, on a different model when one is
   available. It posts findings on the PR, approves only with zero open findings, and never edits
   the branch; the owner merges. A re-review raises new findings only on lines changed since the
-  last report's `Reviewed at <sha>`, and a PR still open after round 3 goes to `ready-for-human`.
+  last report's `Reviewed at <sha>`, and a PR whose round 3 still ends in changes requested goes
+  to `ready-for-human`.
   Implementer → `/implement` driving `/tdd` at seams agreed up front, then a PR labelled
   `status:in-review`. Planner → `/grill-with-docs`, then `/to-spec` and `/to-tickets`. Queue and
   session start → `/work`.
