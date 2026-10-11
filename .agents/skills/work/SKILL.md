@@ -12,13 +12,14 @@ lives in `docs/workflow.md`, and every command in
 
 ## 1. Pick the role
 
-Infer from what the owner says, and say which you picked:
+The words that start a session are in this skill's `description`, and only there. Infer the role
+from what the owner wants, and say which you picked:
 
-| The owner says | Role |
+| The owner wants | Role |
 |---|---|
-| "next", "continue", "what's next", "let's work", "work" | **Implementer** |
-| "review", "check this", a branch or PR name | **Reviewer** |
-| "let's plan", "think about", an idea with no ticket | **Planner** |
+| Work done: the next item, or more of the current one | **Implementer** |
+| A diff checked: a review, or a named branch or PR | **Reviewer** |
+| Something planned: a phase, or an idea with no ticket | **Planner** |
 
 When it is genuinely unclear, ask. One question, not three.
 
