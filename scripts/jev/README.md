@@ -138,8 +138,8 @@ an answer that is not a probability (`noulOf`): a NaN must never compare its way
 Checks each claim in a PR body's `## Evidence`, in the format **Evidence** in
 [`docs/agents/issue-tracker.md`](../../docs/agents/issue-tracker.md) defines. Each top-level bullet
 is an entry, its criterion in bold; each `` `command` → result `` line in it (`->` also works) is
-one claim, and an entry with no such line is one claim with no command. The result is a quoted
-line, as a code span or in double quotes, or `prints nothing`.
+one claim, and an entry with no such line is one claim with no command. The result is one or more
+quoted lines, each a code span or in double quotes outside one, or `prints nothing`.
 
 The PR body is untrusted text, so the tool never runs a command it reads. The Reviewer runs each
 one in the PR's checkout and hands in what it printed, keyed by the command exactly as the claim
@@ -153,11 +153,12 @@ One way to build it: `jq -n --rawfile v out.txt '{"scripts/verify.sh": $v}' > ou
 
 Then, per claim, cheapest first:
 
-1. **Exact match, no call.** Colour codes and CR line ends are stripped from the output, then the
-   quoted line must appear in it as a substring, character for character; `prints nothing` needs
-   an output that is blank. A claim with no quote or no command is flagged `no-quote`, a command
-   missing from the outputs `no-output`, and a failed match `not-in-output`. ADR-0002 checks text
-   exactly before asking Jev about it, so a quote that is not there is never argued over.
+1. **Exact match, no call.** Colour codes and CR line ends are stripped from the output, then
+   every quoted line of the claim must appear in it as a substring, character for character;
+   `prints nothing` needs an output that is blank. A claim with no quote or no command is flagged
+   `no-quote`, a command missing from the outputs `no-output`, and a claim any of whose quotes
+   fails to match `not-in-output`. ADR-0002 checks text exactly before asking Jev about it, so a
+   quote that is not there is never argued over.
 2. **One Choice per matched claim**, all in one `ask`, the claim and its full output in the
    question: `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias lands
    on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged

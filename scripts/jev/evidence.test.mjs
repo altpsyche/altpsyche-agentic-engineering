@@ -66,7 +66,7 @@ const choice = (pick, confidence) => () => ({ type: 'choice', choice: pick, prob
 
 test('parses each claim of the ## Evidence section: criterion, command and the quoted result', () => {
   assert.deepEqual(parseEvidence(BODY), [
-    { id: 'E1', criterion: 'The tests pass', command: 'scripts/verify.sh', expect: { quote: 'ℹ fail 0' } },
+    { id: 'E1', criterion: 'The tests pass', command: 'scripts/verify.sh', expect: { quotes: ['ℹ fail 0'] } },
     {
       id: 'E2',
       criterion: 'The vendored `pr` skill is unchanged',
@@ -80,8 +80,8 @@ test('parses each claim of the ## Evidence section: criterion, command and the q
 test('a quote with backticks in it, in a double-backtick span, and a second claim in one entry', () => {
   const body = '## Evidence\n\n- **Both**\n  `a` → `` say `hi` ``\n  `b` -> "done"\n- **No claim at all**\n';
   assert.deepEqual(parseEvidence(body), [
-    { id: 'E1', criterion: 'Both', command: 'a', expect: { quote: 'say `hi`' } },
-    { id: 'E2', criterion: 'Both', command: 'b', expect: { quote: 'done' } },
+    { id: 'E1', criterion: 'Both', command: 'a', expect: { quotes: ['say `hi`'] } },
+    { id: 'E2', criterion: 'Both', command: 'b', expect: { quotes: ['done'] } },
     { id: 'E3', criterion: 'No claim at all', command: null, expect: null },
   ]);
 });
@@ -89,9 +89,29 @@ test('a quote with backticks in it, in a double-backtick span, and a second clai
 test('an arrow inside a code span is part of the command or the quote, not the claim\'s arrow', () => {
   const body = '## Evidence\n\n- **Arrows**\n  `echo a -> b` → `a -> b`\n- **No arrow outside** `x -> y`\n';
   assert.deepEqual(parseEvidence(body), [
-    { id: 'E1', criterion: 'Arrows', command: 'echo a -> b', expect: { quote: 'a -> b' } },
+    { id: 'E1', criterion: 'Arrows', command: 'echo a -> b', expect: { quotes: ['a -> b'] } },
     { id: 'E2', criterion: 'No arrow outside', command: null, expect: null },
   ]);
+});
+
+test('every quoted result after the arrow is kept, code spans and double quotes alike', () => {
+  const body = '## Evidence\n\n- **Several**\n  `t` → `ℹ pass 3`, `ℹ fail 0` and "done"\n- **Quote in a span** `u` → `say "hi"`\n';
+  assert.deepEqual(parseEvidence(body), [
+    { id: 'E1', criterion: 'Several', command: 't', expect: { quotes: ['ℹ pass 3', 'ℹ fail 0', 'done'] } },
+    { id: 'E2', criterion: 'Quote in a span', command: 'u', expect: { quotes: ['say "hi"'] } },
+  ]);
+});
+
+test('a claim with several quotes is flagged without a call when any one is not in the output', async () => {
+  const body = '## Evidence\n\n- **Both quoted**\n  `scripts/verify.sh` → `ℹ pass 3`, `ℹ fail 1`\n';
+  const client = fakeClient(choice('supports', 0.99));
+  const missing = await run({ body, outputs: OUTPUTS }, { client });
+  assert.deepEqual([missing.claims[0].decision, missing.claims[0].reason], ['flag', 'not-in-output']);
+  assert.equal(client.calls.length, 0);
+
+  const present = await run({ body: body.replace('ℹ fail 1', 'ℹ fail 0'), outputs: OUTPUTS }, { client });
+  assert.deepEqual([present.claims[0].decision, present.claims[0].reason], ['note', 'supports']);
+  assert.match(client.calls[0].questions.E1.instructions, /ℹ pass 3[\s\S]*ℹ fail 0/);
 });
 
 test('a missing quote is flagged without a call, and so is a missing command', async () => {

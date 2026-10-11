@@ -1,4 +1,4 @@
-// The evidence checker: for each claim in a PR body's `## Evidence`, checks the quoted result line
+// The evidence checker: for each claim in a PR body's `## Evidence`, checks each quoted result line
 // exactly against the output the Reviewer's own run of that command printed, then asks Jev whether
 // the output supports the criterion. It flags or notes; it never decides. The Reviewer still checks
 // every entry and owns every finding. See README.md beside this file and docs/agents/jev.md.
@@ -14,34 +14,45 @@ import { EVIDENCE_SUPPORTS_CONFIDENT } from './constants.mjs';
 const OPTIONS = {
   contradicts: 'The output shows the criterion is not met: a failure, an error, or a result opposite to what the criterion needs.',
   silent: 'The output neither shows the criterion met nor shows it unmet: it is about something else, or says too little to tell.',
-  supports: 'The output, including the quoted result line, shows the criterion is met.',
+  supports: 'The output, including the quoted result lines, shows the criterion is met.',
 };
 
 const STATE = {
-  task: 'Each question is one claim from the evidence section of a pull request: an acceptance criterion, the command run to prove it, the result line quoted from its output, and the full output that command printed.',
+  task: 'Each question is one claim from the evidence section of a pull request: an acceptance criterion, the command run to prove it, the result lines quoted from its output, and the full output that command printed.',
 };
 
 const ARROW = /\s(?:→|->)\s?/;
 const CODE_SPAN = /(`+)([\s\S]*?[^`])\1(?!`)/g;
 
-// Markdown code spans, any number of backticks, with one padding space stripped from each end.
+// Markdown code spans, any number of backticks, with one padding space stripped from each end,
+// each with where it starts.
 function codeSpans(text) {
-  return [...text.matchAll(CODE_SPAN)].map(([, , inner]) => (/^ .* $/.test(inner) ? inner.slice(1, -1) : inner));
+  return [...text.matchAll(CODE_SPAN)].map(({ index, 2: inner }) => ({
+    at: index,
+    text: /^ .* $/.test(inner) ? inner.slice(1, -1) : inner,
+  }));
+}
+
+// The line with every code span blanked to backticks of the same length, so indices still line up
+// and nothing inside a span (an arrow, a double quote) is read as the claim's own syntax.
+function maskSpans(line) {
+  return line.replace(CODE_SPAN, (span) => '`'.repeat(span.length));
 }
 
 // Where a claim's arrow is, ignoring any inside a code span, which belong to a command or a quote.
 function arrowAt(line) {
-  const masked = line.replace(CODE_SPAN, (span) => '`'.repeat(span.length));
-  const m = ARROW.exec(masked);
+  const m = ARROW.exec(maskSpans(line));
   return m ? { start: m.index, end: m.index + m[0].length } : null;
 }
 
-/** What a claim's result says to look for: a quoted line, an empty output, or nothing usable. */
+/**
+ * What a claim's result says to look for: every quoted line in it (each code span, and each
+ * double-quoted string outside one, in order), an empty output, or nothing usable.
+ */
 function expectation(result) {
-  const [span] = codeSpans(result);
-  if (span !== undefined) return { quote: span };
-  const quoted = /"([^"]+)"/.exec(result);
-  if (quoted) return { quote: quoted[1] };
+  const doubleQuoted = [...maskSpans(result).matchAll(/"([^"]+)"/g)].map((m) => ({ at: m.index, text: m[1] }));
+  const found = [...codeSpans(result), ...doubleQuoted].sort((a, b) => a.at - b.at);
+  if (found.length) return { quotes: found.map((q) => q.text) };
   if (/^\s*prints nothing\b/i.test(result)) return { nothing: true };
   return null;
 }
@@ -53,7 +64,7 @@ function expectation(result) {
  * command. Ids run E1, E2, … over the claims.
  *
  * @returns {Array<{ id: string, criterion: string, command: string | null,
- *   expect: { quote: string } | { nothing: true } | null }>}
+ *   expect: { quotes: string[] } | { nothing: true } | null }>}
  */
 export function parseEvidence(body) {
   const entries = [];
@@ -82,7 +93,7 @@ export function parseEvidence(body) {
     for (const line of lines) {
       const { start, end } = arrowAt(line);
       const left = line.slice(0, start);
-      const [command = left.trim()] = codeSpans(left);
+      const command = codeSpans(left)[0]?.text ?? left.trim();
       claims.push({ criterion, command, expect: expectation(line.slice(end)) });
     }
   }
@@ -95,15 +106,15 @@ function clean(output) {
 }
 
 function matches(expect, output) {
-  return 'nothing' in expect ? output.trim() === '' : output.includes(expect.quote);
+  return 'nothing' in expect ? output.trim() === '' : expect.quotes.every((quote) => output.includes(quote));
 }
 
 function question({ criterion, command, expect }, output) {
-  const quoted = 'nothing' in expect ? '(the claim is that the command prints nothing)' : expect.quote;
+  const quoted = 'nothing' in expect ? '(the claim is that the command prints nothing)' : expect.quotes.join('\n');
   return {
     type: 'choice',
     instructions:
-      `Criterion: ${criterion}\nCommand: ${command}\nQuoted result line: ${quoted}\n` +
+      `Criterion: ${criterion}\nCommand: ${command}\nQuoted result lines:\n${quoted}\n` +
       `Output the command printed:\n${output}\n\nRead the output. Does it show the criterion is met?`,
     criteria: OPTIONS,
   };
