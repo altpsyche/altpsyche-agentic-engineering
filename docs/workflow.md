@@ -63,8 +63,11 @@ has confirmed the spec's testing seams.
 4. Read `AGENTS.md` and the ADRs that touch the area. To find them, run the prune tool on the
    issue first, per [`docs/agents/jev.md`](agents/jev.md).
 5. **Plan**: post the `Plan:` comment before the first commit, so intent is reviewable before the
-   work. A session resuming the ticket reads it first and starts at its first unchecked step. At
-   the end of each session, edit it in place so its checked steps are the ones committed.
+   work. Before posting it, run the Jev readiness tool on the draft,
+   `node scripts/jev/readiness-cli.mjs <n> --plan <file>`, and fix each gap it flags in the plan,
+   or raise a gap in the ticket with the owner ([`jev.md`](agents/jev.md)). A session resuming the
+   ticket reads it first and starts at its first unchecked step. At the end of each session, edit
+   it in place so its checked steps are the ones committed.
 6. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
    proves the work is written before the work. On a bug ticket, which reports something broken
    rather than asking for something new, run `/diagnosing-bugs` first for its reproduction loop.

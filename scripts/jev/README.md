@@ -10,10 +10,12 @@ code works.
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
+| `issue-input.mjs` | How a CLI reads its issue: by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first. `gh(args)` runs `gh` for any other read |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
+| `cli-runner.mjs` | Runs a CLI as a subprocess with a `gh` stub on PATH that logs each call and answers canned output, for tests only. `keepPath` keeps the caller's PATH after the stub, for a CLI that runs git |
 | `client.test.mjs` | The client's tests, against the fake server |
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
-| `triage-cli.mjs` | Its CLI: an issue number (read with `gh issue view`), or the issue on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
+| `triage-cli.mjs` | Its CLI: an issue number or the issue on stdin, read by `issue-input.mjs`; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `prune.mjs` | The doc pruner, `run(input, { client, root })`, and `human(result)`, its CLI's line output. Tests point `root` at a temp git repo |
 | `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
@@ -21,6 +23,8 @@ code works.
 | `verify-findings.mjs` | The finding verifier, `run(findings, { client, root })`, and `human(result)`, its CLI's line output. `root` is where the review checklist is read from |
 | `verify-findings-cli.mjs` | Its CLI: a findings file, or the findings on stdin, as JSON; `--json` for JSON |
 | `verify-findings.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server |
+| `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
+| `duplicates.mjs`, `duplicates-cli.mjs`, `duplicates.test.mjs` | The duplicates tool, `run(input, { client })`, its CLI (an issue number, or a draft on stdin; open issues from `gh issue list`) and its tests, at the same seams as triage |
 
 ## The client
 
@@ -126,6 +130,31 @@ defaults to `F1`, `F2`, … by position, and ids are unique:
 Empty input, input that is not JSON or not an array, or a finding that is not an object, has a
 blank field or repeats an id, is an error line naming the first problem, and nothing is sent. So is
 an answer that is not a probability (`noulOf`): a NaN must never compare its way into a keep.
+## Readiness
+
+Asks one request of Nouls, with the ticket's title and body as state, and the plan beside it when
+`--plan` gives one:
+
+- **criteria**: does the ticket state acceptance criteria a reviewer can check?
+- **seams**: does it name the seams its work is checked at? A pointer to agreed seams counts.
+- **criterion_N**, with a plan only: does a plan step cover criterion N? The criteria are parsed,
+  not asked about: each list item under the first heading naming acceptance criteria, up to the
+  next heading, checkbox stripped, with LF or CRLF line endings. No such section means no
+  coverage questions, and the CLI says so in one line.
+
+Each question is phrased positively, since Jev reads negations literally, and a criterion's text
+is quoted as JSON and named as data, since Jev can be swayed by injected text (ADR-0002). A noul outside
+0 to 1 is an error. A blank plan is an error before anything is asked.
+
+## Duplicates
+
+Asks one Score per open issue, with the issue or draft as state and the open issue's title and
+body, cut to `DUPLICATES_BODY_CHARS`, quoted as JSON and named as data in its question, so batching
+packs them. The levels run
+different (0), maybe (1), same (2), and Jev's float score is banded by the two `DUPLICATES_`
+thresholds. A score off the scale is an error. With no open issues it asks nothing. The CLI reads
+open issues with `gh issue list --state open --limit 1000`, drops the issue being checked, and never
+writes to the tracker.
 
 ## Testing
 

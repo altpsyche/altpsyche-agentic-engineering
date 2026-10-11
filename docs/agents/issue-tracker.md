@@ -184,6 +184,17 @@ number,title,body,labels,author,authorAssociation`, `gh pr comment`, `gh pr edit
 Create a GitHub issue and apply the label the skill names, **plus exactly one `phase:N`**. The
 vendored skills do not know about phase labels, so this line is the only thing that adds them.
 
+**Before creating it, check for duplicates.** Write the draft to a file, title on the first line
+and body after it, and run the Jev duplicates tool on it:
+
+```bash
+node scripts/jev/duplicates-cli.mjs < <draft-file>
+```
+
+Read each open issue it lists and decide: do not file work an open issue already asks for, and
+name an overlapping issue in the one you file. Its bands, and what a skip or error line means, are
+in [`jev.md`](jev.md). When publishing several tickets, check each before creating it.
+
 **A spec is the exception.** `/to-spec` says to publish the spec to the tracker and label it
 `ready-for-agent`. Here it writes `docs/specs/<slug>.md` instead, with no tracker issue and no
 frontier label, so a frontier never hands a spec to an Implementer. The tickets `/to-tickets`
