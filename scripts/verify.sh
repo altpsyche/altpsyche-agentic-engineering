@@ -11,8 +11,10 @@ cd "$(git rev-parse --show-toplevel)"
 if command -v node >/dev/null; then
   node scripts/check-skills.mjs
   node --test scripts/check-skills.test.mjs scripts/install-hooks.test.mjs
+  # Jev tools (ADR-0002), against a fake local server: no key, no network.
+  node --test scripts/jev/*.test.mjs
 else
-  echo "verify: node not found, agent-layer check and hook test skipped (CI runs them)" >&2
+  echo "verify: node not found, agent-layer check and tests skipped (CI runs them)" >&2
 fi
 
 # Secrets: all history reachable in this clone, not just the tree, because a secret deleted in a

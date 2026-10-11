@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Checks the agent layer: skill frontmatter, relative links, pointer integrity, and that nothing in
-// the repo is wired for one harness.
+// Checks the agent layer: skill frontmatter, relative links, pointer integrity, that nothing in the
+// repo is wired for one harness, and that every Jev CLI is in its registry.
 //
 // This is the repo's deterministic check for the class of mistake an agent makes most often when
 // editing skills or AGENTS.md: a renamed folder, a missing description, a pointer to a file that
@@ -374,6 +374,19 @@ export async function checkRepo(root) {
     for (const name of skillNames) {
       if (!readme.includes(`./${name}/`) && !readme.includes(`${name}/SKILL.md`)) {
         err(`.agents/skills/README.md: skill "${name}" is not indexed`);
+      }
+    }
+  }
+
+  // Every Jev CLI must be in the registry, so a step can name the tool and point there (ADR-0002).
+  const jevDir = path.join(root, 'scripts', 'jev');
+  const jevRegistry = path.join(root, 'docs', 'agents', 'jev.md');
+  if (existsSync(jevDir)) {
+    const registry = existsSync(jevRegistry) ? await readFile(jevRegistry, 'utf8') : '';
+    const clis = (await readdir(jevDir)).filter((name) => name.endsWith('-cli.mjs')).sort();
+    for (const cli of clis) {
+      if (!registry.includes(`scripts/jev/${cli}`)) {
+        err(`scripts/jev/${cli}: Jev CLI not listed in docs/agents/jev.md`);
       }
     }
   }

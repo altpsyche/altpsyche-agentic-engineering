@@ -17,6 +17,20 @@ it closes. Those two states put an issue on a frontier, and the vendored `/triag
 phase labels exist, so this line is what adds them. If the phase is unclear, ask the owner rather
 than guess.
 
+## Suggesting a label
+
+Before deciding an issue's role and phase, run the Jev triage tool:
+
+```bash
+node scripts/jev/triage-cli.mjs <number>
+```
+
+Its confident answers become your recommendation to the owner; the rest stay open, and you decide
+them as above. Its bands, and what a skip or error line means, are in [`jev.md`](jev.md). The tool
+never applies a label, and its answer never applies a frontier label either: only the owner puts
+work on a frontier ([`issue-tracker.md`](issue-tracker.md) § Untrusted text), so `/triage` still
+waits for the owner as it always does.
+
 ## Creating the labels
 
 The five role labels are created **before** `/triage` first runs, so it applies existing labels
