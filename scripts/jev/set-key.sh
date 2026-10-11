@@ -71,4 +71,5 @@ mv "$tmp" "$file"
 trap - EXIT
 
 echo "Saved TYPESAFE_API_KEY to $file (mode 600)."
-echo "Check it with one live call: echo hello | node $here/injection-cli.mjs"
+# %q quotes the path, so the command pastes as is from a clone whose path has a space in it.
+printf 'Check it with one live call: echo hello | node %q\n' "$here/injection-cli.mjs"

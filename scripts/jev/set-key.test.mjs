@@ -4,7 +4,7 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -97,14 +97,35 @@ test('spaces and tabs around a pasted key are trimmed; inside it they are kept',
   });
 });
 
+// The path the hint's command names, as bash would read it: `printf %q` may escape characters.
+const hintPath = (stdout) => {
+  const hint = /\| node (.+)$/m.exec(stdout);
+  assert.ok(hint, stdout);
+  return spawnSync('bash', ['-c', `printf %s ${hint[1]}`], { encoding: 'utf8' }).stdout;
+};
+
 test('the check hint names injection-cli.mjs by an absolute path, so it runs from anywhere', async () => {
   await withRepo(async ({ main }) => {
-    const result = setKey(main, 'k\n');
-    const hint = /\| node (\S+)$/m.exec(result.stdout);
-    assert.ok(hint, result.stdout);
-    assert.ok(path.isAbsolute(hint[1]), hint[1]);
-    assert.equal(hint[1], path.join(path.dirname(SCRIPT), 'injection-cli.mjs'));
+    const shown = hintPath(setKey(main, 'k\n').stdout);
+    assert.ok(path.isAbsolute(shown), shown);
+    assert.equal(shown, path.join(path.dirname(SCRIPT), 'injection-cli.mjs'));
   });
+});
+
+test('the check hint still names the CLI when the scripts path has a space in it', async () => {
+  const spaced = await mkdtemp(path.join(tmpdir(), 'jev sp ace-'));
+  try {
+    for (const file of ['set-key.sh', 'env-file.mjs']) {
+      await copyFile(path.join(path.dirname(SCRIPT), file), path.join(spaced, file));
+    }
+    await withRepo(async ({ main }) => {
+      const result = spawnSync('bash', [path.join(spaced, 'set-key.sh')], { cwd: main, env: ENV, input: 'k\n', encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(hintPath(result.stdout), path.join(spaced, 'injection-cli.mjs'));
+    });
+  } finally {
+    await rm(spaced, { recursive: true, force: true });
+  }
 });
 
 // --offer, as bootstrap.sh calls it: ask first, only when no key is set, and always exit 0.
