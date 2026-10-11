@@ -22,7 +22,7 @@ const TEST_NAME = [/\b(?:test|it)\s*\(\s*(['"`])(.+?)\1/, /^\s*def\s+(test_\w+)/
 export function parseCriteria(body) {
   const criteria = [];
   let inSection = false;
-  for (const line of String(body ?? '').split('\n')) {
+  for (const line of String(body ?? '').split(/\r?\n/)) {
     if (/^#{1,6}\s/.test(line)) {
       inSection = /^#{1,6}\s+acceptance criteria\s*$/i.test(line.trim());
       continue;
@@ -44,7 +44,7 @@ export function parseDiff(diff) {
   const hunks = [];
   const tests = [];
   let file = null;
-  for (const line of String(diff ?? '').split('\n')) {
+  for (const line of String(diff ?? '').split(/\r?\n/)) {
     const header = /^diff --git a\/.* b\/(.*)$/.exec(line);
     if (header) {
       file = header[1];

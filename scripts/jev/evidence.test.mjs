@@ -114,6 +114,10 @@ test('a claim with several quotes is flagged without a call when any one is not 
   assert.match(client.calls[0].questions.E1.instructions, /ℹ pass 3[\s\S]*ℹ fail 0/);
 });
 
+test('a body with CRLF line ends parses as it does with LF', () => {
+  assert.deepEqual(parseEvidence(BODY.replaceAll('\n', '\r\n')), parseEvidence(BODY));
+});
+
 test('a missing quote is flagged without a call, and so is a missing command', async () => {
   const client = fakeClient(choice('supports', 0.99));
   const body = '## Evidence\n\n- **Unquoted**\n  `node render.mjs` → it looks right\n- **No claim at all**\n';

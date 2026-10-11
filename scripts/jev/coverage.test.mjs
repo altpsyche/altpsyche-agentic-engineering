@@ -98,6 +98,12 @@ test('parses the diff into hunks and the names of the tests it adds', () => {
   ]);
 });
 
+test('an issue and a diff with CRLF line ends parse as they do with LF', () => {
+  const crlf = (text) => text.replaceAll('\n', '\r\n');
+  assert.deepEqual(parseCriteria(crlf(ISSUE)), parseCriteria(ISSUE));
+  assert.deepEqual(parseDiff(crlf(DIFF)), parseDiff(DIFF));
+});
+
 test('asks per criterion a Choice over the hunks and tests, none first, and a Noul, in one request', async () => {
   const client = answering('h1', 0.9);
   const result = await run({ issue: ISSUE, diff: DIFF }, { client });

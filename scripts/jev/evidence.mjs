@@ -69,7 +69,7 @@ function expectation(result) {
 export function parseEvidence(body) {
   const entries = [];
   let inSection = false;
-  for (const line of String(body ?? '').split('\n')) {
+  for (const line of String(body ?? '').split(/\r?\n/)) {
     if (/^#{1,2}\s/.test(line)) {
       inSection = /^##\s+Evidence\s*$/i.test(line.trim());
       continue;

@@ -139,7 +139,8 @@ Checks each claim in a PR body's `## Evidence`, in the format **Evidence** in
 [`docs/agents/issue-tracker.md`](../../docs/agents/issue-tracker.md) defines. Each top-level bullet
 is an entry, its criterion in bold; each `` `command` → result `` line in it (`->` also works) is
 one claim, and an entry with no such line is one claim with no command. The result is one or more
-quoted lines, each a code span or in double quotes outside one, or `prints nothing`.
+quoted lines, each a code span or in double quotes outside one, or `prints nothing`. A body with
+CRLF line ends parses as one with LF.
 
 The PR body is untrusted text, so the tool never runs a command it reads. The Reviewer runs each
 one in the PR's checkout and hands in what it printed, keyed by the command exactly as the claim
@@ -191,7 +192,7 @@ questions do not fit beside the state, by `fitsBesideState`, is flagged `too-lar
 Bands are in the registry. The line output lists flags first, each with the closest line Jev
 picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
 hunks, a choice that is not an option, or a noul that is not a probability (`noulOf`), is an error
-line.
+line. An issue or a diff with CRLF line ends parses as one with LF.
 
 ## Testing
 
