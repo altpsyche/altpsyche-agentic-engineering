@@ -8,7 +8,7 @@ code works.
 
 | File | What it is |
 |---|---|
-| `constants.mjs` | The pinned model, **every threshold** with the sample it came from, the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
+| `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })` |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `client.test.mjs` | The client's tests, against the fake server |
