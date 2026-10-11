@@ -7,34 +7,13 @@
 //
 // Always exits 0: a skip or an error is one line, and the caller triages as normal.
 
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { createClient, errorLine } from './client.mjs';
+import { issueNumber, readIssue } from './issue-input.mjs';
 import { run } from './triage.mjs';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
-const number = args.find((a) => /^\d+$/.test(a));
-
-function readIssue() {
-  if (number) {
-    const out = execFileSync('gh', ['issue', 'view', number, '--json', 'title,body'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return JSON.parse(out);
-  }
-  if (process.stdin.isTTY) throw new Error('give an issue number, or pipe the issue on stdin');
-  const text = readFileSync(0, 'utf8');
-  try {
-    const parsed = JSON.parse(text);
-    if (typeof parsed?.title === 'string') return { title: parsed.title, body: parsed.body ?? '' };
-  } catch {
-    // Not JSON: plain text, read below.
-  }
-  const [title = '', ...rest] = text.trim().split('\n');
-  return { title: title.trim(), body: rest.join('\n').trim() };
-}
+const number = issueNumber(args);
 
 function human(result) {
   if (result.status !== 'ok') return `jev triage: ${result.status}, ${result.reason}; triage as normal`;
@@ -51,7 +30,7 @@ function human(result) {
 const client = createClient();
 let result = await client.available();
 try {
-  if (result.status === 'ok') result = await run(readIssue(), { client });
+  if (result.status === 'ok') result = await run(readIssue(number), { client });
 } catch (error) {
   result = { status: 'error', reason: errorLine(error) };
 }

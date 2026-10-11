@@ -3,16 +3,16 @@
 // tests run it as a subprocess, as an agent would, against a fake Jev server on localhost and with
 // a `gh` stub first on PATH. Nothing reaches Jev or needs a key.
 
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
+import { runCli as runCliAs } from './cli-runner.mjs';
 import { human, run } from './prune.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -283,41 +283,13 @@ test('through the real client, units beyond one request go in several, and their
     },
   ));
 
-// The CLI, run as an agent runs it: a `gh` stub first on PATH that logs every call and answers
-// `pr view` with $GH_PR and `issue view` with $GH_ISSUE, failing when unset. The CLI reads this
+// The CLI, run as an agent runs it, through cli-runner.mjs: a `gh` stub first on PATH, with the
+// caller's PATH after it, since the CLI lists this repo's tracked docs with git. The CLI reads this
 // repo's docs, so these tests assert only what does not depend on their content.
 const CLI = path.join(HERE, 'prune-cli.mjs');
 
-async function runCli(args, { env = {}, stdin = '' } = {}) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'jev-cli-'));
-  const log = path.join(dir, 'gh.log');
-  await writeFile(
-    path.join(dir, 'gh'),
-    [
-      '#!/bin/sh',
-      `echo "$@" >> "${log}"`,
-      'case "$1" in',
-      '  pr) [ -n "$GH_PR" ] && { printf "%s" "$GH_PR"; exit 0; } ;;',
-      '  issue) [ -n "$GH_ISSUE" ] && { printf "%s" "$GH_ISSUE"; exit 0; } ;;',
-      'esac',
-      'echo "no such item" >&2',
-      'exit 1',
-      '',
-    ].join('\n'),
-  );
-  await chmod(path.join(dir, 'gh'), 0o755);
-  try {
-    // git stays reachable after the stub: the CLI lists this repo's tracked docs with it.
-    const child = spawn(process.execPath, [CLI, ...args], { env: { ...GIT_ENV, PATH: `${dir}:${process.env.PATH}`, ...env } });
-    let stdout = '';
-    child.stdout.on('data', (chunk) => (stdout += chunk));
-    child.stdin.end(stdin);
-    const status = await new Promise((resolve) => child.on('close', resolve));
-    const ghCalls = existsSync(log) ? (await readFile(log, 'utf8')).trim().split('\n') : [];
-    return { status, stdout, ghCalls };
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
+function runCli(args, { env = {}, stdin = '', gh = {} } = {}) {
+  return runCliAs(CLI, args, { env: { ...GIT_ENV, ...env }, stdin, gh, keepPath: true });
 }
 
 test('the CLI with no key prints one skip line, exits 0 and never calls gh', async () => {
@@ -343,8 +315,8 @@ test('the CLI reads a PR with its changed files and prints the read list, AGENTS
   const jev = await fakeJev(nouls(0.9));
   try {
     const pr = { title: 'Outbox retries', body: 'Retry writes.', files: [{ path: 'src/sync/outbox.js', additions: 3 }] };
-    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url, GH_PR: JSON.stringify(pr) };
-    const { status, stdout, ghCalls } = await runCli(['12'], { env });
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    const { status, stdout, ghCalls } = await runCli(['12'], { env, gh: { 'pr view': JSON.stringify(pr) } });
     assert.equal(status, 0);
     assert.deepEqual(ghCalls, ['pr view 12 --json title,body,files']);
     for (const request of jev.requests) {
@@ -368,8 +340,8 @@ test('the CLI falls back to the issue when the number is not a PR, and prints JS
   const jev = await fakeJev(nouls(0));
   try {
     const issue = { title: 'Doc pruner', body: 'Prune the docs.' };
-    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url, GH_ISSUE: JSON.stringify(issue) };
-    const { status, stdout, ghCalls } = await runCli(['8', '--json'], { env });
+    const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
+    const { status, stdout, ghCalls } = await runCli(['8', '--json'], { env, gh: { 'issue view': JSON.stringify(issue) } });
     assert.equal(status, 0);
     assert.deepEqual(ghCalls, ['pr view 8 --json title,body,files', 'issue view 8 --json title,body']);
     assert.deepEqual(jev.requests[0].body.state, { work: { title: 'Doc pruner', body: 'Prune the docs.', changed_files: [] } });
