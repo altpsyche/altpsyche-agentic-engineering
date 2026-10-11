@@ -30,6 +30,7 @@ tunable defaults. Mirror them in the review checklist, `docs/workflow.md` § The
 | Issues, PR state | **GitHub issues** — see [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md) |
 | Local scratch, never authoritative | `.scratch/` (gitignored) |
 | Skills | [`.agents/skills/README.md`](.agents/skills/README.md) |
+| Skill evals | [`evals/README.md`](evals/README.md); when a PR runs them: `docs/workflow.md` § 2 |
 | Jev tools, optional (ADR-0002) | [`docs/agents/jev.md`](docs/agents/jev.md): each tool, the step that calls it, its bands |
 
 **Precedence when sources disagree:** ADR → spec → `docs/idea.md` → co-located `.md` → this file.

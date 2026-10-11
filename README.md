@@ -19,6 +19,7 @@ was built and used.
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | The one context file every agent loads first, in any harness. There is no per-harness copy |
 | [`.agents/skills/`](.agents/skills/README.md) | [mattpocock/skills](https://github.com/mattpocock/skills), copied in at a pinned commit, plus the local `/work` session router |
+| [`evals/`](evals/README.md) | Eval cases for the core skills: any agent runs one in a throwaway repo, and another session grades it |
 | [`docs/workflow.md`](docs/workflow.md) | Roles, the loop, the strict review verdict, the review checklist, where state lives |
 | [`docs/agents/`](docs/agents/) | Tracker commands (claiming an item, confirming the claim, finding PRs to work on), triage labels, how agents use the domain docs |
 | [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way |

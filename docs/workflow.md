@@ -76,13 +76,19 @@ has confirmed the spec's testing seams.
    - Commit to the branch; one concern per commit.
 7. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
    it is not the review (§ Roles).
-8. **Open a PR** whose body, written by `/pr` with its Evidence per **Evidence**, says
+8. Evals, so a skill change is proven like code: when the diff touches `.agents/skills/<name>/`,
+   run every case in `evals/<name>/`; when it touches `AGENTS.md`, every case in `evals/`. Run
+   each, and have another session grade it, per [`evals/README.md`](../evals/README.md). A skill
+   with no folder in `evals/` has no case to run. A grade holds for the commit it ran on: a later
+   commit to those paths, in a fix round too, needs a fresh run.
+9. **Open a PR** whose body, written by `/pr` with its Evidence per **Evidence**, says
    `Closes #<n>`, labelled `status:in-review`. Without that label no Reviewer finds it.
 
 **Done when:** the ticket's own acceptance criteria pass, each with an entry in the PR's
 `## Evidence` per **Evidence** in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md),
-`scripts/verify.sh` is green, every source you made stale is corrected in the same commit, and a PR
-whose body says `Closes #<n>` is open and labelled `status:in-review`. On a red baseline, done is
+`scripts/verify.sh` is green, every eval case step 8 requires has passed with its grade in that
+`## Evidence`, every source you made stale is corrected in the same commit, and a PR whose body
+says `Closes #<n>` is open and labelled `status:in-review`. On a red baseline, done is
 step 3's release instead.
 
 ### 3. Review (Reviewer) — `/review-pr`
@@ -171,6 +177,8 @@ Applied in full on every review. Each line is a hard rule, not a judgement call.
 - Every acceptance criterion in the spec is demonstrably met.
 - Every acceptance criterion has an entry in the PR's `## Evidence`, per **Evidence** in
   [`docs/agents/issue-tracker.md`](agents/issue-tracker.md). A criterion without one is a finding.
+- Every eval case § 2, step 8 requires has a passing grade in the PR's `## Evidence`, run on the
+  last commit that touched its paths. A missing, failing or stale grade is a finding.
 - A behaviour change has a check that fails without it. Name the check.
 - No check asserts an implementation detail, and no expected value is recomputed the way the work
   computes it.

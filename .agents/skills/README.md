@@ -11,7 +11,9 @@ gets the same base and takes the same path. See
 [ADR-0001](../../docs/adr/0001-agentic-development-workflow.md).
 
 Who runs which skill is defined in [`docs/workflow.md`](../../docs/workflow.md). Repo config
-the skills read lives in [`docs/agents/`](../../docs/agents/).
+the skills read lives in [`docs/agents/`](../../docs/agents/). Eval cases for the loop's core
+skills live in [`evals/`](../../evals/README.md), outside these folders, so vendored skills stay
+byte-identical.
 
 ## Included
 
