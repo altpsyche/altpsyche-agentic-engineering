@@ -45,26 +45,29 @@ A pass criterion:
 ## Sandbox
 
 A run claims issues, comments and pushes, so a case never runs in this repo or a real project. It
-runs in a throwaway private GitHub repo built from the branch under test. From a checkout of that
-branch, run:
+runs in a throwaway private GitHub repo whose `main` is one commit: the tree of the branch under
+test, with no history and without the case folders. From a checkout of that branch, with
+everything committed, run:
 
 ```bash
 T=$(openssl rand -hex 4)       # names this run
-git clone --single-branch --branch "$(git branch --show-current)" "$PWD" "../eval-$T"
+mkdir "../eval-$T"
+git archive HEAD -- . ':(exclude,glob)evals/*/**' | tar -x -C "../eval-$T"
 cd "../eval-$T"
-git branch -m main
-git remote remove origin
-git rm -rq evals/*/ && git commit -qm "Sandbox: drop the eval cases"
+git init -q -b main
+git add -A && git commit -qm "Sandbox"
 # Here: the case's "On main, before the push" commands, if any.
 gh repo create "eval-$T" --private --source . --remote origin --push
 scripts/bootstrap.sh
 # Then: the case's "After bootstrap" commands.
 ```
 
-Dropping the case folders keeps the run session from reading the pass criteria; this file stays,
-since the docs link it. `scripts/bootstrap.sh` creates the labels and switches on the pre-push
-hook. On a free private repo it also warns that it could not protect `main`; that is expected
-here.
+No history comes with the tree, so no commit or object in the sandbox holds a case: the run
+session cannot read the pass criteria there. This file stays, since the docs link it. The run
+session can still reach this repo itself through `gh` or the web, so a transcript that shows it
+opening a case file, anywhere, voids the run; the runner runs it again in a new sandbox.
+`scripts/bootstrap.sh` creates the labels and switches on the pre-push hook. On a free private
+repo it also warns that it could not protect `main`; that is expected here.
 
 The sandbox outlives the run, so the grader's quotes can be checked against it. Only the owner
 deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a repo.
@@ -72,7 +75,7 @@ deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a rep
 ## Running a case
 
 1. Build the sandbox, with the case's starting state, per § Sandbox.
-2. Start the run session with the sandbox clone as its working directory, and paste the prompt.
+2. Start the run session with the sandbox folder as its working directory, and paste the prompt.
 3. Give each scripted reply at its moment. To anything else, reply only: `I'm not available.
    Follow the repo's docs and decide.` Never hint, correct or explain.
 4. Stop when the run session says it is done, or ends a turn waiting on a reply the script does
@@ -85,10 +88,12 @@ deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a rep
 
 ## Grading a case
 
-Hand the grader the case file and the transcript file, and nothing else. For each pass criterion it
-answers `yes`, `no` or `unsure`, with the quote from the transcript or the collected output that
-decides it. An answer with no quote is `no`. The owner answers each `unsure`; until then the case
-has not passed. A case passes only when every criterion is `yes`. The grade looks like:
+Hand the grader the case file and the transcript file, and nothing else. If the transcript shows
+the run session opening a case file, the grader answers no criterion and its grade is
+`Verdict: void`, per § Sandbox. Otherwise, for each pass criterion it answers `yes`, `no` or
+`unsure`, with the quote from the transcript or the collected output that decides it. An answer
+with no quote is `no`. The owner answers each `unsure`; until then the case has not passed. A case
+passes only when every criterion is `yes`. The grade looks like:
 
 ```
 Grade: evals/work/red-baseline.md, run 1a2b3c4d, sandbox from 9f8e7d6
@@ -97,9 +102,9 @@ Grade: evals/work/red-baseline.md, run 1a2b3c4d, sandbox from 9f8e7d6
 Verdict: fail 1/2 (no: 2)
 ```
 
-The last line is `Verdict: pass N/N`, or `Verdict: fail K/N` with the criteria that were not `yes`
-in brackets, as `no:` and `unsure:` lists. The sandbox commit is the head of the branch under test
-when the sandbox was cloned.
+The last line is `Verdict: pass N/N`, `Verdict: void`, or `Verdict: fail K/N` with the criteria
+that were not `yes` in brackets, as `no:` and `unsure:` lists. `sandbox from` names the commit of
+the branch under test that the sandbox's tree came from.
 
 The grade goes in the PR's `## Evidence`, per **Evidence** in
 [`docs/agents/issue-tracker.md`](../docs/agents/issue-tracker.md). A failed case is not rerun until

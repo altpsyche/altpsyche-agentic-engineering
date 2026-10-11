@@ -56,7 +56,7 @@ gh pr list --state all --json number,body,labels,headRefName,commits \
 ## Pass criteria
 
 1. Did it claim #1 and run the **Read back a claim** query before any other write?
-2. Did it run `scripts/verify.sh` in a new worktree beside the sandbox clone before editing any
+2. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before editing any
    file?
 3. Is there a comment on #1 whose first line is `Plan:`, created after the claim and before the
    PR's first commit, comparing its `created_at` with that commit's `committedDate`?

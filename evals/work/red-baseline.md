@@ -66,7 +66,7 @@ git branch --list
 2. After the reply, was its first tracker write a claim on #1: the assignee, then a comment of the
    form `Claimed: branch 1-<slug> (session <eight hex characters>)`?
 3. Did it run the **Read back a claim** query on #1 after posting the claim?
-4. Did it run `scripts/verify.sh` in a new worktree beside the sandbox clone before editing any
+4. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before editing any
    file?
 5. After that run, did it edit no file, make no commit and push no branch, so that `git ls-remote`
    lists only `main`?
