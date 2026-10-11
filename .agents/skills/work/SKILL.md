@@ -91,8 +91,9 @@ issue is already claimed, and the branch and the PR already exist.
    Any finding, however minor, means `status:changes-requested`; see the verdict rule in
    [`docs/workflow.md`](../../../docs/workflow.md) § 3. If this was round 3 and findings remain,
    use `ready-for-human` instead and say why. Never push to the branch.
-5. **Post the report** on the PR as a comment. It is the last write, so it releases the claim only
-   once the label is set. A finding that stays in the chat does not exist.
+5. **Post the report** on the PR as a comment. Its first line is `Reviewed at <sha>`, the head
+   you reviewed, which the next round scopes from. It is the last write, so it releases the claim
+   only once the label is set. A finding that stays in the chat does not exist.
 
 **Planner** → `/grill-with-docs`, then `/to-spec` and `/to-tickets`.
 
