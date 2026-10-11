@@ -133,8 +133,13 @@ The owner merges. Then `/retro` looks back over the session and proposes changes
 rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
 standard where it was a judgement call.
 
-**Done when:** the issue is closed with a comment linking the PR, and every accepted retro action has
-either landed or become its own issue.
+**Unblocking.** When an issue closes, the session closing it removes `status:blocked` from every
+issue whose native blockers are now all closed, per **Unblock** in
+[`docs/agents/issue-tracker.md`](agents/issue-tracker.md). When a merge closes the issue, that is
+whoever merged it: the owner, or the session the owner merged through.
+
+**Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
+`status:blocked`, and every accepted retro action has either landed or become its own issue.
 
 ## Review checklist
 

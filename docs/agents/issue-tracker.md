@@ -21,6 +21,12 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Unblock**, straight after an issue closes, per [`docs/workflow.md`](../workflow.md) § 5. List
+  the open issues it was blocking:
+  `gh api 'repos/{owner}/{repo}/issues/<closed>/dependencies/blocking' --jq '.[] | select(.state == "open") | .number'`.
+  For each, check its native blockers:
+  `gh api 'repos/{owner}/{repo}/issues/<n>/dependencies/blocked_by' --jq 'all(.[]; .state == "closed")'`.
+  Where that prints `true`, run `gh issue edit <n> --remove-label status:blocked`.
 - **Claim**: `gh issue edit <number> --add-assignee @me` then
   `gh issue comment <number> --body "Claimed: branch <number>-<slug> (session <token>)"`, then
   **Read back a claim**. Every session shares the owner's account, so the comment is the claim and
