@@ -3,7 +3,7 @@
 # agent ever invents a near-duplicate. Idempotent (`--force` updates existing labels), so rerun it
 # after adding a phase to docs/idea.md § Roadmap.
 #
-#   pnpm bootstrap            # or: bash scripts/bootstrap.sh
+#   scripts/bootstrap.sh
 #
 # Needs `gh`, authenticated, run inside the clone (gh infers the repo from `git remote -v`).
 set -euo pipefail

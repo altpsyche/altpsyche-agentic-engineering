@@ -14,21 +14,13 @@ permissions:
   contents: read
 
 jobs:
-  # Always runs. Checks the agent layer (skill frontmatter, links, AGENTS.md budget) and the script
-  # tests. The checker runs before the install, which proves it stays dependency-free; the tests run
-  # after it, because the Jev tools' tests import their modules. No step calls Jev: CI has no key.
-  #
-  # Phase 0 adds one job per stack (format, lint, test, typecheck, build). Update AGENTS.md
-  # § Verifying your work in the same commit.
-  agent-layer:
+  # Runs scripts/verify.sh: the agent-layer check (plain Node, no packages, no install) plus whatever
+  # project checks Phase 0 adds to it. Update AGENTS.md § Verifying your work in the same commit.
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-      - run: node scripts/check-skills.mjs
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run scripts:test
+      - run: scripts/verify.sh

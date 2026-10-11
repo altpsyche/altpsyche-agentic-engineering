@@ -1,16 +1,6 @@
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build output
-dist/
-build/
-*.tsbuildinfo
-
 # Local scratch: draft specs and ticket breakdowns, never authoritative.
 # See docs/agents/issue-tracker.md.
 .scratch/
-.vendor-tmp/
 
 # Secrets and local config. Nothing here should ever be committed.
 .env
@@ -19,17 +9,6 @@ build/
 *.pem
 *.key
 *.p12
-*.keystore
-*.jks
-
-# Logs and databases
-*.log
-logs/
-*.db
-*.db-wal
-*.db-shm
-*.sqlite
-*.sqlite3
 
 # Editors and OS
 .DS_Store
@@ -38,3 +17,5 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Phase 0: add the project's build output, caches and data files here.

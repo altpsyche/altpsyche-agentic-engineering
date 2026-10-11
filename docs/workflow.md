@@ -1,6 +1,6 @@
 # Development & Review Workflow
 
-How work moves from idea to merged code. Skills live in
+How work moves from idea to merged change. Skills live in
 [`.agents/skills/`](../.agents/skills/README.md); the human is the index that reaches for them.
 
 Session start is [`/work`](../.agents/skills/work/SKILL.md): it picks the role, picks the next item
@@ -11,7 +11,7 @@ from the tracker, and confirms both before anything is written.
 | Role | Owns | Never does |
 |---|---|---|
 | **Owner** (human) | Priorities, ADRs, merging, anything on the `ready-for-human` list | Waits on an agent for a decision it could make |
-| **Planner** | Sharpening the idea, the spec, the ticket breakdown | Writes implementation code |
+| **Planner** | Sharpening the idea, the spec, the ticket breakdown | Does the implementation work |
 | **Implementer** | One ticket, test-first, on a branch | Touches an unrelated file, or merges |
 | **Reviewer** | Two-axis review of the diff since a fixed point | Edits the branch under review |
 
@@ -49,17 +49,17 @@ has confirmed the spec's testing seams.
 Claim the ticket as the first write, then read the claim back, so two sessions never collide: the
 earliest open claim wins and the other session backs off, per **Read back a claim** in
 [`docs/agents/issue-tracker.md`](agents/issue-tracker.md). Then branch as `<n>-<slug>`; nothing is
-committed to `main`. Read the ADRs that touch the area: run `node scripts/jev/prune-cli.mjs <n>`
-first and read the docs it lists, `AGENTS.md` first
-([`scripts/jev/README.md`](../scripts/jev/README.md)). If it prints a skip or error line, find them
-as normal. Then drive `/tdd` at the seams agreed during planning.
+committed to `main`. Read `AGENTS.md` and the ADRs that touch the area. Then drive `/tdd` at the
+seams agreed during planning: the check that proves the work is written before the work.
 
-- Red before green. One slice at a time: one test, one minimal implementation, repeat.
-- `pnpm verify` runs regularly, and once more at the end.
-- Run the app for anything user-visible. A green suite is not evidence a window rendered.
+- Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
+  code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
+- `scripts/verify.sh` runs regularly, and once more at the end.
+- Look at the real result for anything a person will see or use. A green check is not evidence it
+  works in front of them.
 - Commit to the branch; one concern per commit.
 
-**Done when:** the ticket's own acceptance criteria pass, `pnpm verify` is green, every source you
+**Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
 made stale is corrected in the same commit, and a PR whose body says `Closes #<n>` is open and labelled
 `status:in-review`.
 
@@ -70,22 +70,13 @@ an Implementer claims a ticket, and posts the report last, after setting the ver
 releases the claim. Two axes, run as parallel sub-agents and reported side by side:
 
 - **Standards** — does the diff follow `AGENTS.md`, `docs/workflow.md`'s checklist below, the ADRs that
-  touch it, and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run
-  `node scripts/jev/prune-cli.mjs <PR number>` first and read the docs it lists; on a skip or error
-  line, find them as normal. The checklist is still applied in full.
+  touch it, and `CODING_STANDARDS.md` once `/retro` has created it? The checklist is applied in
+  full.
 - **Spec** — does it faithfully implement the originating spec, no more and no less?
 
 The reviewer sets the verdict and posts the report as a PR comment; it does not push to the branch.
 Every finding names its source and quotes the line it is about. The Implementer's own `/review-pr` run
 at the end of `/implement` is a self-check, not this step.
-
-After drafting the report and before setting the verdict, the Reviewer runs the finding verifier
-on the draft findings, as [`scripts/jev/README.md`](../scripts/jev/README.md) § Finding verifier
-describes. A finding it flags gets one re-read of its cited source, after which the Reviewer keeps
-or drops it; the tool never drops a finding, and a constitution-level finding is never dropped on
-a flag alone. An error line naming a finding means the findings file is malformed, so the Reviewer
-fixes it and runs once more; on any other error or skip line, the Reviewer continues as normal.
-Every finding still in the report counts towards the verdict below.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
@@ -110,7 +101,7 @@ disputed with a reason and a source. That comment is the last write, and it rele
 ### 5. Merge and learn (Owner)
 
 The owner merges. Then `/retro` looks back over the session and proposes changes to the **environment**
-rather than the code: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
+rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
 standard where it was a judgement call.
 
 **Done when:** the issue is closed with a comment linking the PR, and every accepted retro action has
@@ -123,32 +114,32 @@ Applied in full on every review. Each line is a hard rule, not a judgement call.
 **Correctness**
 
 - Every acceptance criterion in the spec is demonstrably met.
-- A behaviour change has a test that fails without it. Name the test.
-- No test asserts an implementation detail, and no expected value is recomputed the way the code does.
+- A behaviour change has a check that fails without it. Name the check.
+- No check asserts an implementation detail, and no expected value is recomputed the way the work
+  computes it.
 
 **The constitution** — a violation here blocks the merge outright
 
-<!-- TEMPLATE: replace with this project's constitution from AGENTS.md. scripts/jev/verify.mjs reads
-these bullets on every run and never flags a finding that quotes one. -->
+<!-- TEMPLATE: replace with this project's constitution from AGENTS.md. -->
 
-- No telemetry, analytics, ads, or monetisation of any kind, including build-flagged.
-- No new outbound network destination. Adding one requires an ADR.
-- No secret, key or credential is committed or logged; it lives in the owner's environment only.
+- No secret, credential, or personal or confidential data is committed, logged, or shared beyond
+  where the owner put it.
+- <The project's other non-negotiables.>
 
-**Stack**
+**Domain**
 
-<!-- TEMPLATE: add the stack's hard rules here as Phase 0 lands. -->
+<!-- TEMPLATE: the field's hard rules, added as Phase 0 lands: a build or lint for code, a style
+guide for writing, a protocol or citation standard for research, a clinical or regulatory rule for
+care work. -->
 
-- `pnpm verify` is green, including every check Phase 0 added to it.
-- Migrations are additive and reversible; no destructive migration without an ADR.
-- Writes that can be retried carry an idempotency key.
-- New UI is keyboard-navigable and readable by a screen reader.
+- `scripts/verify.sh` is green, including every check Phase 0 added to it.
+- Nothing destructive or irreversible without an ADR.
 
 **Craft**
 
 - The co-located `.md` is updated in the same commit.
 - One concern per commit.
-- No `Manager` suffix; no module without an ADR.
+- No new system or major part without an ADR.
 - `AGENTS.md` is still under 200 lines and still true.
 
 ## Where state lives

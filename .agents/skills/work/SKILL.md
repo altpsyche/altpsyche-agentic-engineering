@@ -54,9 +54,7 @@ return to § 2.
    `Claimed: branch <n>-<slug> (session <token>)`. Every session runs as the owner's account, so
    the token, not the assignee, is what tells two sessions apart.
 2. **Branch** from a freshly fetched `origin/main` as `<n>-<slug>`. Never commit to `main`.
-3. **Read the docs that touch the work**: run `node scripts/jev/prune-cli.mjs <n>` and read the
-   docs it lists, `AGENTS.md` first. If it prints a skip or error line, read the ADRs that touch
-   the area as normal. Then `/implement`, driving `/tdd` at the seams agreed up front. Its closing `/review-pr` is a
+3. **Read the docs that touch the work**: `AGENTS.md`, then the ADRs that touch the area. Then `/implement`, driving `/tdd` at the seams agreed up front. Its closing `/review-pr` is a
    self-check: fix what it finds, but it is not the review. A review by the author is not a review.
 4. **Open the PR**: push, then create it with a body written by `/pr` that contains `Closes #<n>`,
    and label it `status:in-review`. Without that label no Reviewer will find it.
@@ -78,22 +76,13 @@ issue is already claimed, and the branch and the PR already exist.
    gives an empty diff, and a stale local `main` adds already-merged commits to it.
 3. `/review-pr` with `origin/main` as the fixed point. Its standards sources here are `AGENTS.md`, the
    review checklist in [`docs/workflow.md`](../../../docs/workflow.md), the ADRs that touch the
-   diff, and `CODING_STANDARDS.md` if `/retro` has created it. To find the ADRs, first run
-   `node scripts/jev/prune-cli.mjs <PR number>` and read the docs it lists; on a skip or error
-   line, find them as normal. The originating spec is the issue
+   diff, and `CODING_STANDARDS.md` if `/retro` has created it. The originating spec is the issue
    in `Closes #<n>`. When the PR closes no issue, review the Spec axis against the PR body, say so
    in the report, and flag the missing issue as a finding; do not stop to ask.
-4. **Verify the findings**, once the report is drafted and if it has any: write them to a file
-   under `.scratch/` in the input format of [`scripts/jev/README.md`](../../../scripts/jev/README.md)
-   § Finding verifier, then run `pnpm run --silent jev:verify <file>`. On a `flag` line, re-read
-   that finding's cited source once, then keep or drop it; the tool never drops a finding. Never
-   drop a constitution-level finding on a flag alone. An error line that names a finding means
-   the file is malformed: fix that finding and run once more. On any other error or skip line,
-   continue as normal.
-5. **Set the state**: swap `status:in-review` for `status:approved` only when no finding is open.
+4. **Set the state**: swap `status:in-review` for `status:approved` only when no finding is open.
    Any finding, however minor, means `status:changes-requested`; see the verdict rule in
    [`docs/workflow.md`](../../../docs/workflow.md) § 3. Never push to the branch.
-6. **Post the report** on the PR as a comment. It is the last write, so it releases the claim only
+5. **Post the report** on the PR as a comment. It is the last write, so it releases the claim only
    once the label is set. A finding that stays in the chat does not exist.
 
 **Planner** → `/grill-with-docs`, then `/to-spec` and `/to-tickets`.

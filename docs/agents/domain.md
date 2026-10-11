@@ -13,13 +13,13 @@ How the engineering skills consume this project's domain documentation. This rep
   first time a term is resolved. If it does not exist, **proceed silently**: do not flag its absence
   and do not create it upfront.
 - **[`docs/adr/`](../adr/)** — read the ADRs that touch the area you are about to work in.
-- **The co-located `.md`** beside the code you touch, which describes how that module works.
+- **The co-located `.md`** beside the work you touch, which describes how that part works.
 - **[`docs/specs/`](../specs/)** — what was agreed to be built, and its testing seams.
 
 ## Use the glossary's vocabulary
 
 When your output names a domain concept (an issue title, a test name, a type name), use the term as
-`docs/idea.md` § Core Concepts and the code define it. Do not drift to synonyms. If a synonym is
+`docs/idea.md` § Core Concepts and the work define it. Do not drift to synonyms. If a synonym is
 genuinely better, `/domain-modeling` changes the model and the vocabulary together, in one commit.
 
 <!-- TEMPLATE: once terms settle, list the distinctions agents most often blur here, e.g.
@@ -30,6 +30,6 @@ genuinely better, `/domain-modeling` changes the model and the vocabulary togeth
 If your output contradicts an ADR or a decided constraint, say so explicitly rather than silently
 overriding it:
 
-> _Contradicts ADR-0002 (Jev stays in dev tooling), but worth reopening because…_
+> _Contradicts ADR-0001 (skills are vendored, not installed globally), but worth reopening because…_
 
-Under `AGENTS.md`, adding a module requires an ADR, and an ADR outranks code docs and `AGENTS.md`.
+Under `AGENTS.md`, adding a system requires an ADR, and an ADR outranks co-located docs and `AGENTS.md`.

@@ -1,9 +1,13 @@
 # altpsyche agentic engineering
 
-A GitHub template for a repo built primarily by coding agents driven by one human owner. Start a
-new project from it and the whole agent layer is already there: vendored skills, the
-idea → spec → tickets → test-first → two-axis review loop, tracker conventions, label setup, a
-skill checker, CI, and optional cost-cutting tooling.
+A GitHub template for a project worked on mostly by AI agents, steered by one human owner. It fits
+any field: a video game, a research study, a clinical protocol or care workflow, an app. Start a new
+project from it and the agent layer is already there. You get vendored skills and a session
+router. You get the loop that takes an idea to a spec, then to tickets, then to check-first work,
+then to a two-sided review. You also get tracker conventions, label setup, a skill checker and CI.
+
+It installs no packages and assumes no stack. The only tools are `git`, the `gh` CLI, and plain Node
+for the skill checker. CI always runs the checker; locally it is skipped if Node is missing.
 
 Extracted from [`altpsyche/errand-knight`](https://github.com/altpsyche/errand-knight), where it
 was built and used.
@@ -12,44 +16,38 @@ was built and used.
 
 | Path | What it is |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | The always-loaded context file every harness reads. `CLAUDE.md` is a symlink to it |
-| [`.agents/skills/`](.agents/skills/README.md) | [mattpocock/skills](https://github.com/mattpocock/skills) vendored at a pinned commit, plus the local `/work` session router and the `typesafe-ai` reference |
+| [`AGENTS.md`](AGENTS.md) | The context file every agent loads first, in any harness. `CLAUDE.md` is a symlink to it |
+| [`.agents/skills/`](.agents/skills/README.md) | [mattpocock/skills](https://github.com/mattpocock/skills), copied in at a pinned commit, plus the local `/work` session router |
 | [`docs/workflow.md`](docs/workflow.md) | Roles, the loop, the strict review verdict, the review checklist, where state lives |
-| [`docs/agents/`](docs/agents/) | Tracker commands (claims, read-back, PR frontiers), triage labels, domain-doc rules |
-| [`docs/adr/`](docs/adr/) | ADR-0001 agentic workflow, ADR-0002 Jev in dev tooling only |
-| [`docs/idea.md`](docs/idea.md) | Skeleton of the product source of truth, with the Roadmap shape the tools read |
-| [`docs/dev_setup.md`](docs/dev_setup.md) | Sandbox, SSH and workflow-file push gotchas for agent sessions |
-| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Dependency-free checker: skill frontmatter, doc links, symlink, `AGENTS.md` budget |
-| [`scripts/jev/`](scripts/jev/README.md) | Optional Jev tools: triage helper, doc pruner, finding verifier. Skip cleanly without a key |
+| [`docs/agents/`](docs/agents/) | Tracker commands (claiming an item, confirming the claim, finding PRs to work on), triage labels, how agents use the domain docs |
+| [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way |
+| [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
+| [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
+| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, the symlink and the `AGENTS.md` line budget; no packages |
 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label on the new repo |
 
 ## Using this template
 
-1. **Create the repo**: `gh repo create <owner>/<name> --template altpsyche/altpsyche-agentic-engineering --public --clone`
+1. **Create the repo**: `gh repo create <owner>/<name> --template altpsyche/altpsyche-agentic-engineering --private --clone`
    (or **Use this template** on GitHub), then `cd` into it.
-2. **Install and check**: `pnpm install && pnpm verify`.
-3. **Create the labels**: `pnpm bootstrap`.
-4. **Fill the placeholders**. `grep -rn 'TEMPLATE\|<Project>\|<owner>' --exclude-dir=node_modules .`
-   lists every one:
-   - `AGENTS.md` — name, stack, constitution, anti-patterns.
-   - `docs/workflow.md` § Review checklist — the constitution bullets and the stack's rules.
-   - `docs/idea.md` — easiest via `/grill-with-docs` in an agent session.
-   - `docs/dev_setup.md` § Phase 0 prerequisites.
-   - `package.json` `name` and `description`; this `README.md`; `LICENSE` holder.
-5. **Optional**: export `TYPESAFE_API_KEY` in your own shell to switch the Jev tools on.
-6. Tell an agent "let's plan". From then on, "let's work", "next" and "review" drive the loop.
+2. **Create the labels**: `scripts/bootstrap.sh`.
+3. **Fill the placeholders**. `grep -rn 'TEMPLATE\|<Project>\|<owner>' .` lists every one:
+   - `AGENTS.md`: name, what the project is, its constitution, anti-patterns.
+   - `docs/workflow.md` § Review checklist: the constitution and the field's hard rules.
+   - `docs/idea.md`: easiest via `/grill-with-docs` in an agent session.
+   - This `README.md` and the `LICENSE` holder.
+4. **Check**: `scripts/verify.sh`.
+5. Tell an agent "let's plan". From then on, "let's work", "next" and "review" drive the loop.
+
+The vendored skills are written for software, so words like "test" and "PR" appear in them. In any
+other field read "test" as "the check agreed in the spec that proves the work done". A PR is still
+how a change gets reviewed, whether it changes code, a manuscript or a protocol.
 
 ## Keeping it in sync
 
-Improvements found in a project (a `/retro` action, a skill fix) belong here too, so the next
-project starts with them. Port them back by hand, one concern per commit; this repo has no
+Improvements found in a project, such as a `/retro` action or a skill fix, belong here too, so the
+next project starts with them. Port them back by hand, one concern per commit. This repo has no
 upstream link to the projects made from it.
-
-## Verification
-
-```bash
-pnpm verify         # skills:check + scripts:test, everything CI runs
-```
 
 ## License
 
