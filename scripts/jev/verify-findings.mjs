@@ -9,7 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { errorLine, fitsBesideState } from './client.mjs';
+import { errorLine, fitsBesideState, noulOf } from './client.mjs';
 import { VERIFY_KEEP_NOUL } from './constants.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -113,9 +113,7 @@ function question({ text, quote, source, excerpt }) {
 }
 
 function judge(answer) {
-  // A probability or nothing: NaN would compare as not-below the threshold and keep silently.
-  const noul = answer?.noul;
-  if (typeof noul !== 'number' || !(noul >= 0 && noul <= 1)) throw new Error('Jev returned no usable answer');
+  const noul = noulOf(answer);
   return { decision: noul >= VERIFY_KEEP_NOUL ? 'keep' : 'flag', noul, reason: 'checked' };
 }
 
@@ -159,12 +157,13 @@ export async function run(input, { client, root = ROOT }) {
     const questions = {};
     findings.forEach((f, index) => {
       const key = `f${index + 1}`;
+      const ask = question(f);
       if (citesConstitution(f, phrases)) {
         verdicts.set(f.id, { decision: 'keep', noul: null, reason: 'constitution' });
-      } else if (!fitsBesideState(STATE, key, question(f))) {
+      } else if (!fitsBesideState(STATE, key, ask)) {
         verdicts.set(f.id, { decision: 'keep', noul: null, reason: 'too-large' });
       } else {
-        questions[key] = question(f);
+        questions[key] = ask;
       }
     });
 

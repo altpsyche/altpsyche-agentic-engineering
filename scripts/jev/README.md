@@ -9,7 +9,7 @@ code works.
 | File | What it is |
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
-| `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, and `fitsBesideState(state, id, question)` |
+| `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
 | `client.test.mjs` | The client's tests, against the fake server |
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
@@ -81,8 +81,8 @@ it would hide a step from the agent running it. Tracked means `git ls-files` at 
 
 All the questions go to one `ask`, which batches them. A unit that does not fit beside the state,
 by `fitsBesideState`, is listed unasked with reason `oversize`, since a missed doc costs more than
-a read. An answer that is not a probability, or a missing `docs/idea.md`, is an error line, never
-a shorter list.
+a read. An answer that is not a probability (`noulOf`), or a missing `docs/idea.md`, is an error
+line, never a shorter list.
 
 ## Verify findings
 
@@ -120,7 +120,7 @@ defaults to `F1`, `F2`, … by position, and ids are unique:
 
 Empty input, input that is not JSON or not an array, or a finding that is not an object, has a
 blank field or repeats an id, is an error line naming the first problem, and nothing is sent. So is
-an answer that is not a probability: a NaN must never compare its way into a keep.
+an answer that is not a probability (`noulOf`): a NaN must never compare its way into a keep.
 
 ## Testing
 

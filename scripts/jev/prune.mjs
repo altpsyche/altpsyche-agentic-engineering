@@ -11,7 +11,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { errorLine, fitsBesideState } from './client.mjs';
+import { errorLine, fitsBesideState, noulOf } from './client.mjs';
 import { PRUNE_INCLUDE_NOUL } from './constants.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -139,9 +139,7 @@ export async function run(input, { client, root = ROOT }) {
         read.push({ ...entry(unit), reason: 'oversize' });
         continue;
       }
-      const noul = answers[id]?.noul;
-      // A probability or nothing: NaN or a string would compare false and drop the doc silently.
-      if (typeof noul !== 'number' || !(noul >= 0 && noul <= 1)) throw new Error('Jev returned no usable answer');
+      const noul = noulOf(answers[id]);
       if (noul >= PRUNE_INCLUDE_NOUL) read.push({ ...entry(unit), reason: 'relevant', noul });
     }
     return { status: 'ok', read };

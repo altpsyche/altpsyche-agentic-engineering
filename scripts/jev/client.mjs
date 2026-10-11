@@ -107,6 +107,16 @@ export function fitsBesideState(state, id, question) {
 }
 
 /**
+ * The probability a Noul answer carries, or a throw: NaN, a string or a missing answer would
+ * compare false against a threshold and decide silently, so a tool never compares one.
+ */
+export function noulOf(answer) {
+  const noul = answer?.noul;
+  if (typeof noul !== 'number' || !(noul >= 0 && noul <= 1)) throw new Error('Jev returned no usable answer');
+  return noul;
+}
+
+/**
  * Packs questions first-fit, in order, into as few requests as the limits allow: the state plus
  * every question in a request within `JEV_REQUEST_TOKENS`, and the state plus any one question
  * within `JEV_QUESTION_TOKENS`. Throws, before anything is sent, on a question that cannot fit.

@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createClient, fitsBesideState } from './client.mjs';
+import { createClient, fitsBesideState, noulOf } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
 
 const KEY = 'fake-key';
@@ -193,4 +193,12 @@ test('fitsBesideState accepts a question within 32k beside its state and refuses
   const client = createClient({ env: { TYPESAFE_API_KEY: KEY, TYPESAFE_BASE_URL: 'http://127.0.0.1:1' } });
   const result = await client.ask({ state, questions: { big: bigQuestion(40_000) } });
   assert.match(result.reason, /too large/);
+});
+
+test('noulOf returns a probability from 0 to 1, and throws on anything a threshold could misread', () => {
+  assert.equal(noulOf({ type: 'noul', noul: 0 }), 0);
+  assert.equal(noulOf({ type: 'noul', noul: 1 }), 1);
+  for (const answer of [undefined, {}, { noul: Number.NaN }, { noul: '0.9' }, { noul: 1.01 }, { noul: -0.01 }]) {
+    assert.throws(() => noulOf(answer), /no usable answer/);
+  }
 });
