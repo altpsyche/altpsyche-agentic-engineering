@@ -278,7 +278,7 @@ const CLI = path.join(HERE, 'verify-findings-cli.mjs');
 const BASE_ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('TYPESAFE_')));
 
 async function runCli(args, { env = {}, stdin = '' } = {}) {
-  const child = spawn(process.execPath, [CLI, ...args], { env: { ...BASE_ENV, ...env } });
+  const child = spawn(process.execPath, [CLI, ...args], { env: { ...BASE_ENV, TYPESAFE_ENV_FILE: 'none', ...env } });
   let stdout = '';
   child.stdout.on('data', (chunk) => (stdout += chunk));
   child.stdin.end(stdin);
