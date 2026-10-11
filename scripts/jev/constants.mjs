@@ -60,6 +60,35 @@ export const DUPLICATES_SAME = 1.5;
  */
 export const DUPLICATES_BODY_CHARS = 4_000;
 
+/**
+ * The evidence checker notes an Evidence claim whose output Jev says `supports` its criterion at a
+ * confidence at or above this; below it, and on `contradicts` or `silent` at any confidence, the
+ * claim is flagged for the Reviewer to check first. Sample: none. A first guess, set at triage's bar
+ * for want of any run to set it from. Retune it from the first live evidence runs here.
+ */
+export const EVIDENCE_SUPPORTS_CONFIDENT = 0.8;
+
+/**
+ * The coverage checker notes an acceptance criterion as covered at a Noul ("does the diff cover
+ * it?") at or above this, with its Choice on a hunk or a test; below it the criterion is flagged.
+ * Sample: none. A first guess, at verify-findings' keep bar, erring towards a flag: a flag costs one
+ * look, a wrong note a missed criterion. Retune it from the first live coverage runs here.
+ */
+export const COVERAGE_COVERED_NOUL = 0.7;
+
+/**
+ * Below this Noul a flagged criterion is labelled uncovered rather than uncertain. Both are flags;
+ * the label only says which way Jev leans. Sample: none. A first guess, the mirror of the covered
+ * bar. Retune it with COVERAGE_COVERED_NOUL.
+ */
+export const COVERAGE_UNCOVERED_NOUL = 0.3;
+
+/**
+ * Lines of each diff hunk the coverage checker shows Jev; the rest are counted, not sent, so a long
+ * diff still fits beside its questions. Not a threshold. Sample: none; a design default.
+ */
+export const COVERAGE_HUNK_LINES = 60;
+
 // Jev's context limits, not thresholds: a request holds at most 64k tokens, and its state plus its
 // longest single question at most 32k. Source: the TypeSafe docs as errand-knight's constants
 // recorded them on 2026-10-11; not re-checked against the docs for this repo.

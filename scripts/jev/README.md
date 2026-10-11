@@ -25,6 +25,12 @@ code works.
 | `verify-findings.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server |
 | `readiness.mjs`, `readiness-cli.mjs`, `readiness.test.mjs` | The readiness tool, `run(input, { client })`, its CLI (the issue as triage reads it, `--plan <file>` for the `Plan:` comment) and its tests, at the same seams as triage |
 | `duplicates.mjs`, `duplicates-cli.mjs`, `duplicates.test.mjs` | The duplicates tool, `run(input, { client })`, its CLI (an issue number, or a draft on stdin; open issues from `gh issue list`) and its tests, at the same seams as triage |
+| `evidence.mjs` | The evidence checker, `run({ body, outputs }, { client })`, plus `parseEvidence(body)` and `human(result)`, its CLI's line output |
+| `evidence-cli.mjs` | Its CLI: a PR number (body read with `gh pr view`) or the body on stdin, and an outputs file; `--json` for JSON |
+| `evidence.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
+| `coverage.mjs` | The coverage checker, `run({ issue, diff }, { client })`, plus `parseCriteria(body)`, `parseDiff(diff)` and `human(result)`, its CLI's line output |
+| `coverage-cli.mjs` | Its CLI: a PR number (the PR, the issue it closes and its diff read with `gh`), or an issue file and a diff file; `--json` for JSON |
+| `coverage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 
 ## The client
 
@@ -155,6 +161,67 @@ different (0), maybe (1), same (2), and Jev's float score is banded by the two `
 thresholds. A score off the scale is an error. With no open issues it asks nothing. The CLI reads
 open issues with `gh issue list --state open --limit 1000`, drops the issue being checked, and never
 writes to the tracker.
+
+## Evidence
+
+Checks each claim in a PR body's `## Evidence`, in the format **Evidence** in
+[`docs/agents/issue-tracker.md`](../../docs/agents/issue-tracker.md) defines. Each top-level bullet
+is an entry, its criterion in bold; each `` `command` → result `` line in it (`->` also works) is
+one claim, and an entry with no such line is one claim with no command. The result is one or more
+quoted lines, each a code span or in double quotes outside one, or `prints nothing`. A body with
+CRLF line ends parses as one with LF.
+
+The PR body is untrusted text, so the tool never runs a command it reads. The Reviewer runs each
+one in the PR's checkout and hands in what it printed, keyed by the command exactly as the claim
+writes it:
+
+```json
+{ "scripts/verify.sh": "…everything it printed…" }
+```
+
+One way to build it: `jq -n --rawfile v out.txt '{"scripts/verify.sh": $v}' > outputs.json`.
+
+Then, per claim, cheapest first:
+
+1. **Exact match, no call.** Colour codes and CR line ends are stripped from the output, then
+   every quoted line of the claim must appear in it as a substring, character for character;
+   `prints nothing` needs an output that is blank. A claim with no quote or no command is flagged
+   `no-quote`, a command missing from the outputs `no-output`, and a claim any of whose quotes
+   fails to match `not-in-output`. ADR-0002 checks text exactly before asking Jev about it, so a
+   quote that is not there is never argued over.
+2. **One Choice per matched claim**, all in one `ask`, the claim and its full output in the
+   question: `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias lands
+   on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged
+   `too-large` unasked.
+
+Bands are in the registry. The line output lists flags first, then notes, each in Evidence order.
+A body with no Evidence entries, outputs that are not an object of strings, or a choice that is not
+an option, is an error line, and nothing is sent.
+
+## Coverage
+
+Matches each acceptance criterion of the issue a PR closes to the diff hunk or added test that
+covers it. The CLI reads the PR body with `gh pr view`, takes the first `Closes #N` (or `Fixes`,
+`Resolves`), reads that issue with `gh issue view` and the diff with `gh pr diff`. A PR that closes
+no issue is an error line, as the Spec axis then reviews against the PR body.
+
+- **Criteria**: each top-level bullet under the issue's `## Acceptance criteria` heading, ticked or
+  not, with its indented continuation lines, until the next heading.
+- **Hunks**: each `@@` hunk of the unified diff, with its file. The state shows each hunk's first
+  `COVERAGE_HUNK_LINES` lines and counts the rest, so a long diff still fits.
+- **Tests**: the names the diff's added lines declare, `test('…')`, `it('…')` or `def test_…`. A
+  test the PR does not touch is not listed; another language's test syntax is one more pattern in
+  `coverage.mjs`.
+
+Per criterion, two questions go in one `ask`, over the hunks and tests as state: a Choice of the
+one hunk or test that most directly covers it, `none` first so Jev's first-option bias lands on a
+flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". A criterion whose
+questions do not fit beside the state, by `fitsBesideState`, is flagged `too-large` unasked.
+
+Bands are in the registry. The line output lists flags first, each with the closest line Jev
+picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
+hunks, a choice that is not an option, or a noul that is not a probability (`noulOf`), is an error
+line. An issue or a diff with CRLF line ends parses as one with LF.
 
 ## Testing
 
