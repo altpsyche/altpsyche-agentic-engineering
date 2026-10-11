@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # One-time setup for a repo made from this template: switches on the pre-push hook in this clone,
-# creates every label the workflow uses, so no agent ever invents a near-duplicate, then protects
-# the default branch with a ruleset. Idempotent (`--force` updates labels, the ruleset is updated by
-# name), so rerun it after adding a phase to docs/idea.md § Roadmap.
+# offers to save the optional Jev key, creates every label the workflow uses, so no agent ever
+# invents a near-duplicate, then protects the default branch with a ruleset. Idempotent (`--force`
+# updates labels, the ruleset is updated by name), so rerun it after adding a phase to
+# docs/idea.md § Roadmap.
 #
 #   scripts/bootstrap.sh
 #
@@ -13,6 +14,17 @@ cd "$(git rev-parse --show-toplevel)"
 
 # Local git config, so first: it needs no network, and a gh failure below must not skip it.
 scripts/install-hooks.sh
+
+# The optional Jev key (ADR-0002), offered once on a terminal when neither the shell nor the key
+# file has one; env-file.mjs owns where that file is. Skipping is normal: every Jev tool works
+# without it, so no answer and no failure here stops the setup below.
+if [ -t 0 ] && command -v node >/dev/null && ! node scripts/jev/env-file.mjs has-key; then
+  read -rp "Add a TypeSafe key for the optional Jev tools now? [y/N] " answer || answer=
+  case "$answer" in
+    [yY]*) scripts/jev/set-key.sh || echo "No key saved; run scripts/jev/set-key.sh later." >&2 ;;
+    *) echo "Skipped; run scripts/jev/set-key.sh later." ;;
+  esac
+fi
 
 repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 echo "Creating workflow labels on $repo"

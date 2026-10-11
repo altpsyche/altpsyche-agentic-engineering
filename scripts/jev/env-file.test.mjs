@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -142,3 +142,35 @@ test('createClient() with no env finds the key in the .env of the clone it runs 
   });
 });
 
+// The CLI set-key.sh and bootstrap.sh call, so the path rule and the key check have one home.
+const cli = (cwd, args, env = {}) => {
+  const ENV_FILE = path.join(HERE, 'env-file.mjs');
+  return spawnSync(process.execPath, [ENV_FILE, ...args], { cwd, env: { ...GIT_ENV, ...env }, encoding: 'utf8' });
+};
+
+test('the CLI prints the path from a worktree, and exits 1 when there is none', async () => {
+  await withRepo(async ({ dir, main, worktree }) => {
+    const found = cli(worktree, ['path']);
+    assert.equal(found.status, 0);
+    assert.equal(found.stdout, `${path.join(main, '.env')}\n`);
+    assert.equal(cli(dir, ['path']).status, 1);
+    assert.equal(cli(main, ['path'], { TYPESAFE_ENV_FILE: 'none' }).status, 1);
+  });
+});
+
+test('the CLI has-key sees a key in the shell or the file, in any form parseEnv reads', async () => {
+  await withRepo(async ({ main }) => {
+    assert.equal(cli(main, ['has-key']).status, 1);
+    assert.equal(cli(main, ['has-key'], { TYPESAFE_API_KEY: 'k' }).status, 0);
+    await writeFile(path.join(main, '.env'), 'export TYPESAFE_API_KEY=k\n');
+    assert.equal(cli(main, ['has-key']).status, 0);
+    await writeFile(path.join(main, '.env'), 'TYPESAFE_API_KEY=\n');
+    assert.equal(cli(main, ['has-key']).status, 1);
+  });
+});
+
+test('the CLI with no command prints its usage and exits 2', () => {
+  const result = cli(HERE, []);
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /usage/);
+});

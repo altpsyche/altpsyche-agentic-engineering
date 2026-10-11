@@ -52,7 +52,8 @@ runs on.
   shell" above means on the owner's machine and never in a CI secret, which still holds. Exporting
   it in a shell profile was the only way to set it, which every new user had to work out. So a
   tool now also reads `TYPESAFE_*` from the gitignored `.env` at the main clone's root, which
-  every worktree finds. A key in the shell wins. How it is found is
+  every worktree finds, and [`scripts/jev/set-key.sh`](../../scripts/jev/set-key.sh) writes it.
+  A key in the shell wins. How it is found is
   [`scripts/jev/README.md`](../../scripts/jev/README.md) § The client. Recorded per
   [#27](https://github.com/altpsyche/altpsyche-agentic-engineering/issues/27); the owner
   signs it off by merging.

@@ -9,7 +9,8 @@ code works.
 | File | What it is |
 |---|---|
 | `constants.mjs` | The pinned model, **every threshold** with the sample it came from (or a note that it has none), the request limits, and the retry and timeout settings. Retune here, in one reviewed edit |
-| `env-file.mjs`, `env-file.test.mjs` | `jevEnv({ env, cwd })`: `env` with any `TYPESAFE_*` it lacks filled from the main clone's `.env`; `createClient()`'s default `env`. `envFilePath` names that file. Its tests use a temp clone and worktree |
+| `env-file.mjs`, `env-file.test.mjs` | `jevEnv({ env, cwd })`: `env` with any `TYPESAFE_*` it lacks filled from the main clone's `.env`; `createClient()`'s default `env`. `envFilePath` names that file, and its CLI (`path`, `has-key`) serves the shell scripts. Its tests use a temp clone and worktree |
+| `set-key.sh`, `set-key.test.mjs` | Saves the key to that file: hidden entry, single-quoted, mode 600, refused where git would track it; its tests pipe the key in |
 | `client.mjs` | The shared client every tool asks through. `createClient({ env, sleep, timeoutMs })`, plus `fitsBesideState` and `noulOf`, the size and answer rules every tool shares |
 | `issue-input.mjs` | How a CLI reads its issue: `readIssue` by number with `gh issue view`, or from stdin as `gh`'s JSON or plain text with the title first, LF or CRLF. `readPrOrIssue` does the same for a CLI that takes either, trying `gh pr view` first and keeping every JSON field. `gh(args)` runs `gh` for any other read |
 | `fake-jev.mjs` | A fake Jev server on localhost, for tests only |
@@ -52,7 +53,8 @@ variable it lacks or holds blank filled from `.env` at the main clone's root, th
 read, and a value in the shell wins. `TYPESAFE_ENV_FILE=<path>` reads another file, and
 `TYPESAFE_ENV_FILE=none` reads none: `cli-runner.mjs` and every test that spawns a CLI set it, so a
 developer's real key never changes a test result. A missing or unreadable file is no key, never an
-error.
+error. `set-key.sh` writes the key there, and it and `bootstrap.sh` ask `env-file.mjs`'s CLI
+(`path`, `has-key`) rather than repeat the rule.
 
 Inside `ask`:
 

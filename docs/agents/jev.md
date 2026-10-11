@@ -10,7 +10,8 @@ here; this file owns each tool's caller and bands.
 
 Every tool is optional. The key, `TYPESAFE_API_KEY`, lives on the owner's machine, never in CI:
 in the shell, or in the gitignored `.env` at the root of the main clone, which every worktree
-finds. A key in the shell wins.
+finds. `scripts/jev/set-key.sh` writes that file, and `scripts/bootstrap.sh` offers it. A key in
+the shell wins.
 
 - **Skipped** (no key): the tool prints one `jev <tool>: skipped, …` line and exits 0. Do the step
   yourself, as you would without Jev.
