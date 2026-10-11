@@ -33,7 +33,7 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh issue comment <number> --body "Claimed: branch <number>-<slug> (session <token>)"`, then
   **Read back a claim**. Every session shares the owner's account, so the comment is the claim and
   the token tells sessions apart; the assignee only hides the issue from the frontier. The owner
-  frees an issue claim left by a dead session by unassigning it and commenting.
+  frees an issue claim left by a dead session per **Release a claim**: comment, then unassign.
 - **Release a claim** without finishing the item, as on a red baseline: write the comment to a
   file, then `gh issue comment <number> --body-file <file>` (on a PR, `gh pr comment`), then, on
   an issue, `gh issue edit <number> --remove-assignee @me`. A comment that does not start with
