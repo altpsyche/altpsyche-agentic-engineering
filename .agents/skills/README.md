@@ -8,8 +8,10 @@ model, in every harness, reads the same version.
   `AGENTS.md`, which points at this folder. A skill is used by reading its `SKILL.md` and
   following it; `/name` in any doc is shorthand for exactly that. There is deliberately no
   `.claude/` folder, and no harness-specific wiring of any kind: every agent takes the same path.
-- DSH discovers these skills automatically and injects each `description` into context, so no
-  registration step is needed.
+- Harnesses that read `.agents/skills/` natively (Codex, Gemini CLI, Cursor, Copilot, OpenCode,
+  Amp and DSH among them) discover these skills and inject each `description` into context, so no
+  registration step is needed. Claude Code reads only `.claude/skills/`, so it follows the pointer
+  in `AGENTS.md` instead; see [ADR-0001](../../docs/adr/0001-agentic-development-workflow.md).
 
 Who runs which skill is defined in [`docs/workflow.md`](../../docs/workflow.md). Repo config
 the skills read lives in [`docs/agents/`](../../docs/agents/).
