@@ -5,11 +5,12 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# Agent layer: skill frontmatter, doc links, no harness-specific files, AGENTS.md budget. Plain Node, no
-# packages. Without Node on this machine it is skipped here; CI always runs it.
+# Agent layer: skill frontmatter, doc links, no harness-specific files, AGENTS.md budget, and the
+# tracker's claim read-back query. Plain Node, no packages. Without Node on this machine it is
+# skipped here; CI always runs it.
 if command -v node >/dev/null; then
   node scripts/check-skills.mjs
-  node --test scripts/check-skills.test.mjs
+  node --test scripts/check-skills.test.mjs scripts/claim-readback.test.mjs
 else
   echo "verify: node not found, agent-layer check skipped (CI runs it)" >&2
 fi

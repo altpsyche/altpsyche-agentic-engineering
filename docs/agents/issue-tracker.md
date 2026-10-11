@@ -36,13 +36,13 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   frees an issue claim left by a dead session per **Release a claim**: comment, then unassign.
 - **Release a claim** without finishing the item, as on a red baseline: write the comment to a
   file, then `gh issue comment <number> --body-file <file>` (on a PR, `gh pr comment`), then, on
-  an issue, `gh issue edit <number> --remove-assignee @me`. A comment that does not start with
-  `Claimed:` ends the claim, per **Read back a claim**. **Comment first, then unassign**: the
-  other way round, the issue is back on the frontier while the old claim stands, so a new
-  session's claim either loses to it or is ended by the late comment. On a PR, the comment alone
-  releases it and the label stays as it was. On an issue, the branch was never pushed: after
-  **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`, so the
-  next claimant's **Branch** does not fail on a branch that already exists.
+  an issue, `gh issue edit <number> --remove-assignee @me`. A comment that starts with neither
+  `Claimed:` nor `Plan:` ends the claim, per **Read back a claim**. **Comment first, then
+  unassign**: the other way round, the issue is back on the frontier while the old claim stands,
+  so a new session's claim either loses to it or is ended by the late comment. On a PR, the
+  comment alone releases it and the label stays as it was. On an issue, the branch was never
+  pushed: after **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`,
+  so the next claimant's **Branch** does not fail on a branch that already exists.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
@@ -57,9 +57,10 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Session token**: eight random hex characters, generated once per session with
   `openssl rand -hex 4`, and carried by every claim the session posts.
 - **Read back a claim**, straight after posting it, for an issue or a PR alike. Among counted
-  comments, the claims that count are the `Claimed:` ones after the newest one that is not, and
-  the earliest of them wins. This prints the winner and the item's labels:
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){viewer{login} repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: ([.comments.nodes[] | select(.author.login == $me) | .body] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first)}'`
+  comments, skipping those that start with `Plan:`, the claims that count are the `Claimed:` ones
+  after the newest one that is not, and the earliest of them wins. This prints the winner and the
+  item's labels, and `scripts/claim-readback.test.mjs` runs it on fixture comment lists:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){viewer{login} repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: ([.comments.nodes[] | select(.author.login == $me) | .body | select(startswith("Plan:") | not)] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first)}'`
   The session holds the item only if the winner carries its token and the item still carries the
   label that put it on the frontier. Otherwise it backs off: it deletes its own claim with
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
