@@ -87,7 +87,7 @@ test('per-harness metadata inside a skill is reported', () =>
     await writeFile(path.join(root, '.agents', 'skills', 'demo', 'agents', 'openai.yaml'), 'interface: {}\n');
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, [
-      '.agents/skills/demo/agents: harness-specific skill metadata; every agent gets the same base (ADR-0001)',
+      '.agents/skills/demo/agents: harness-specific; every agent gets the same base (ADR-0001)',
     ]);
   }));
 

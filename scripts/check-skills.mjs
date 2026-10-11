@@ -33,12 +33,10 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   'compatibility',
 ]);
 
-// A block-scalar header: style, then an optional chomping and indentation indicator in either
-// order, then an optional comment, as in `>`, `|-`, `>2`, `|+1` or `> # note`.
 // Files and folders that exist for one harness. The template gives every agent the same base
 // (ADR-0001), so none may appear: a second context file drifts from AGENTS.md, and per-harness
 // wiring means agents start from different places. Paths are relative to the repo root.
-export const HARNESS_SPECIFIC = [
+const HARNESS_SPECIFIC = [
   'CLAUDE.md',
   'CLAUDE.local.md',
   'GEMINI.md',
@@ -53,6 +51,8 @@ export const HARNESS_SPECIFIC = [
   '.github/copilot-instructions.md',
 ];
 
+// A block-scalar header: style, then an optional chomping and indentation indicator in either
+// order, then an optional comment, as in `>`, `|-`, `>2`, `|+1` or `> # note`.
 const BLOCK_HEADER = /^([|>])(?:[1-9][+-]?|[+-][1-9]?)?(?:[ \t]+#.*)?$/;
 
 // YAML line folding for a `>` block: a break between two text lines becomes a space, and each
@@ -341,16 +341,15 @@ export async function checkRepo(root) {
     }
   }
 
-  // Nothing for one harness (ADR-0001). lstat, so a symlink counts even when its target is gone.
-  for (const rel of HARNESS_SPECIFIC) {
+  // Nothing for one harness (ADR-0001), at the root or inside a skill. lstat, so a symlink counts
+  // even when its target is gone.
+  const harnessPaths = [
+    ...HARNESS_SPECIFIC,
+    ...skillNames.map((name) => `.agents/skills/${name}/agents`),
+  ];
+  for (const rel of harnessPaths) {
     if (await present(path.join(root, rel))) {
       err(`${rel}: harness-specific; every agent gets the same base (ADR-0001)`);
-    }
-  }
-  for (const name of skillNames) {
-    const rel = `.agents/skills/${name}/agents`;
-    if (await present(path.join(root, rel))) {
-      err(`${rel}: harness-specific skill metadata; every agent gets the same base (ADR-0001)`);
     }
   }
 
