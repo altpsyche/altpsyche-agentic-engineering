@@ -4,9 +4,9 @@ Issues and specs for this repo live as **GitHub issues** on this repo's GitHub r
 are authoritative and public. Use the `gh` CLI for all operations.
 
 `.scratch/` is a local, gitignored scratch area for in-flight thinking that is not ready to be
-public: draft specs, ticket breakdowns mid-edit, wayfinding notes. **Nothing authoritative lives
-in `.scratch/`**; promote it to a GitHub issue when it stabilises. If the two ever disagree,
-the GitHub issue wins.
+public: draft specs, ticket breakdowns mid-edit, notes from an investigation. **Nothing
+authoritative lives in `.scratch/`**; promote it to a GitHub issue when it stabilises. If the two
+ever disagree, the GitHub issue wins.
 
 ## Conventions
 
@@ -132,11 +132,3 @@ vendored skills do not know about phase labels, so this line is the only thing t
 ## When a skill says "fetch the relevant ticket"
 
 Run `gh issue view <number> --comments`.
-
-## Wayfinding operations
-
-Not currently used: `/wayfinder` is not vendored (see
-[`.agents/skills/README.md`](../../.agents/skills/README.md)). If it is vendored later, the map
-is a single issue labelled `wayfinder:map`, children are GitHub sub-issues labelled
-`wayfinder:<research|prototype|grilling|task>`, and blocking uses GitHub's native issue
-dependencies, with a `Blocked by: #<n>` line in the child body as the fallback.
