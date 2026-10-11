@@ -57,7 +57,9 @@ has confirmed the spec's testing seams.
    Nothing is committed to `main`.
 3. Read `AGENTS.md` and the ADRs that touch the area.
 4. Build with `/implement`, driving `/tdd` at the seams agreed during planning: the check that
-   proves the work is written before the work.
+   proves the work is written before the work. On a bug ticket, which reports something broken
+   rather than asking for something new, run `/diagnosing-bugs` first for its reproduction loop.
+   The failing check that loop ends with becomes the first `/tdd` slice.
    - Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
      code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
    - `scripts/verify.sh` runs regularly, and once more at the end.
