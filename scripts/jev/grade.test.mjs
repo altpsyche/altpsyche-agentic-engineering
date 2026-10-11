@@ -86,6 +86,36 @@ test('pass criteria are read from a case with CRLF line endings, and end at the 
   assert.deepEqual(parsePassCriteria(text).map((c) => c.criterion), CRITERIA);
 });
 
+test('a heading or a numbered line inside a code fence is not read as part of the criteria', () => {
+  const text = [
+    '## Starting state',
+    '',
+    '```bash',
+    "gh issue create --body-file - <<'EOF'",
+    '## Pass criteria',
+    '',
+    '1. A fenced criterion?',
+    'EOF',
+    '```',
+    '',
+    '## Pass criteria',
+    '',
+    '1. The real first?',
+    '',
+    '~~~',
+    '## Notes',
+    '9. A fenced line in the real section?',
+    '~~~',
+    '',
+    '2. The real second?',
+    '',
+  ].join('\n');
+  assert.deepEqual(parsePassCriteria(text), [
+    { number: 1, criterion: 'The real first?' },
+    { number: 2, criterion: 'The real second?' },
+  ]);
+});
+
 test('an item number in the case is kept, so the advice lines up with the grade', () => {
   const text = '## Pass criteria\n\n4. Fourth?\n7. Seventh?\n';
   assert.deepEqual(parsePassCriteria(text).map((c) => c.number), [4, 7]);
