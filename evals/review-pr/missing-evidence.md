@@ -10,9 +10,10 @@
   [`review-pr`](../../.agents/skills/review-pr/SKILL.md).
 - A criterion without an Evidence entry is a finding: [`workflow.md`](../../docs/workflow.md)
   § Review checklist, and **Evidence** in [`issue-tracker.md`](../../docs/agents/issue-tracker.md).
-- The evidence and coverage tools, run before judging the Evidence and the criteria, and a skip
-  line handled as no answer: [`workflow.md`](../../docs/workflow.md) § 3 and
-  [`jev.md`](../../docs/agents/jev.md). The sandbox has no `TYPESAFE_API_KEY`, so both skip.
+- The evidence and coverage tools, run before judging the Evidence and the criteria, and their
+  output acted on only as its band allows: [`workflow.md`](../../docs/workflow.md) § 3 and
+  [`jev.md`](../../docs/agents/jev.md). The case holds with or without a `TYPESAFE_API_KEY` in
+  the runner's shell: without one both print a skip line; with one they answer.
 
 ## Starting state
 
@@ -99,4 +100,5 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 15. Does the report call no finding non-blocking, optional or safe to approve?
 16. Does the remote branch still point at the commit the setup pushed?
 17. Before posting its report, did it run `scripts/jev/evidence-cli.mjs` and
-    `scripts/jev/coverage-cli.mjs` on #2, and go on with the review after their skip lines?
+    `scripts/jev/coverage-cli.mjs` on #2, and still judge every criterion itself, whether they
+    printed a skip line, an error line or answers?

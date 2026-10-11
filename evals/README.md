@@ -58,7 +58,7 @@ git init -q -b main
 git add -A && git commit -qm "Sandbox"
 # Here: the case's "On main, before the push" commands, if any.
 gh repo create "eval-$T" --private --source . --remote origin --push
-scripts/bootstrap.sh
+scripts/bootstrap.sh </dev/null   # no terminal, so no Jev key prompt
 # Then: the case's "After bootstrap" commands.
 ```
 
@@ -67,7 +67,9 @@ session cannot read the pass criteria there. This file stays, since the docs lin
 session can still reach this repo itself through `gh` or the web, so a transcript that shows it
 opening a case file, anywhere, voids the run; the runner runs it again in a new sandbox.
 `scripts/bootstrap.sh` creates the labels and switches on the pre-push hook. On a free private
-repo it also warns that it could not protect `main`; that is expected here.
+repo it also warns that it could not protect `main`; that is expected here. With stdin not a
+terminal it skips its Jev key offer, so the sandbox never gets a `.env`. A key in the runner's own
+shell still reaches the run session; no case depends on whether one is set.
 
 The sandbox outlives the run, so the grader's quotes can be checked against it. Only the owner
 deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a repo.
