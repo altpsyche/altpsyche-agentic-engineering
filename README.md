@@ -23,7 +23,7 @@ was built and used.
 | [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way |
 | [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
 | [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
-| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, the symlink and the `AGENTS.md` line budget; no packages |
+| [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, the symlink and the `AGENTS.md` line and byte budgets; no packages |
 | [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Creates every workflow label on the new repo |
 
 ## Using this template

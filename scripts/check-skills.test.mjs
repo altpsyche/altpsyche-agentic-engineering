@@ -240,3 +240,31 @@ test('blank lines inside a block scalar are kept: `|` as breaks, `>` as folded b
   assert.equal(read('|'), 'one\ntwo\n\nthree\n\n\nfour');
   assert.equal(read('>'), 'one two\nthree\n\nfour');
 });
+
+test('a skill name over 64 characters is reported', () =>
+  withRepo(async (root) => {
+    const name = 'a'.repeat(65);
+    const dir = path.join(root, '.agents', 'skills', name);
+    await mkdir(dir);
+    await writeFile(path.join(dir, 'SKILL.md'), SKILL.replace('name: demo', `name: ${name}`));
+    await writeFile(path.join(root, '.agents', 'skills', 'README.md'), `[demo](./demo/SKILL.md) [x](./${name}/SKILL.md)\n`);
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [`.agents/skills/${name}/SKILL.md: name is 65 chars, over the 64 limit`]);
+  }));
+
+test('compatibility is a known key, and over 500 characters is reported', () =>
+  withRepo(async (root) => {
+    const file = path.join(root, '.agents', 'skills', 'demo', 'SKILL.md');
+    await writeFile(file, SKILL.replace('---\n\n', 'compatibility: Needs gh.\n---\n\n'));
+    assert.deepEqual(await checkRepo(root).then((r) => [r.errors, r.warnings]), [[], []]);
+    await writeFile(file, SKILL.replace('---\n\n', `compatibility: ${'x'.repeat(501)}\n---\n\n`));
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['.agents/skills/demo/SKILL.md: compatibility is 501 chars, over the 500 limit']);
+  }));
+
+test('AGENTS.md over 32 KiB is reported even under the line budget', () =>
+  withRepo(async (root) => {
+    await writeFile(path.join(root, 'AGENTS.md'), `${'x'.repeat(33 * 1024)}\n`);
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['AGENTS.md is 33793 bytes, over the 32768-byte limit Codex truncates at']);
+  }));

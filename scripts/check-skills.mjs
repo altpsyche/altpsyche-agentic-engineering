@@ -13,7 +13,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Limits from the Agent Skills specification, https://agentskills.io/specification.
+const MAX_NAME = 64;
 const MAX_DESCRIPTION = 1024;
+const MAX_COMPATIBILITY = 500;
+// Codex concatenates the AGENTS.md chain and silently truncates it past `project_doc_max_bytes`,
+// 32 KiB by default. The line budget is the tighter rule; this one catches very long lines.
+const MAX_AGENTS_BYTES = 32 * 1024;
 const KNOWN_FRONTMATTER_KEYS = new Set([
   'name',
   'description',
@@ -22,6 +28,7 @@ const KNOWN_FRONTMATTER_KEYS = new Set([
   'metadata',
   'license',
   'allowed-tools',
+  'compatibility',
 ]);
 
 // A block-scalar header: style, then an optional chomping and indentation indicator in either
@@ -201,6 +208,8 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
     }
     if (!NAME_RE.test(fields.name ?? '')) {
       err(`${label}: name must be kebab-case ([a-z0-9-])`);
+    } else if (fields.name.length > MAX_NAME) {
+      err(`${label}: name is ${fields.name.length} chars, over the ${MAX_NAME} limit`);
     }
 
     const description = fields.description;
@@ -216,6 +225,11 @@ async function checkSkill(skillsDir, skillName, { err, warn }) {
       if (!userInvoked && !/\buse when\b|\bwhen the user\b|\buse for\b/i.test(description)) {
         warn(`${label}: model-invoked description names no trigger ("Use when ...")`);
       }
+    }
+
+    const compatibility = fields.compatibility;
+    if (typeof compatibility === 'string' && compatibility.length > MAX_COMPATIBILITY) {
+      err(`${label}: compatibility is ${compatibility.length} chars, over the ${MAX_COMPATIBILITY} limit`);
     }
 
     const dmi = fields['disable-model-invocation'];
@@ -284,7 +298,7 @@ export async function checkRepo(root) {
 
   for (const name of skillNames) await checkSkill(skillsDir, name, { err, warn });
 
-  // AGENTS.md must exist and stay inside its own line budget.
+  // AGENTS.md must exist and stay inside its line and byte budgets.
   if (!existsSync(agentsMd)) {
     err('AGENTS.md does not exist');
   } else {
@@ -292,6 +306,10 @@ export async function checkRepo(root) {
     const lines = agents.split('\n').length;
     if (lines > 200) {
       err(`AGENTS.md is ${lines} lines, over its own 200-line budget (see its header)`);
+    }
+    const bytes = Buffer.byteLength(agents, 'utf8');
+    if (bytes > MAX_AGENTS_BYTES) {
+      err(`AGENTS.md is ${bytes} bytes, over the ${MAX_AGENTS_BYTES}-byte limit Codex truncates at`);
     }
   }
 
