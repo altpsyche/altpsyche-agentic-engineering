@@ -73,12 +73,14 @@ has confirmed the spec's testing seams.
    - Commit to the branch; one concern per commit.
 6. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
    it is not the review (§ Roles).
-7. **Open a PR** whose body, written by `/pr`, says `Closes #<n>`, labelled `status:in-review`.
-   Without that label no Reviewer finds it.
+7. **Open a PR** whose body, written by `/pr` with its Evidence per **Evidence**, says
+   `Closes #<n>`, labelled `status:in-review`. Without that label no Reviewer finds it.
 
-**Done when:** the ticket's own acceptance criteria pass, `scripts/verify.sh` is green, every source you
-made stale is corrected in the same commit, and a PR whose body says `Closes #<n>` is open and labelled
-`status:in-review`. On a red baseline, done is step 3's release instead.
+**Done when:** the ticket's own acceptance criteria pass, each with an entry in the PR's
+`## Evidence` per **Evidence** in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md),
+`scripts/verify.sh` is green, every source you made stale is corrected in the same commit, and a PR
+whose body says `Closes #<n>` is open and labelled `status:in-review`. On a red baseline, done is
+step 3's release instead.
 
 ### 3. Review (Reviewer) — `/review-pr`
 
