@@ -73,11 +73,18 @@ test('a confidence just below the threshold leaves the answer open; just above r
   assert.deepEqual(result.phase, { label: 'phase:1', confidence: 0.81, decision: 'recommend' });
 });
 
-test('a confidence exactly at the threshold recommends; the phase just below it is open', async () => {
-  const client = fakeClient({ choice: 'wontfix', confidence: 0.8 }, { choice: 'phase:0', confidence: 0.79 });
+test('the other way round: the role just above the threshold recommends; the phase just below is open', async () => {
+  const client = fakeClient({ choice: 'wontfix', confidence: 0.81 }, { choice: 'phase:0', confidence: 0.79 });
   const result = await run(ISSUE, { client });
   assert.equal(result.role.decision, 'recommend');
   assert.equal(result.phase.decision, 'open');
+});
+
+test('a confidence exactly at the threshold recommends, for role and phase alike', async () => {
+  const client = fakeClient({ choice: 'ready-for-human', confidence: 0.8 }, { choice: 'phase:1', confidence: 0.8 });
+  const result = await run(ISSUE, { client });
+  assert.equal(result.role.decision, 'recommend');
+  assert.equal(result.phase.decision, 'recommend');
 });
 
 test('a choice that is not one of the options is an error', async () => {

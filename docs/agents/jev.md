@@ -23,5 +23,5 @@ Every tool is optional. The key, `TYPESAFE_API_KEY`, lives only in the owner's s
 | triage | `scripts/jev/triage-cli.mjs <issue>` | [`triage-labels.md`](triage-labels.md) § Suggesting a label | Per answer, role and phase: a confidence at or above `TRIAGE_CONFIDENT` is `recommend`, and becomes your recommendation to the owner; below it is `open`, and you decide the role yourself, or treat the phase as unclear. The tool never applies a label, and you never apply a frontier label on its say-so |
 
 Thresholds live in [`scripts/jev/constants.mjs`](../../scripts/jev/constants.mjs), each with the
-sample it came from. Retuning one is an edit there, and a band-edge test fails until the tests
-agree.
+sample it came from. Retuning one is an edit there, and the band-edge tests beside it fail until
+they are updated in the same commit.
