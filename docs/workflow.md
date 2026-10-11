@@ -141,6 +141,7 @@ and PR steps.
 
 **Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
 pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
+On a red baseline that is also red on `origin/main`, done is step 3's release instead.
 
 ### 5. Merge and learn (Owner)
 
