@@ -16,6 +16,25 @@ export const MODEL = 'jev-1.13.0';
 export const TRIAGE_CONFIDENT = 0.8;
 
 /**
+ * The pruner puts a doc on the read list at a Noul (probability that the work needs it) at or above
+ * this; below it, the doc is skipped. A low bar: a missed doc costs more than an extra read.
+ * Sample: none. Ported unchanged from errand-knight's PRUNE_INCLUDE_NOUL, which records no sample
+ * for it either. Retune it from the first live prune runs here.
+ */
+export const PRUNE_INCLUDE_NOUL = 0.2;
+
+/**
+ * The finding verifier keeps a draft finding at a Noul (probability that its cited source supports
+ * it) at or above this, and flags it for one re-read below it. A flag costs one re-read, a kept
+ * false finding a fix round, so the bar errs towards flagging. Sample: one, from errand-knight,
+ * whose README documents one live run of its sample findings file: the supported finding scored
+ * 0.89 and the unsupported one 0.61, so its first guess of 0.5 kept both. Ported unchanged. There
+ * the findings sat in the request's state; here each sits in its own question, a shape no live run
+ * has checked yet. Retune it from the first live runs here.
+ */
+export const VERIFY_KEEP_NOUL = 0.7;
+
+/**
  * The evidence checker notes an Evidence claim whose output Jev says `supports` its criterion at a
  * confidence at or above this; below it, and on `contradicts` or `silent` at any confidence, the
  * claim is flagged for the Reviewer to check first. Sample: none. A first guess, set at triage's bar
