@@ -22,6 +22,8 @@ const STATE = {
 };
 
 const ARROW = /\s(?:→|->)\s?/;
+// An eval-case entry's bullet: a case path under evals/ and the grade's Verdict line.
+const EVAL_ENTRY = /\bevals\/\S+\.md\b.*\bVerdict:/;
 const CODE_SPAN = /(`+)([\s\S]*?[^`])\1(?!`)/g;
 
 // Markdown code spans, any number of backticks, with one padding space stripped from each end,
@@ -61,7 +63,9 @@ function expectation(result) {
  * The claims in a PR body's `## Evidence` section, in order, per **Evidence** in
  * docs/agents/issue-tracker.md: each top-level bullet is an entry naming its criterion in bold, and
  * each `command` → result line in it is one claim. An entry with no such line is one claim with no
- * command. Ids run E1, E2, … over the claims.
+ * command. An eval-case entry, whose bullet names an `evals/` case and its `Verdict:` line, is no
+ * claim, and nothing inside a `<details>` block is read: the grade there is the grader's, quoted,
+ * not a command's output. Ids run E1, E2, … over the claims.
  *
  * @returns {Array<{ id: string, criterion: string, command: string | null,
  *   expect: { quotes: string[] } | { nothing: true } | null }>}
@@ -69,26 +73,32 @@ function expectation(result) {
 export function parseEvidence(body) {
   const entries = [];
   let inSection = false;
+  let inDetails = false;
   for (const line of String(body ?? '').split(/\r?\n/)) {
     if (/^#{1,2}\s/.test(line)) {
       inSection = /^##\s+Evidence\s*$/i.test(line.trim());
       continue;
     }
     if (!inSection) continue;
+    if (inDetails || /^\s*<details[\s>]/i.test(line)) {
+      inDetails = !/<\/details>/i.test(line);
+      continue;
+    }
     const bullet = /^[-*]\s+(.*)$/.exec(line);
     let rest = line;
     if (bullet) {
       const bold = /^\*\*(.+?)\*\*/.exec(bullet[1]);
       const arrow = arrowAt(bullet[1]);
       const criterion = (bold ? bold[1] : bullet[1].slice(0, arrow ? arrow.start : undefined)).trim();
-      entries.push({ criterion, lines: [] });
+      entries.push({ criterion, lines: [], evalCase: EVAL_ENTRY.test(bullet[1]) });
       rest = bold ? bullet[1].slice(bold[0].length) : bullet[1];
     }
     if (entries.length && arrowAt(rest)) entries.at(-1).lines.push(rest);
   }
 
   const claims = [];
-  for (const { criterion, lines } of entries) {
+  for (const { criterion, lines, evalCase } of entries) {
+    if (evalCase) continue;
     if (!lines.length) claims.push({ criterion, command: null, expect: null });
     for (const line of lines) {
       const { start, end } = arrowAt(line);

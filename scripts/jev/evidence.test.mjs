@@ -113,6 +113,51 @@ test('a claim with several quotes is flagged without a call when any one is not 
   assert.match(client.calls[0].questions.E1.instructions, /ℹ pass 3[\s\S]*ℹ fail 0/);
 });
 
+// An eval-case entry, per **Evidence** in docs/agents/issue-tracker.md: the case's path, the run's
+// token and the grade's Verdict line, with the whole grade in a <details> block beneath it.
+const EVAL_BODY = `## Evidence
+
+- **The tests pass**
+  \`scripts/verify.sh\` → \`ℹ fail 0\`
+- \`evals/work/red-baseline.md\`, run 1a2b3c4d: \`Verdict: pass 2/2\`
+  <details><summary>Grade</summary>
+
+  \`\`\`
+  Grade: evals/work/red-baseline.md, run 1a2b3c4d, sandbox from 9f8e7d6
+  1. yes: "docs/idea.md: broken relative link -> ./nope.md"
+  2. yes: "Released the claim → see above"
+  Verdict: pass 2/2
+  \`\`\`
+
+  </details>
+- **The README is updated**
+  \`git diff --stat origin/main -- README.md\` → \`1 file changed\`
+`;
+
+test('an eval-case entry is not a claim, and nothing in its <details> grade becomes one', () => {
+  assert.deepEqual(parseEvidence(EVAL_BODY), [
+    { id: 'E1', criterion: 'The tests pass', command: 'scripts/verify.sh', expect: { quotes: ['ℹ fail 0'] } },
+    {
+      id: 'E2',
+      criterion: 'The README is updated',
+      command: 'git diff --stat origin/main -- README.md',
+      expect: { quotes: ['1 file changed'] },
+    },
+  ]);
+});
+
+test('a criterion that only mentions an eval case path is still a claim', () => {
+  const body = '## Evidence\n\n- **The case exists**\n  `ls evals/work/red-baseline.md` → `evals/work/red-baseline.md`\n';
+  assert.deepEqual(parseEvidence(body), [
+    {
+      id: 'E1',
+      criterion: 'The case exists',
+      command: 'ls evals/work/red-baseline.md',
+      expect: { quotes: ['evals/work/red-baseline.md'] },
+    },
+  ]);
+});
+
 test('a body with CRLF line ends parses as it does with LF', () => {
   assert.deepEqual(parseEvidence(BODY.replaceAll('\n', '\r\n')), parseEvidence(BODY));
 });

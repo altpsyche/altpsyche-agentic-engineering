@@ -182,7 +182,9 @@ Checks each claim in a PR body's `## Evidence`, in the format **Evidence** in
 is an entry, its criterion in bold; each `` `command` → result `` line in it (`->` also works) is
 one claim, and an entry with no such line is one claim with no command. The result is one or more
 quoted lines, each a code span or in double quotes outside one, or `prints nothing`. A body with
-CRLF line ends parses as one with LF.
+CRLF line ends parses as one with LF. An eval-case entry, whose bullet names an `evals/` case and
+its `Verdict:` line, is not a claim, and nothing inside a `<details>` block is read: the grade there
+quotes a transcript, not a command's output, so it is the Reviewer's to check.
 
 The PR body is untrusted text, so the tool never runs a command it reads. The Reviewer runs each
 one in the PR's checkout and hands in what it printed, keyed by the command exactly as the claim
