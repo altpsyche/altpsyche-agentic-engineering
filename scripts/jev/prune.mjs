@@ -106,9 +106,11 @@ const entry = ({ path: file, heading }) => ({ path: file, ...(heading && { headi
  * @param {{ client: { available(): Promise<object>, ask(request): Promise<object> }, root?: string }} deps
  *   a client from client.mjs, and the repo root the docs are read from (default: this repo)
  * @returns one of
- *   { status: 'ok', read: Entry[] }  `AGENTS.md` first, then each unit to read, in precedence order
- *     Entry = { path, heading?, reason, noul? }: `heading` for a `docs/idea.md` section; reason
- *     'always' (AGENTS.md), 'relevant' (with its noul) or 'oversize' (too large to ask about)
+ *   { status: 'ok', read: Entry[], skip: Entry[] }  `read` is `AGENTS.md` first, then each unit
+ *     to read; `skip` is each unit answered below the bar. Both in precedence order.
+ *     Entry = { path, heading?, reason?, noul? }: `heading` for a `docs/idea.md` section; a read
+ *     entry's reason is 'always' (AGENTS.md), 'relevant' (with its noul) or 'oversize' (too large
+ *     to ask about); a skip entry carries its noul
  *   { status: 'skipped', reason }  no key
  *   { status: 'error', reason }    anything else; never thrown
  */
@@ -134,6 +136,7 @@ export async function run(input, { client, root = ROOT }) {
     }
 
     const read = [{ path: ALWAYS, reason: 'always' }];
+    const skip = [];
     for (const { id, unit } of all) {
       if (oversize.has(id)) {
         read.push({ ...entry(unit), reason: 'oversize' });
@@ -141,9 +144,30 @@ export async function run(input, { client, root = ROOT }) {
       }
       const noul = noulOf(answers[id]);
       if (noul >= PRUNE_INCLUDE_NOUL) read.push({ ...entry(unit), reason: 'relevant', noul });
+      else skip.push({ ...entry(unit), noul });
     }
-    return { status: 'ok', read };
+    return { status: 'ok', read, skip };
   } catch (error) {
     return { status: 'error', reason: errorLine(error) };
   }
+}
+
+const label = ({ path: file, heading }) => (heading ? `${file} § ${heading}` : file);
+
+/**
+ * The CLI's line output: one line per unit, `read` lines first in read-list order, then `skip`
+ * lines, or one line for a skip or an error. Each line says why: `always` for AGENTS.md, the noul
+ * for an answered unit, and `oversize, not asked` for a unit that was never asked.
+ */
+export function human(result) {
+  if (result.status !== 'ok') return `jev prune: ${result.status}, ${result.reason}; read the docs as normal`;
+  const why = (e) => {
+    if (e.reason === 'always') return 'always';
+    if (e.reason === 'oversize') return 'oversize, not asked';
+    return `noul ${e.noul.toFixed(2)}`;
+  };
+  return [
+    ...result.read.map((e) => `read ${label(e)} (${why(e)})`),
+    ...result.skip.map((e) => `skip ${label(e)} (noul ${e.noul.toFixed(2)})`),
+  ].join('\n');
 }

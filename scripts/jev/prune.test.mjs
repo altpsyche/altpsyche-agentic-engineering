@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from './client.mjs';
 import { fakeJev } from './fake-jev.mjs';
-import { run } from './prune.mjs';
+import { human, run } from './prune.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WORK = { title: 'Retry failed writes', body: 'Retry failed writes from the outbox.', files: ['src/sync/outbox.js'] };
@@ -110,11 +110,40 @@ test('a unit at exactly the 0.2 threshold is included, just above is included, j
     assert.deepEqual(listed(result), ['AGENTS.md', 'docs/adr/0001-first.md', 'docs/specs/outbox.md']);
   }));
 
+// The CLI contract (README § Adding a tool): one line per answer. Every unit gets exactly one line,
+// a `skip` one as much as a `read` one, and an oversize unit says it was never asked.
+test('the line output has one line per unit, read or skip, and marks AGENTS.md and oversize units', () =>
+  withRepo({ ...BASE, 'docs/adr/0003-huge.md': `MARK-HUGE ${'x'.repeat(100_000)}` }, async (root) => {
+    const result = await run(WORK, { client: fakeClient({ 'MARK-ADR-1': 0.9, 'MARK-SYNC': 0.25 }, 0.05), root });
+    assert.deepEqual(result.skip.map((e) => e.path), [
+      'docs/adr/0002-second.md',
+      'docs/specs/outbox.md',
+      'docs/idea.md',
+      'docs/idea.md',
+      'src/sync/README.md',
+    ]);
+    assert.equal(
+      human(result),
+      [
+        'read AGENTS.md (always)',
+        'read docs/adr/0001-first.md (noul 0.90)',
+        'read docs/adr/0003-huge.md (oversize, not asked)',
+        'read docs/idea.md § 2. Sync (noul 0.25)',
+        'skip docs/adr/0002-second.md (noul 0.05)',
+        'skip docs/specs/outbox.md (noul 0.05)',
+        'skip docs/idea.md § Idea (noul 0.05)',
+        'skip docs/idea.md § 1. Vision (noul 0.05)',
+        'skip src/sync/README.md (noul 0.05)',
+      ].join('\n'),
+    );
+    assert.equal(human({ status: 'skipped', reason: 'no key' }), 'jev prune: skipped, no key; read the docs as normal');
+  }));
+
 test('AGENTS.md is on the read list even when Jev finds nothing relevant, and is never asked about', () =>
   withRepo(BASE, async (root) => {
     const client = fakeClient({}, 0);
     const result = await run(WORK, { client, root });
-    assert.deepEqual(result, { status: 'ok', read: [{ path: 'AGENTS.md', reason: 'always' }] });
+    assert.deepEqual(result.read, [{ path: 'AGENTS.md', reason: 'always' }]);
     assert.ok(!asked(client).some((q) => q.includes('MARK-AGENTS')));
   }));
 
@@ -323,13 +352,13 @@ test('the CLI reads a PR with its changed files and prints the read list, AGENTS
         work: { title: 'Outbox retries', body: 'Retry writes.', changed_files: ['src/sync/outbox.js'] },
       });
     }
-    // Every unit was found relevant, so the list is AGENTS.md and then one line per question.
+    // Every unit was found relevant: AGENTS.md, then one `read` line per answer.
     const lines = stdout.trimEnd().split('\n');
     const questions = jev.requests.reduce((n, r) => n + Object.keys(r.body.questions).length, 0);
-    assert.equal(lines[0], 'AGENTS.md');
+    assert.equal(lines[0], 'read AGENTS.md (always)');
     assert.equal(lines.length, questions + 1);
-    assert.ok(lines.includes('docs/adr/0002-jev-optional-dev-tooling.md'));
-    assert.ok(lines.some((l) => /^docs\/idea\.md § \S/.test(l)), 'no docs/idea.md section line');
+    assert.ok(lines.includes('read docs/adr/0002-jev-optional-dev-tooling.md (noul 0.90)'));
+    assert.ok(lines.some((l) => /^read docs\/idea\.md § \S.* \(noul 0\.90\)$/.test(l)), 'no docs/idea.md section line');
   } finally {
     await jev.close();
   }
@@ -344,7 +373,12 @@ test('the CLI falls back to the issue when the number is not a PR, and prints JS
     assert.equal(status, 0);
     assert.deepEqual(ghCalls, ['pr view 8 --json title,body,files', 'issue view 8 --json title,body']);
     assert.deepEqual(jev.requests[0].body.state, { work: { title: 'Doc pruner', body: 'Prune the docs.', changed_files: [] } });
-    assert.deepEqual(JSON.parse(stdout), { status: 'ok', read: [{ path: 'AGENTS.md', reason: 'always' }] });
+    const parsed = JSON.parse(stdout);
+    assert.equal(parsed.status, 'ok');
+    assert.deepEqual(parsed.read, [{ path: 'AGENTS.md', reason: 'always' }]);
+    const questions = jev.requests.reduce((n, r) => n + Object.keys(r.body.questions).length, 0);
+    assert.equal(parsed.skip.length, questions);
+    assert.ok(parsed.skip.every((e) => e.noul === 0));
   } finally {
     await jev.close();
   }
@@ -356,7 +390,9 @@ test('the CLI takes the first non-blank stdin line as the title, and never calls
     const env = { TYPESAFE_API_KEY: 'fake-key', TYPESAFE_BASE_URL: jev.url };
     const { status, stdout, ghCalls } = await runCli([], { env, stdin: '\n\nSome title\nthe body\n' });
     assert.equal(status, 0);
-    assert.equal(stdout, 'AGENTS.md\n');
+    const lines = stdout.trimEnd().split('\n');
+    assert.equal(lines[0], 'read AGENTS.md (always)');
+    assert.ok(lines.slice(1).every((l) => /^skip .+ \(noul 0\.00\)$/.test(l)), stdout);
     assert.deepEqual(ghCalls, []);
     assert.deepEqual(jev.requests[0].body.state, { work: { title: 'Some title', body: 'the body', changed_files: [] } });
   } finally {

@@ -5,13 +5,14 @@
 //   gh pr view 12 --json title,body,files | node scripts/jev/prune-cli.mjs [--json]
 //   node scripts/jev/prune-cli.mjs [--json] < ticket.txt   first non-blank line is the title
 //
-// Prints the read list, one doc a line (`docs/idea.md § <heading>` for a section), AGENTS.md first.
+// Prints one line per unit, `read` or `skip` with why (`docs/idea.md § <heading>` for a section),
+// AGENTS.md first: the read list is the `read` lines.
 // Always exits 0: a skip or an error is one line, and the agent reads the docs as normal.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createClient, errorLine } from './client.mjs';
-import { run } from './prune.mjs';
+import { human, run } from './prune.mjs';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
@@ -48,11 +49,6 @@ function readWork() {
   }
   const [title = '', ...rest] = text.trim().split('\n');
   return work({ title: title.trim(), body: rest.join('\n').trim() });
-}
-
-function human(result) {
-  if (result.status !== 'ok') return `jev prune: ${result.status}, ${result.reason}; read the docs as normal`;
-  return result.read.map(({ path, heading }) => (heading ? `${path} § ${heading}` : path)).join('\n');
 }
 
 // Check the key first: a keyless run must not call gh or read stdin, and must print the skip.

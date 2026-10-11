@@ -15,7 +15,7 @@ code works.
 | `triage.mjs` | The triage tool, `run(input, { client, root })`. `root` is the repo root its docs are read from; tests point it at a temp tree |
 | `triage-cli.mjs` | Its CLI: an issue number (read with `gh issue view`), or the issue on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
 | `triage.test.mjs` | Tests at the `run()` seam with a fake client, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
-| `prune.mjs` | The doc pruner, `run(input, { client, root })`. Tests point `root` at a temp git repo |
+| `prune.mjs` | The doc pruner, `run(input, { client, root })`, and `human(result)`, its CLI's line output. Tests point `root` at a temp git repo |
 | `prune-cli.mjs` | Its CLI: a PR or issue number (`gh pr view`, falling back to `gh issue view`), or the work on stdin as `gh`'s JSON or plain text with the title first; `--json` for JSON |
 | `prune.test.mjs` | Tests at the `run()` seam with a fake client over a temp git repo, and the CLI as a subprocess against the fake server with a `gh` stub on PATH |
 | `verify-findings.mjs` | The finding verifier, `run(findings, { client, root })`, and `human(result)`, its CLI's line output. `root` is where the review checklist is read from |
@@ -83,6 +83,11 @@ All the questions go to one `ask`, which batches them. A unit that does not fit 
 by `fitsBesideState`, is listed unasked with reason `oversize`, since a missed doc costs more than
 a read. An answer that is not a probability (`noulOf`), or a missing `docs/idea.md`, is an error
 line, never a shorter list.
+
+The result is `{ status: 'ok', read, skip }`: `read` is `AGENTS.md` and each unit to read, `skip`
+each unit answered below the bar, each with its noul. The CLI prints one line per unit, `read`
+lines first, each saying why: `read AGENTS.md (always)`, `read <doc> (noul 0.85)`,
+`read <doc> (oversize, not asked)`, `skip <doc> (noul 0.05)`. The read list is the `read` lines.
 
 ## Verify findings
 
