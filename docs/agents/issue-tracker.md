@@ -33,7 +33,16 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh issue comment <number> --body "Claimed: branch <number>-<slug> (session <token>)"`, then
   **Read back a claim**. Every session shares the owner's account, so the comment is the claim and
   the token tells sessions apart; the assignee only hides the issue from the frontier. The owner
-  frees an issue claim left by a dead session by unassigning it and commenting.
+  frees an issue claim left by a dead session per **Release a claim**: comment, then unassign.
+- **Release a claim** without finishing the item, as on a red baseline: write the comment to a
+  file, then `gh issue comment <number> --body-file <file>` (on a PR, `gh pr comment`), then, on
+  an issue, `gh issue edit <number> --remove-assignee @me`. A comment that does not start with
+  `Claimed:` ends the claim, per **Read back a claim**. **Comment first, then unassign**: the
+  other way round, the issue is back on the frontier while the old claim stands, so a new
+  session's claim either loses to it or is ended by the late comment. On a PR, the comment alone
+  releases it and the label stays as it was. On an issue, the branch was never pushed: after
+  **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`, so the
+  next claimant's **Branch** does not fail on a branch that already exists.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
   `--body "Claimed: fix round (session <token>)"`, then **Read back a claim**. A PR is claimed
@@ -71,6 +80,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
   `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
   `main` gives an empty diff.
+- **Check the base**, when a fix round's branch is red before any change: `git fetch origin`,
+  `git checkout --detach origin/main`, run `scripts/verify.sh`, then `gh pr checkout <number>` to
+  return to the branch.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
   is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
