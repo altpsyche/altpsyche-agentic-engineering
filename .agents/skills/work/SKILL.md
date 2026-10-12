@@ -31,7 +31,8 @@ frontier:
 
 - **Implementer** — first, unclaimed open PRs labelled `status:changes-requested`, oldest first:
   a fix round outranks new work. Then open issues labelled `ready-for-agent`, oldest first, with
-  no open blocker and no assignee.
+  no assignee and no `status:blocked` label. **List** returns labels, not blockers, so the label
+  stands for an open native blocker: **Block** adds it and **Unblock** removes it.
 - **Reviewer** — unclaimed open PRs labelled `status:in-review`, oldest first.
 - **Planner** — the earliest unfinished Phase in [`docs/idea.md`](../../../docs/idea.md) § Roadmap.
 

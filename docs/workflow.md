@@ -61,9 +61,10 @@ has confirmed the spec's testing seams.
    its own ticket, not part of this one. Then, in this order, per **Block** and **Release a
    claim**: link the breakage issue as the item's native blocker, add `status:blocked`, then
    release the claim with a comment that quotes the failing line and links the breakage issue.
-   Blocked, the item stays off the frontier, so the next session does not pick it, hit the same
-   red and release it again; **Unblock** in § 5 returns it when the breakage issue closes. When the item is a PR, as in § 4,
-   step 3, skip the block: **List PRs** does not read `status:blocked`. Only the release applies.
+   `/work`'s frontier skips an issue labelled `status:blocked`, so the next session does not pick
+   it, hit the same red and release it again; **Unblock** in § 5 returns it when the breakage
+   issue closes. When the item is a PR, as in § 4, step 3, skip the block: **List PRs** does not
+   read `status:blocked`. Only the release applies.
 4. Read `AGENTS.md` and the ADRs that touch the area. To find them, run the prune tool on the
    issue first, per [`docs/agents/jev.md`](agents/jev.md).
 5. **Plan**: post the `Plan:` comment before the first commit, so intent is reviewable before the
