@@ -1,6 +1,5 @@
-// Tests for the ruleset step of scripts/bootstrap.sh. Each case copies the script into a temp
-// repo with a stand-in install-hooks.sh and this repo's docs/idea.md, and puts a stub `gh` first
-// on PATH.
+// Tests for the ruleset step of scripts/bootstrap.sh. Each case copies the script into a temp repo
+// with a stand-in install-hooks.sh and this repo's docs/idea.md, and puts a stub gh first on PATH.
 // The stub logs every call and answers the rulesets list as the case asks: refused the way the API
 // refuses a free private repo, or a list it filters with the caller's --jq, as gh does.
 

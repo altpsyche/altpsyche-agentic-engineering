@@ -65,7 +65,8 @@ if rulesets="$(gh api "repos/$repo/rulesets" --jq '.[] | "\(.id) \(.name)"' 2>"$
 else
   rulesets_listed=0
   message="$(tr -s '\n' ' ' <"$rulesets_err")"
-  echo "Could not list rulesets, so no branch is protected: ${message% }." \
+  message="${message% }"
+  echo "Could not list rulesets, so no branch is protected: ${message:-gh gave no message}." \
     "On a private repo, a plan without rulesets is the usual cause." >&2
 fi
 
@@ -76,7 +77,8 @@ fi
 ruleset() {
   local name="$1" what="$2" json="$3" id method endpoint
   [ "$rulesets_listed" = 1 ] || return 0
-  id="$(awk -v name="$name" '{ id = $1; sub(/^[^ ]+ /, ""); if ($0 == name) { print id; exit } }' <<<"$rulesets")"
+  id="$(awk -v name="$name" '{ id = $1; sub(/^[^ ]+ /, ""); if ($0 == name) { print id; exit } }' \
+    <<<"$rulesets")"
   if [ -n "$id" ]; then
     method=PUT endpoint="repos/$repo/rulesets/$id"
   else
@@ -92,9 +94,10 @@ ruleset() {
 
 # Protect the default branch: changes land only through a PR with `verify` green, and its history is
 # never rewritten or deleted. Prose says "never commit to main"; this makes it true.
-default_branch_ruleset="$(cat <<'JSON'
+default_branch_name="default-branch"
+default_branch_ruleset="$(cat <<JSON
 {
-  "name": "default-branch",
+  "name": "$default_branch_name",
   "target": "branch",
   "enforcement": "active",
   "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
@@ -115,4 +118,4 @@ default_branch_ruleset="$(cat <<'JSON'
 }
 JSON
 )"
-ruleset default-branch "the default branch" "$default_branch_ruleset"
+ruleset "$default_branch_name" "the default branch" "$default_branch_ruleset"
