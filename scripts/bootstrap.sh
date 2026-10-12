@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # One-time setup for a repo made from this template: switches on the pre-push hook in this clone,
 # offers to save the optional Jev key, creates every label the workflow uses, so no agent ever
-# invents a near-duplicate, then protects the default branch with a ruleset. Idempotent (`--force`
-# updates labels, the ruleset is updated by name), so rerun it after adding a phase to
-# docs/idea.md § Roadmap.
+# invents a near-duplicate, then protects the default branch and every integration/* branch with a
+# ruleset each. Idempotent (`--force` updates labels, each ruleset is updated by name), so rerun it
+# after adding a phase to docs/idea.md § Roadmap.
 #
 #   scripts/bootstrap.sh
 #
@@ -128,3 +128,33 @@ default_branch_ruleset="$(cat <<JSON
 JSON
 )"
 ruleset "$default_branch_name" "the default branch" "$default_branch_ruleset"
+
+# Protect integration branches (docs/workflow.md § Integration branches): an effort's sub-PRs land
+# only by PR with `verify` green, and the history is never rewritten. No approval is required, since
+# no session can approve its own account's PR; the `status:approved` label carries the verdict.
+# No bypass actors, so agents and owner alike merge sub-PRs through the rules. No deletion rule:
+# the branch is deleted once its integration PR merges, and with no bypass it would block the owner.
+integration_name="integration-branches"
+integration_ruleset="$(cat <<JSON
+{
+  "name": "$integration_name",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["refs/heads/integration/*"], "exclude": []}},
+  "bypass_actors": [],
+  "rules": [
+    {"type": "non_fast_forward"},
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": false,
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": false}},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": false,
+      "required_status_checks": [{"context": "verify"}]}}
+  ]
+}
+JSON
+)"
+ruleset "$integration_name" "every integration/* branch" "$integration_ruleset"

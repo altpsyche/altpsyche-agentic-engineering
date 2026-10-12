@@ -190,6 +190,27 @@ whoever merged it: the owner, or the session the owner merged through.
 **Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
 `status:blocked`, and every accepted retro action has either landed or become its own issue.
 
+## Integration branches
+
+An effort too large for one PR to `main`, such as a spec whose tickets land in waves, collects
+its tickets on `integration/<name>`, cut from `main`. Each ticket is still one issue, one worktree,
+one branch and one PR, but that PR, a sub-PR, targets the integration branch: § 2 branches from
+`origin/integration/<name>` and opens the PR with `--base integration/<name>`, per **Branch** and
+**Open a PR**. § 3 reviews a sub-PR against its base, and § 5 says who closes its issue. Once every
+sub-PR has merged, one PR from `integration/<name>` to `main` takes the whole effort through the
+loop, and the branch is deleted when it merges.
+
+**Protected like `main`.** The `integration-branches` ruleset that
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) sets covers every `integration/*` branch:
+changes land only by PR with `verify` green, and its history is never rewritten. It requires no
+approving review and has no bypass actor, so a sub-PR merges on its `status:approved` label and no
+one, agent or owner, pushes to the branch directly. It has no deletion rule, so the branch can be
+deleted after its integration PR merges.
+
+**Fix rounds land by PR.** A fix round on a sub-PR pushes to the sub-PR's own branch, per § 4. A
+fix round on the integration PR to `main` lands through a small PR into `integration/<name>`, like
+any sub-PR, never by a push to the integration branch.
+
 ## Review checklist
 
 Applied in full on every review. Each line is a hard rule, not a judgement call.

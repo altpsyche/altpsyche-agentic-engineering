@@ -113,25 +113,51 @@ test('a refused rulesets list sets no ruleset and warns once with the API messag
 });
 
 test('a ruleset the list already has is updated in place by its id', needsJq, async () => {
-  const run = await bootstrap({ list: [{ id: 7, name: 'other' }, { id: 42, name: 'main' }] });
+  const run = await bootstrap({
+    list: [{ id: 7, name: 'other' }, { id: 42, name: 'main' }, { id: 9, name: 'integration-branches' }],
+  });
   assert.equal(run.status, 0, run.stderr);
-  assert.deepEqual(writes(run.calls), ['api -X PUT repos/owner/repo/rulesets/42 --input -']);
+  assert.deepEqual(writes(run.calls), [
+    'api -X PUT repos/owner/repo/rulesets/42 --input -',
+    'api -X PUT repos/owner/repo/rulesets/9 --input -',
+  ]);
   assert.equal(run.stderr, '');
   assert.match(run.stdout, /^Ruleset main: /m);
+  assert.match(run.stdout, /^Ruleset integration-branches: /m);
 });
 
 test('a ruleset the list does not have is created', needsJq, async () => {
-  const run = await bootstrap({ list: [{ id: 7, name: 'main-old' }] });
+  const run = await bootstrap({ list: [{ id: 7, name: 'main-old' }, { id: 8, name: 'integration-branches-old' }] });
   assert.equal(run.status, 0, run.stderr);
-  assert.deepEqual(writes(run.calls), ['api -X POST repos/owner/repo/rulesets --input -']);
+  assert.deepEqual(writes(run.calls), [
+    'api -X POST repos/owner/repo/rulesets --input -',
+    'api -X POST repos/owner/repo/rulesets --input -',
+  ]);
+  assert.deepEqual(run.sent.map((r) => r.name), ['main', 'integration-branches']);
   assert.equal(run.stderr, '');
 });
 
 test('a refused write still warns for that ruleset and the script goes on', needsJq, async () => {
   const run = await bootstrap({ list: [], set: 'refused' });
   assert.equal(run.status, 0, run.stderr);
-  assert.equal(writes(run.calls).length, 1);
+  assert.equal(writes(run.calls).length, 2);
   assert.match(run.stderr, /Could not set ruleset main;/);
+  assert.match(run.stderr, /Could not set ruleset integration-branches;/);
+});
+
+test('the integration-branches ruleset takes changes only by PR with verify green, and has no bypass', needsJq, async () => {
+  const run = await bootstrap({ list: [] });
+  assert.equal(run.status, 0, run.stderr);
+  const integration = named(run.sent, 'integration-branches');
+  assert.ok(integration, `a ruleset named integration-branches is sent, got: ${run.sent.map((r) => r.name)}`);
+  assert.equal(integration.target, 'branch');
+  assert.equal(integration.enforcement, 'active');
+  assert.deepEqual(integration.conditions.ref_name.include, ['refs/heads/integration/*']);
+  assert.deepEqual(integration.bypass_actors, []);
+  // No deletion rule: the branch is deleted once its integration PR merges.
+  assert.deepEqual(integration.rules.map((r) => r.type), ['non_fast_forward', 'pull_request', 'required_status_checks']);
+  assert.equal(rule(integration, 'pull_request').parameters.required_approving_review_count, 0);
+  assert.deepEqual(rule(integration, 'required_status_checks').parameters.required_status_checks, [{ context: 'verify' }]);
 });
 
 // The live `main` ruleset on this repo, as the owner set it (#38): the default-branch ruleset must
