@@ -173,7 +173,12 @@ instead, with no block.
 
 ### 5. Merge and learn (Owner)
 
-The owner merges. Then `/retro` looks back over the session and proposes changes to the **environment**
+The owner merges. The default branch's ruleset, set by
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh), requires one approving review, which no session
+can give: every session shares the owner's account, and GitHub forbids approving your own PR. So
+the `status:approved` label carries the verdict, and the owner merges with the ruleset's one bypass,
+the admin role. Agents run as that account and hold the bypass too; they still never merge
+(§ Roles). Then `/retro` looks back over the session and proposes changes to the **environment**
 rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
 standard where it was a judgement call.
 

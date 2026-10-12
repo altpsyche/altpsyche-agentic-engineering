@@ -56,8 +56,7 @@ fi
 # Rulesets, each created or updated by name. One list call, and an id comes only from a list that
 # succeeded: a refused call prints its error body on stdout, which is not an id. If the API refuses
 # the list (a private repo on a plan without rulesets, auth, network), this warns once with gh's
-# message and sets no ruleset, so only the prose rules hold. No bypass actors on any of them: every
-# agent session runs as the owner's account, so an owner bypass would exempt agents too.
+# message and sets no ruleset, so only the prose rules hold.
 rulesets_err="$(mktemp)"
 trap 'rm -f "$rulesets_err"' EXIT
 if rulesets="$(gh api "repos/$repo/rulesets" --jq '.[] | "\(.id) \(.name)"' 2>"$rulesets_err")"; then
@@ -92,27 +91,37 @@ ruleset() {
   fi
 }
 
-# Protect the default branch: changes land only through a PR with `verify` green, and its history is
-# never rewritten or deleted. Prose says "never commit to main"; this makes it true.
-default_branch_name="default-branch"
+# Protect the default branch: changes land only through a PR with `verify` green and one approving
+# review, history stays linear and is never rewritten or deleted. Prose says "never commit to main";
+# this makes it true. The one bypass actor is the admin role, and it exists because every session
+# shares the owner's account, which GitHub forbids from approving its own PR: the review verdict is
+# the `status:approved` label (docs/workflow.md § 3), and the owner merges with the bypass. It also
+# exempts agents, so agents never merge (docs/workflow.md § Roles); the pre-push hook and CI still
+# run. Named `main` to match the ruleset this repo already had, so a run updates it in place.
+default_branch_name="main"
 default_branch_ruleset="$(cat <<JSON
 {
   "name": "$default_branch_name",
   "target": "branch",
   "enforcement": "active",
   "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
-  "bypass_actors": [],
+  "bypass_actors": [{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}],
   "rules": [
     {"type": "deletion"},
     {"type": "non_fast_forward"},
+    {"type": "required_linear_history"},
     {"type": "pull_request", "parameters": {
-      "required_approving_review_count": 0,
+      "required_approving_review_count": 1,
       "dismiss_stale_reviews_on_push": false,
+      "required_reviewers": [],
       "require_code_owner_review": false,
       "require_last_push_approval": false,
-      "required_review_thread_resolution": false}},
+      "required_review_thread_resolution": false,
+      "require_extra_approval_for_unattributed_changes": true,
+      "allowed_merge_methods": ["merge", "squash", "rebase"]}},
     {"type": "required_status_checks", "parameters": {
-      "strict_required_status_checks_policy": false,
+      "strict_required_status_checks_policy": true,
+      "do_not_enforce_on_create": false,
       "required_status_checks": [{"context": "verify"}]}}
   ]
 }
