@@ -29,15 +29,16 @@ was built and used.
 | [`scripts/install-hooks.sh`](scripts/install-hooks.sh) | Switches the hook on by setting `core.hooksPath`; run it once per clone |
 | [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, that nothing is wired for one harness, that every eval folder names a skill, that every Jev CLI is in `docs/agents/jev.md`, and the `AGENTS.md` line and byte budgets; no packages |
 | [`scripts/jev/`](scripts/jev/README.md) | Optional plain-Node tools that hand closed-set workflow questions to TypeSafe's Jev (ADR-0002). Without `TYPESAFE_API_KEY` each prints one skip line and the agent does the step itself; never run in CI. `scripts/jev/set-key.sh` saves your key to the main clone's gitignored `.env` |
-| [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Switches on the pre-push hook, offers to save the optional Jev key, creates every workflow label and protects `main`: changes land only by PR with `verify` green |
+| [`scripts/bootstrap.sh`](scripts/bootstrap.sh) | Switches on the pre-push hook, offers to save the optional Jev key, creates every workflow label and protects `main` and every `integration/*` branch: changes land only by PR with `verify` green, except that the owner's admin bypass merges to `main` (`docs/workflow.md` § 5) |
 
 ## Using this template
 
 1. **Create the repo**: `gh repo create <owner>/<name> --template altpsyche/altpsyche-agentic-engineering --private --clone`
    (or **Use this template** on GitHub), then `cd` into it.
-2. **Create the labels, protect `main` and switch on the pre-push hook**: `scripts/bootstrap.sh`.
-   On a private repo the branch ruleset needs a paid plan; without one the script warns and `main`
-   stays open. The hook is per clone: in any other clone, run `scripts/install-hooks.sh`.
+2. **Create the labels, protect `main` and integration branches, and switch on the pre-push
+   hook**: `scripts/bootstrap.sh`. On a private repo branch rulesets need a paid plan; without one
+   the script warns and every branch stays open. The hook is per clone: in any other clone, run
+   `scripts/install-hooks.sh`.
 3. **Fill the placeholders**. `grep -rn 'TEMPLATE\|<Project>\|<owner>' .` lists every one:
    - `AGENTS.md`: name, what the project is, its constitution, anti-patterns.
    - `docs/workflow.md` § Review checklist: the constitution and the field's hard rules.

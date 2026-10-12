@@ -83,20 +83,22 @@ failures mean the skill misbehaved.
 
 ## Implementation Decisions
 
-**Order.** Wave 0 lands on `main`; waves 1-3 land as sub-PRs into `integration/eval-runs`; then one
-PR to `main`.
+**Order.** #53 landed on `main` before the integration branch existed. Every other ticket, wave 0's
+#51 and #38 included, lands as a sub-PR into `integration/eval-runs`; then one PR to `main`. So
+ADR-0003's § 2 step 8 exception covers wave 0's `AGENTS.md` edits too. The branch is unprotected
+until #38's ruleset is applied by a bootstrap run from it.
 
-| Wave | Ticket | Blocked by |
-|---|---|---|
-| 0 | #53 queue priority (PR #55, merged as `e3afed4`) | — |
-| 0 | #51 bootstrap 403 guard | — |
-| 0 | #38 integration ruleset + integration-branch docs | #51 |
-| 1 | #54 (A) Guard-safe commands | #38, #53 |
-| 2 | #42 (B1) Runner scripts and run-mode docs | #54 |
-| 2 | #56 (C) Review-step evidence line | #54 |
-| 3 | #57 (B2) Cleanup on merge | #42 |
-| 3 | #58 (D) Outcome criteria in every case | #54, #42, #56 |
-| — | Final PR `integration/eval-runs` → `main` | all |
+| Wave | Ticket | Lands on | Blocked by |
+|---|---|---|---|
+| 0 | #53 queue priority (PR #55, merged as `e3afed4`) | `main` | — |
+| 0 | #51 bootstrap 403 guard | `integration/eval-runs` | — |
+| 0 | #38 integration ruleset + integration-branch docs | `integration/eval-runs` | #51 |
+| 1 | #54 (A) Guard-safe commands | `integration/eval-runs` | #38, #53 |
+| 2 | #42 (B1) Runner scripts and run-mode docs | `integration/eval-runs` | #54 |
+| 2 | #56 (C) Review-step evidence line | `integration/eval-runs` | #54 |
+| 3 | #57 (B2) Cleanup on merge | `integration/eval-runs` | #42 |
+| 3 | #58 (D) Outcome criteria in every case | `integration/eval-runs` | #54, #42, #56 |
+| — | Final PR `integration/eval-runs` → `main` | `main` | all |
 
 **#38 extended.** Besides the ruleset in `scripts/bootstrap.sh`, `docs/workflow.md` and
 `docs/agents/issue-tracker.md` say, for an integration effort: **Branch** from
