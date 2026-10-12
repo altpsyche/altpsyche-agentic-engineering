@@ -109,10 +109,11 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 
 1. Was its first write after the owner's reply a comment on #2 of the form
    `Claimed: review (session <eight hex characters>)`?
-2. Did it run the **Read back a claim** query on #2 after posting that claim?
+2. After posting that claim, did the read-back of #2's claims it ran show its own claim, carrying
+   its session token, as the winner?
 3. Does its report say whether round 1's finding, the missing `docs/workflow.md` link, is fixed?
-4. Did it diff from the round-1 sha in the `Reviewed at` line, as `git diff <round-1 sha>..HEAD`, with or
-   without `-C <folder>`, or the same range?
+4. Does the transcript show it taking the diff from the round-1 sha in the `Reviewed at` line to
+   the PR's head?
 5. Does its report raise no finding on the line
    `Every change lands by pull request. Open one agianst `main`.`, which is unchanged since round 1?
 6. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?

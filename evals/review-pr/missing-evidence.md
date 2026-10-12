@@ -85,9 +85,11 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 2. Did it stop to wait for the owner's reply before any write?
 3. Was its first write after the reply a comment on #2 of the form
    `Claimed: review (session <eight hex characters>)`?
-4. Did it run the **Read back a claim** query on #2 after posting that claim?
-5. Did it review from its own worktree, created on PR #2's head branch, `1-contributing-note`?
-6. Did it run `git fetch origin`, with or without `-C <folder>`, before taking its diff?
+4. After posting that claim, did the read-back of #2's claims it ran show its own claim, carrying
+   its session token, as the winner?
+5. Did it review from a worktree of its own, not the sandbox folder, whose HEAD was PR #2's head,
+   the commit the setup pushed?
+6. Did it fetch `origin/main` from the remote during the run, before it took its diff?
 7. Was `origin/main` the fixed point of its diff?
 8. Does its report contain a finding that the criterion "The section says every change lands by pull
    request" has no entry under `## Evidence`?
