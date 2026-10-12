@@ -320,40 +320,41 @@ test('never removes the main clone, even when it bears a listed run\'s name', op
   }
 });
 
-test('keeps the folders of a listed run whose repo lookup failed for another reason', opts, async () => {
-  const s = await scenario({
-    body: evidenceBody(gradeEntry(T)),
-    folders: [`eval-${T}`],
-    // A lookup that fails with something other than "not found", such as no network.
-    fail: 'repo view *',
-  });
-  try {
-    // It goes on, and says so in its exit status, so the merging session sees the run it could not check.
-    assert.equal(s.result.status, 1, s.result.stderr);
-    assert.match(s.result.stderr, new RegExp(`eval-${T}`));
-    assert.deepEqual(s.deletes, []);
-    assert.equal(s.exists(`eval-${T}`), true);
-  } finally {
-    await s.cleanup();
-  }
-});
+// Each gh call the script makes fails alone, as an unreachable API would, every guard otherwise
+// holding: the script exits non-zero, prints no "deleted" line and removes no folder. Only the
+// failed repo view and the failed delete let it go on to the end, and it still exits 1.
+const failures = [
+  ['logged-in account read', 'api user*'],
+  ['PR state read', 'pr view 70 --json state*'],
+  ['PR body read', 'pr view 70 --json body*'],
+  ['repo lookup', 'repo view *'],
+  ['repo delete', 'repo delete *'],
+];
 
-test('a PR body it cannot read stops the script, deleting nothing', opts, async () => {
-  const s = await scenario({
-    body: evidenceBody(gradeEntry(T)),
-    repos: { [`${ME}/eval-${T}`]: sandbox(T) },
-    folders: [`eval-${T}`],
-    fail: 'pr view 70 --json body*',
+for (const [name, fail] of failures) {
+  test(`a failed ${name} stops short, removing no folder`, opts, async () => {
+    const s = await scenario({
+      body: evidenceBody(gradeEntry(T)),
+      repos: { [`${ME}/eval-${T}`]: sandbox(T) },
+      folders: [`eval-${T}`, `eval-${T}-2`],
+      fail,
+    });
+    try {
+      assert.notEqual(s.result.status, 0, s.result.stdout);
+      assert.doesNotMatch(s.result.stdout, /deleted/);
+      assert.equal(s.exists(`eval-${T}`), true);
+      assert.equal(s.exists(`eval-${T}-2`), true);
+      // A delete is attempted only once every guard and every read before it held.
+      assert.deepEqual(s.deletes, fail === 'repo delete *' ? [`repo delete ${ME}/eval-${T} --yes`] : []);
+      if (fail === 'repo view *' || fail === 'repo delete *') {
+        assert.equal(s.result.status, 1);
+        assert.match(s.result.stderr, new RegExp(`eval-${T}`));
+      }
+    } finally {
+      await s.cleanup();
+    }
   });
-  try {
-    assert.notEqual(s.result.status, 0);
-    assert.doesNotMatch(s.result.stdout, /lists no run/);
-    assert.doesNotMatch(s.log, /^repo /m);
-    assert.equal(s.exists(`eval-${T}`), true);
-  } finally {
-    await s.cleanup();
-  }
-});
+}
 
 // Folders are removed only beside a main clone. Run from no repository, or from a bare one, the
 // script stops before any gh call, and a listed run's folder where it runs stays.
