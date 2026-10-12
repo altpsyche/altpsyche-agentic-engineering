@@ -23,8 +23,9 @@ the child's own unrelated issues.
   own, never by editing it.
 - Issue refs in template ADRs name the template repo, as `altpsyche/altpsyche-agentic-engineering`
   then a hash and the number, and `check-skills.mjs` keeps them that way.
-- `scripts/bootstrap.sh` removes `docs/specs/` from a new child in one local commit, gated on a
-  sentinel it deletes, and skipped in the template repo itself.
+- `scripts/bootstrap.sh` removes the template's specs from a new child in one local commit,
+  keeping `docs/specs/README.md` so the folder survives, gated on a sentinel it deletes, and
+  skipped in the template repo itself.
 
 ## User Stories
 
@@ -47,21 +48,28 @@ the child's own unrelated issues.
 9. As the owner of a child repo, I want a bare issue ref in my own ADRs to pass, so that the check
    never fights my own refs.
 10. As the owner of a new child repo, I want the template's specs gone after bootstrap, so that
-    `docs/specs/` holds only what my project builds.
+    `docs/specs/` holds only what my project builds, and the folder still there, so that links to
+    it from `AGENTS.md` and the agent docs stay valid.
 11. As the owner of a new child repo, I want that removal in one commit, made before the rulesets
     are set, so that the tree is clean for the pre-push hook and I push it once.
 12. As the owner of a child repo rerunning bootstrap after adding a phase, I want the removal not to
     run again, so that my own specs are never deleted.
 13. As the template's owner running bootstrap on the template, I want the removal skipped, so that
     the template keeps its specs.
-14. As the owner of a new child repo, I want no file that ships to link into the removed specs, so
-    that the doc-link check stays green after bootstrap.
+14. As the owner of a new child repo, I want no file that ships to link a removed spec, so that the
+    doc-link check stays green after bootstrap and the push it asks for is not blocked.
 15. As the template's owner, I want `check-skills.mjs` to fail while the sentinel exists on a link
-    into `docs/specs/` from a file outside it, so that a shipped file cannot start depending on a
-    spec children never get.
+    to a spec file from a file outside `docs/specs/`, so that a shipped file cannot start depending
+    on a spec children never get.
 16. As the owner of a child repo, I want that link check to stop once the sentinel is gone, so that
     my own files may link my own specs.
-17. As the owner, I want the README's "Using this template" steps to say that bootstrap makes a
+17. As the owner of a new child repo whose bootstrap commit fails, I want the removal undone, so
+    that the tree is clean for the pre-push hook and a rerun tries again.
+18. As a Planner in the template, I want the docs that say where ADRs go to name
+    `docs/adr/template/`, so that I never write a template ADR to the child's folder.
+19. As an agent running the Jev prune tool, I want it to find ADRs in both folders, so that a
+    governing ADR is never silently left out.
+20. As the owner, I want the README's "Using this template" steps to say that bootstrap makes a
     commit to push, so that the step does not surprise me.
 
 ## Implementation Decisions
@@ -73,24 +81,38 @@ the child's own unrelated issues.
   `evals/README.md`, `scripts/` comments and messages, the Jev scripts and their tests, and
   `.github/workflows/ci.yml`. Messages that print an ADR number keep the number; only links and
   paths change. `AGENTS.md`'s Where things live row for ADRs names both folders.
+- **Where new ADRs go.** Every doc that says where an ADR is written or how it is numbered says
+  `docs/adr/template/` for the template and `docs/adr/` for a child: `AGENTS.md`'s Pending line,
+  `docs/workflow.md` § 1, and the vendored `domain-modeling` skill's ADR format, whose Numbering
+  section scans the folder the ADR goes in. That skill edit is listed under Local changes in
+  `.agents/skills/README.md`.
+- **The Jev prune tool** finds ADRs in `docs/adr/` and `docs/adr/template/`, both in `AGENTS.md`'s
+  precedence order, and its README says so. Today its pattern matches only the top folder, so it
+  already misses ADR-0004 and would miss every ADR after the move, without an error.
 - **Qualified refs.** Each bare issue ref in a template ADR becomes
   `altpsyche/altpsyche-agentic-engineering` followed by the hash and number. ADR-0001's link to the
   guardrails spec becomes an absolute link to that file on the template repo's `main`.
 - **`check-skills.mjs`: bare refs.** A file under `docs/adr/template/` fails on an issue ref not
   preceded by an `owner/repo` qualifier. Text in code spans and fenced blocks is ignored, as other
-  checks there do. The checker's existing exclusions for ADRs (old commands quoted) cover the new
+  checks there do. A ref that is the text of a link with an absolute URL target passes, since the
+  URL names the repo; ADR-0002 and ADR-0003 already carry refs of that form. The checker's existing exclusions for ADRs (old commands quoted) cover the new
   folder too.
-- **`check-skills.mjs`: spec links.** While `docs/specs/.from-template` exists, a relative link
-  into `docs/specs/` from a file outside `docs/specs/` fails, naming the file. Once the sentinel is
-  gone the check does nothing.
+- **`check-skills.mjs`: spec links.** While `docs/specs/.from-template` exists, a relative link to
+  a file under `docs/specs/` other than its `README.md`, from a file outside `docs/specs/`, fails,
+  naming the file. A link to the folder itself or its `README.md` passes: those survive bootstrap.
+  Once the sentinel is gone the check does nothing.
 - **`bootstrap.sh`: spec removal.** A new step after the hook switch and the Jev key offer, before
   labels and rulesets. It runs only when `docs/specs/.from-template` exists and the repo's
   `nameWithOwner`, which the script already reads, is not `altpsyche/altpsyche-agentic-engineering`.
-  It `git rm -r`s `docs/specs/`, sentinel included, and commits with a message naming ADR-0004. It
-  prints one line saying a commit was made and must be pushed. A refused commit (no git identity,
-  say) warns and the setup goes on, the way a refused ruleset does.
-- **The sentinel.** `docs/specs/.from-template` is a short text file saying what it is for and
-  linking ADR-0004.
+  It `git rm`s every tracked file in `docs/specs/` except `README.md`, sentinel included, and
+  commits with a message naming ADR-0004. It prints one line saying a commit was made and must be
+  pushed. A refused commit (no git identity, say) restores every removed file, sentinel included,
+  so the tree is clean and a rerun tries again, then warns and the setup goes on, the way a refused
+  ruleset does.
+- **The sentinel and the folder's README.** `docs/specs/.from-template` is a short text file saying
+  what it is for and linking ADR-0004. `docs/specs/README.md` is new: one line saying the project's
+  specs live here, written by `/to-spec`, and nothing about the template, so it reads right in a
+  child.
 - **README.** "Using this template" step 2 says bootstrap removes the template's specs in a commit
   the owner pushes. "What you get" lists `docs/adr/template/` in place of `docs/adr/`, and its
   description stops at ADR-0002, so it names all four.
@@ -106,14 +128,19 @@ assert how the script does it.
     commit, made before the first ruleset call;
   - without the sentinel, no commit is made and `docs/specs/` is untouched;
   - with `nameWithOwner` the template, no commit is made and `docs/specs/` is untouched;
+  - after removal, `docs/specs/README.md` is still there;
+  - a refused commit leaves the tree clean, with the specs and the sentinel back;
   - a second run after the first makes no commit.
   The temp repo needs a git identity for the commit; the stub's `repo view` answer becomes a case
   option.
 - **`scripts/check-skills.test.mjs`**, by its existing fixture style:
   - a bare issue ref under `docs/adr/template/` fails; a qualified one passes; one in a code span
     passes; a bare one in `docs/adr/` passes;
-  - with the sentinel, a link into `docs/specs/` from outside fails and one from inside passes;
-    without the sentinel, the outside link passes.
+  - a link-text ref whose target is an absolute URL passes under `docs/adr/template/`;
+  - with the sentinel, a link to a spec file from outside fails, one from inside passes, and one to
+    the folder or its `README.md` passes; without the sentinel, the outside spec link passes.
+- **`scripts/jev/prune.test.mjs`**: an ADR under `docs/adr/template/` is found, as one under
+  `docs/adr/` is.
 - **The move** is proven by `verify.sh`'s doc-link check, which fails on any link the move missed.
 
 ## Out of Scope
