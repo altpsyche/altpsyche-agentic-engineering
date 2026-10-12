@@ -196,9 +196,13 @@ frontier never offered the freed issue. Ticket #4 added this during the DRY pass
 here so the spec matches what landed.
 
 **Pre-push hook.** Lives under `.githooks/`, runs `scripts/verify.sh`, and is switched on by a small
-install script that `scripts/bootstrap.sh` calls, which sets `core.hooksPath`. `AGENTS.md` lists
-`--no-verify` by an agent as an anti-pattern. A git hook belongs to git, not to any harness.
-ADR-0001 records that as an amendment, which the owner signs off by merging that ticket's PR.
+install script that `scripts/bootstrap.sh` calls, which sets `core.hooksPath`. It checks a clean
+tree: `verify.sh` reads the working tree, so the hook first blocks the push, with one line saying
+to commit or stash, when `git status --porcelain` lists any change or untracked file (ignored files
+excepted). On a clean tree `verify.sh` checks the committed HEAD, which is what a push of the
+current branch sends (#31). `AGENTS.md` lists `--no-verify` by an agent as an anti-pattern. A git
+hook belongs to git, not to any harness. ADR-0001 records that as an amendment, which the owner
+signs off by merging that ticket's PR.
 
 **Clean baseline.** `docs/workflow.md` § 2: after the worktree is created from `origin/main` and
 before any change, run `scripts/verify.sh`. If it is red, stop, as in user story 11. In a fix round
@@ -275,8 +279,9 @@ the sample it came from, so live runs can retune it.
   and every Jev CLI under `scripts/jev/` is listed in `docs/agents/jev.md`. The claim read-back
   jq is tested on fixture comment lists that include a `Plan:` comment.
 - **The pre-push hook** is tested through its install script, the one `scripts/bootstrap.sh`
-  calls. In a temp repo, the test checks the script sets `core.hooksPath`, a red `verify.sh`
-  blocks the push, and a green one lets it through.
+  calls. In a temp repo, the test checks the script sets `core.hooksPath`, a tracked change or an
+  untracked file blocks the push before `verify.sh` runs, an ignored file does not, and on a
+  clean tree a red `verify.sh` blocks the push and a green one lets it through.
 - **Doc-only tickets** (DRY pass, baseline, plan, evidence) are proven by `scripts/verify.sh` and
   by the `work` and `review-pr` evals once they exist. Until then, by a Reviewer walking the step
   from its single owner.

@@ -25,7 +25,7 @@ was built and used.
 | [`docs/adr/`](docs/adr/) | ADR-0001: why the workflow is built this way. ADR-0002: Jev answers closed-set questions, optionally |
 | [`docs/idea.md`](docs/idea.md) | Skeleton of the project's source of truth |
 | [`scripts/verify.sh`](scripts/verify.sh) | Everything CI runs; Phase 0 appends the project's own checks |
-| [`.githooks/pre-push`](.githooks/pre-push) | A git pre-push hook that runs `scripts/verify.sh` and blocks the push when it fails. It belongs to git, so it binds every harness alike |
+| [`.githooks/pre-push`](.githooks/pre-push) | A git pre-push hook that refuses a dirty tree, then runs `scripts/verify.sh` and blocks the push when it fails. It belongs to git, so it binds every harness alike |
 | [`scripts/install-hooks.sh`](scripts/install-hooks.sh) | Switches the hook on by setting `core.hooksPath`; run it once per clone |
 | [`scripts/check-skills.mjs`](scripts/check-skills.mjs) | Checks skill frontmatter, doc links, that nothing is wired for one harness, that every eval folder names a skill, that every Jev CLI is in `docs/agents/jev.md`, and the `AGENTS.md` line and byte budgets; no packages |
 | [`scripts/jev/`](scripts/jev/README.md) | Optional plain-Node tools that hand closed-set workflow questions to TypeSafe's Jev (ADR-0002). Without `TYPESAFE_API_KEY` each prints one skip line and the agent does the step itself; never run in CI. `scripts/jev/set-key.sh` saves your key to the main clone's gitignored `.env` |
