@@ -44,12 +44,14 @@ scripts/verify.sh     # everything CI runs
 ```
 
 **Prefer running it over reasoning about whether your change is correct.** Today it checks the agent
-layer (skill frontmatter, doc links, no harness-specific files, eval folders that name a skill,
-this file's budget, the tracker's claim read-back and frontier queries), tests the pre-push hook
-and the Jev tools in [`scripts/jev/`](scripts/jev/README.md), the latter against a fake server, and
-scans every commit for secrets with gitleaks. Phase 0 adds the project's own checks to it. Update
-this block and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires
-them. An Implementer also runs it before changing anything, per
+layer (skill frontmatter, doc links, commands a shell guard refuses, no harness-specific files,
+eval folders that name a skill, this file's budget, the tracker's claim read-back and frontier
+queries), tests itself, the pre-push hook, `bootstrap.sh`'s ruleset step against a stub `gh`, the
+eval case parser over every case in `evals/`, the eval runner and cleanup scripts against a stub
+`gh`, and the Jev tools in [`scripts/jev/`](scripts/jev/README.md), the latter against a fake
+server, and scans every commit for secrets with gitleaks. Phase 0 adds the project's own checks to
+it. Update this block and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit
+that wires them. An Implementer also runs it before changing anything, per
 [`docs/workflow.md`](docs/workflow.md) § 2, step 3.
 
 A pre-push hook, [`.githooks/pre-push`](.githooks/pre-push), runs it before every push and blocks
@@ -82,7 +84,9 @@ Each of these is decided and load-bearing. Sources are authoritative; read them 
 Read the full ADR when it governs your work; the file is the authority, this is an index.
 
 - **Accepted:** [0001](docs/adr/0001-agentic-development-workflow.md) agentic development workflow;
-  [0002](docs/adr/0002-jev-optional-dev-tooling.md) Jev for closed-set questions, optional
+  [0002](docs/adr/0002-jev-optional-dev-tooling.md) Jev for closed-set questions, optional;
+  [0003](docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md) eval runs: real sandboxes,
+  guard-safe commands, outcome criteria
 - **Pending:** the open questions in [`docs/idea.md`](docs/idea.md) § Open Questions stay there until
   one is decided. A decided question gets a number here and a file in `docs/adr/`.
 

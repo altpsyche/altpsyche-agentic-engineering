@@ -12,20 +12,34 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 
 ## Conventions
 
+Every command here runs from the main clone's root, where a session starts: `gh` infers the repo
+from `git remote -v` there, and the `scripts/queries/` paths resolve. A non-interactive shell
+guard refuses some shapes of command, so these never use them
+([ADR-0003](../adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md)). A GraphQL query lives
+in a file passed with `-F query=@<file>`. A jq filter stays inline, in `--jq`, and carries no
+braces: it builds objects with `pick(…)` and `|=`, since a guard reads braces as shell expansion
+and refuses jq's `-f`, which reads a file. No command enters another folder. It names it instead,
+`git -C <worktree> …` for git and `<worktree>/scripts/verify.sh` for a script, because a guard
+refuses a `cd` chained to another command. `<main clone>` and `<worktree>` are absolute paths; a
+relative path after `git -C <main clone>` resolves from the main clone.
+`scripts/check-skills.mjs` fails on a command that breaks any of these rules.
+
 - **Create**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read**: `gh issue view <number> --comments`, also fetching labels:
   `gh issue view <n> --json number,title,body,labels,comments`.
-- **List**: `gh issue list --state open --json number,title,body,labels,assignees --jq '[.[] | {number, title, labels: [.labels[].name], assignees: [.assignees[].login]}]'`
+- **List**: `gh issue list --state open --json number,title,labels,assignees --jq '.[] | .labels |= map(.name) | .assignees |= map(.login)'`
 - **List the frontier**, the Implementer's issues per `/work` § 2: open `ready-for-agent` issues
   with no assignee and no `status:blocked`, `priority:high` first, then unlabelled, then
   `priority:low`, oldest first within each (by number on a tie), one line each with its
   priority. An issue carrying both priority labels counts as high. `gh` returns the newest issues
-  first, so past the limit the oldest would drop silently. `scripts/frontier.test.mjs` runs the jq on fixture issues:
-  `gh issue list --state open --label ready-for-agent --limit 1000 --json number,title,labels,assignees,createdAt --jq 'map(select(.assignees == [] and (any(.labels[]; .name == "status:blocked") | not)) | .rank = (if any(.labels[]; .name == "priority:high") then 0 elif any(.labels[]; .name == "priority:low") then 2 else 1 end)) | sort_by(.rank, .createdAt, .number) | .[] | {number, title, priority: ["high", "normal", "low"][.rank]}'`
+  first, so past the limit the oldest would drop silently. `scripts/frontier.test.mjs` runs this
+  command's filter on fixture issues:
+  `gh issue list --state open --label ready-for-agent --limit 1000 --json number,title,labels,assignees,createdAt --jq 'map(select(.assignees == [] and (any(.labels[]; .name == "status:blocked") | not)) | .rank = (if any(.labels[]; .name == "priority:high") then 0 elif any(.labels[]; .name == "priority:low") then 2 else 1 end)) | sort_by(.rank, .createdAt, .number) | .[] | .priority = ["high", "normal", "low"][.rank] | pick(.number, .title, .priority)'`
 - **List PRs** for a PR frontier, open, carrying one label and unclaimed, oldest first. It asks
   GraphQL for each PR's newest comments directly, because `gh pr list --json comments` reads only
-  a PR's first 100 comments, and keeps only those by this account (**Whose comments count**):
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -f query='query($owner:String!,$repo:String!,$label:String!){viewer{login} repository(owner:$owner,name:$repo){pullRequests(states:OPEN,labels:[$label],first:100,orderBy:{field:CREATED_AT,direction:ASC}){nodes{number title comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.pullRequests.nodes[] | select([.comments.nodes[] | select(.author.login == $me)] | last | (.body // "") | startswith("Claimed:") | not) | {number, title}'`
+  a PR's first 100 comments, and keeps only those by this account (**Whose comments count**). The
+  query is a file:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -F query=@scripts/queries/list-prs.graphql --jq '.data.viewer.login as $me | .data.repository.pullRequests.nodes[] | select([.comments.nodes[] | select(.author.login == $me)] | last | (.body // "") | startswith("Claimed:") | not) | pick(.number, .title)'`
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
@@ -57,7 +71,8 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   unassign**: the other way round, the issue is back on the frontier while the old claim stands,
   so a new session's claim either loses to it or is ended by the late comment. On a PR, the
   comment alone releases it and the label stays as it was. On an issue, the branch was never
-  pushed: after **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`,
+  pushed: after **Worktree** removes the worktree, delete it with
+  `git -C <main clone> branch -D <number>-<slug>`,
   so the next claimant's **Branch** does not fail on a branch that already exists.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
@@ -75,8 +90,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Read back a claim**, straight after posting it, for an issue or a PR alike. Among counted
   comments, skipping those that start with `Plan:`, the claims that count are the `Claimed:` ones
   after the newest one that is not, and the earliest of them wins. This prints the winner and the
-  item's labels, and `scripts/claim-readback.test.mjs` runs it on fixture comment lists:
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){viewer{login} repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: ([.comments.nodes[] | select(.author.login == $me) | .body | select(startswith("Plan:") | not)] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first)}'`
+  item's labels. The query is a file, and `scripts/claim-readback.test.mjs` runs this command's
+  filter on fixture comment lists:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -F query=@scripts/queries/claim-readback.graphql --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | .labels = [.labels.nodes[].name] | .winner = ([.comments.nodes[] | select(.author.login == $me) | .body | select(startswith("Plan:") | not)] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first) | pick(.labels, .winner)'`
   The session holds the item only if the winner carries its token and the item still carries the
   label that put it on the frontier. Otherwise it backs off: it deletes its own claim with
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
@@ -94,20 +110,33 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   Post it from a file with `gh issue comment <number> --body-file <file>`. Edit it with
   `gh api -X PATCH 'repos/{owner}/{repo}/issues/comments/<id>' -F body=@<file>`, where `<id>` is
   the number after `issuecomment-` in the URL that posting it printed. A later session finds it
-  with `gh api 'repos/{owner}/{repo}/issues/<number>/comments' --paginate --jq '.[] | select(.body | startswith("Plan:")) | {id, author: .user.login}'`
+  with `gh api 'repos/{owner}/{repo}/issues/<number>/comments' --paginate --jq '.[] | select(.body | startswith("Plan:")) | pick(.id, .user.login)'`
   and keeps the one by this account, per **Whose comments count**. Claim logic skips it, per
   **Read back a claim**. A plan lives on the issue only, never on a PR.
 - **Worktree**: one item, one worktree, one branch. Sessions run in parallel, and two sessions in
   one checkout switch branches under each other. So a session never works in the main clone: it
-  adds a sibling worktree, works only there, and removes it once its last write is posted, with
-  `git worktree remove ../<repo>-<number>`. Git refuses to check one branch out in two worktrees,
-  which is a second guard against two sessions on one branch.
-- **Branch**: `git fetch origin` then
-  `git worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, and `cd` into it. Branch
-  from `origin/main`, not a local `main` that may be stale.
-- **Open a PR**: `git push -u origin HEAD` then
-  `gh pr create --title "..." --body-file <file> --label status:in-review`. The body contains
-  `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**.
+  adds a sibling worktree per **Branch** or **Check out a PR**, works only there, addressing it by
+  path, and removes it once its last write is posted, with
+  `git -C <main clone> worktree remove ../<repo>-<number>`. Git refuses while the tree holds a
+  change or an untracked file. When it refuses although `git -C <worktree> status --short` prints
+  nothing, only ignored files are left, which `git -C <worktree> status --short --ignored` lists
+  as `!!` lines: move out the `.scratch/` files still needed, then
+  `git -C <main clone> worktree remove --force ../<repo>-<number>`. Anything `status --short`
+  lists is work: commit it or discard it on purpose, never force it away. Git refuses to check one
+  branch out in two worktrees, which is a second guard against two sessions on one branch.
+- **Branch**: `git -C <main clone> fetch origin` then
+  `git -C <main clone> worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, which puts
+  the worktree beside the main clone. Branch from `origin/main`, not a local `main` that may be
+  stale. A ticket in an integration effort, per
+  [`docs/workflow.md`](../workflow.md) § Integration branches, branches from
+  `origin/integration/<name>` in place of `origin/main`.
+- **Open a PR**: `git -C <worktree> push -u origin HEAD` then
+  `gh pr create --head <number>-<slug> --title "..." --body-file <file> --label status:in-review`.
+  `--head` names the branch, since `gh` runs in the main clone, whose branch is `main`. The body
+  contains `Closes #<number>` so merging closes the issue, and a `## Evidence` section per
+  **Evidence**. A sub-PR in an integration effort adds `--base integration/<name>`. GitHub closes
+  an issue from `Closes #<number>` only on a merge into the default branch, so a sub-PR's issue is
+  closed by the session that merges it, per [`docs/workflow.md`](../workflow.md) § 5.
 - **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
   Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
   criterion of the issue the body closes, in the issue's order, and no other criterion entry. A
@@ -126,14 +155,23 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   After the criteria comes one entry per eval case that [`docs/workflow.md`](../workflow.md) § 2
   requires: the case's path, the run's token and the grade's `Verdict:` line, with the whole grade
   beneath it in a `<details>` block. The grade is defined in
-  [`evals/README.md`](../../evals/README.md) § Grading a case.
-- **Check out a PR** for review or a fix round: `git fetch origin`, then
-  `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
-  `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
-  `main` gives an empty diff.
-- **Check the base**, when a fix round's branch is red before any change: `git fetch origin`,
-  `git checkout --detach origin/main`, run `scripts/verify.sh`, then `gh pr checkout <number>` to
-  return to the branch.
+  [`evals/README.md`](../../evals/README.md) § Grading a case. Every run of a case is listed, pass,
+  fail or void, each by its token written as `run <T>`, as in
+  `- evals/work/red-baseline.md, run 1a2b3c4d: Verdict: pass 3/3`, so reruns are visible. That is
+  the form `scripts/eval-cleanup.sh` reads when the PR merges, per
+  [`docs/workflow.md`](../workflow.md) § 5: a run left out keeps its sandbox.
+- **Check out a PR** for review or a fix round, in its own worktree on the PR's head branch,
+  tracking `origin`: `gh pr view <number> --json headRefName --jq .headRefName` prints its
+  `<branch>`, then `git -C <main clone> fetch origin` and
+  `git -C <main clone> worktree add --track -B <branch> ../<repo>-<number> origin/<branch>`. `-B`
+  resets a local `<branch>` an earlier session left to what was pushed. `/review-pr` diffs against
+  `HEAD`, so its git commands take `git -C <worktree>`: in the main clone, `HEAD` is `main` and
+  the diff is empty.
+- **Check the base**, when a fix round's branch is red before any change, in a second worktree,
+  so the branch's own never moves: `git -C <main clone> fetch origin`, then
+  `git -C <main clone> worktree add --detach ../<repo>-<number>-base origin/main` (for a sub-PR,
+  `origin/integration/<name>`), run that worktree's `scripts/verify.sh` by path, then remove it
+  per **Worktree**.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
   is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
@@ -144,8 +182,6 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh pr edit <number> --remove-label status:changes-requested --add-label status:in-review`, then
   `gh pr comment <number> --body-file <file>` with the answer to each finding, in that order per
   **Claim a PR**.
-
-`gh` infers the repo from `git remote -v` when run inside the clone.
 
 ## Untrusted text
 

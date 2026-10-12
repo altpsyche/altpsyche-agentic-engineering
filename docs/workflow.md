@@ -53,10 +53,12 @@ has confirmed the spec's testing seams.
 
 1. **Claim** the issue as the first write, then **Read back a claim**, so two sessions never
    collide. If you do not hold it, back off as that command says.
-2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`.
-   Nothing is committed to `main`.
-3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
-   breakage you inherit is never mistaken for yours. If it is red, do not start. Find the issue for
+2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`, or
+   `origin/integration/<name>` for a ticket in an integration effort (§ Integration branches).
+   Nothing is committed to `main` or to an integration branch.
+3. Clean baseline: before any change, run the fresh worktree's `scripts/verify.sh` by path, per
+   the Conventions in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md), so breakage you
+   inherit is never mistaken for yours. If it is red, do not start. Find the issue for
    the breakage; when none exists, file one per **Create**, labelled `needs-triage`. The fix is
    its own ticket, not part of this one. Then, in this order, per **Block** and **Release a
    claim**: link the breakage issue as the item's native blocker, add `status:blocked`, then
@@ -79,13 +81,14 @@ has confirmed the spec's testing seams.
    The failing check that loop ends with becomes the first `/tdd` slice.
    - Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
      code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
-   - `scripts/verify.sh` runs regularly, and once more at the end.
+   - The worktree's `scripts/verify.sh`, run by path, runs regularly, and once more at the end.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, on every diff,
-   however small: read `.agents/skills/review-pr/SKILL.md` and run it. Reading the diff yourself
-   is not the self-check. Fix what it finds; it is not the review (§ Roles).
+7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, or a sub-PR's base
+   per § 3, on every diff, however small: read `.agents/skills/review-pr/SKILL.md` and run it.
+   Reading the diff yourself is not the self-check. Fix what it finds; it is not the review
+   (§ Roles).
 8. Evals, so a skill change is proven like code: when the diff touches `.agents/skills/<name>/`,
    run every case in `evals/<name>/`; when it touches `AGENTS.md`, every case in `evals/`. Run
    each, and have another session grade it, per [`evals/README.md`](../evals/README.md). A skill
@@ -110,8 +113,11 @@ blind spots, as an author grading its own work is lenient.
 1. **Claim a PR** with `Claimed: review`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree.
 3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
-   local `main` adds already-merged commits to the diff. On a re-review, scope new findings from
-   the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
+   local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base, freshly
+   fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR already
+   merged into the integration branch (§ Integration branches). Its git commands take
+   `git -C <worktree>`, per **Check out a PR**. On a re-review, scope new findings
+   from the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
      and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run the prune
@@ -126,8 +132,14 @@ blind spots, as an author grading its own work is lenient.
 4. Before posting, check each draft finding against its cited source with the verify-findings
    tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
    **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
-   "Re-reviews converge" below. Every finding names its source and quotes the line it is about.
-   The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
+   "Re-reviews converge" below. Below that line comes one `Jev:` line per tool this review runs:
+   prune, evidence, coverage and verify-findings. Each names the tool and quotes its first output
+   line exactly as printed, a skip or error line included, as in
+   `Jev: evidence: jev evidence: skipped, TYPESAFE_API_KEY is not set; check every entry yourself`.
+   A tool that did not run has no line to quote, so a missing line shows it. With no draft
+   findings there is nothing to check, so verify-findings does not run and its line reads
+   `Jev: verify-findings: no findings`. Every finding names its source and quotes the line it is
+   about. The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
@@ -144,8 +156,8 @@ the loop is not converging, and the owner decides whether to merge, rescope or c
 number is one more than the count of earlier reports on the PR.
 
 **Done when:** the PR carries the verdict label this section sets, and the report, opening with
-`Reviewed at <sha>`, is posted on the PR after it, every finding naming its source and quoting its
-line.
+`Reviewed at <sha>` and its `Jev:` lines, is posted on the PR after it, every finding naming its
+source and quoting its line.
 
 ### 4. Fix rounds (Implementer)
 
@@ -154,10 +166,11 @@ and PR steps.
 
 1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree, on the same branch.
-3. Before any change, run `scripts/verify.sh`. The branch carries your own work, so red here is
-   yours to fix in this round. It counts as inherited only if `scripts/verify.sh` is also red on
-   `origin/main`, per **Check the base**; then § 2's clean-baseline rule applies, with the PR as
-   the item.
+3. Before any change, run the worktree's `scripts/verify.sh` by path, per § 2, step 3. The
+   branch carries your own work, so red here is yours to fix in this round. It counts as
+   inherited only if the base's `scripts/verify.sh` is also red on `origin/main`, or a sub-PR's
+   base, run in its own worktree per **Check the base**; then § 2's clean-baseline rule applies,
+   with the PR as the item.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
@@ -168,22 +181,63 @@ and PR steps.
 
 **Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
 pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
-On a red baseline that is also red on `origin/main`, done is § 2, step 3's release
-instead, with no block.
+On a red baseline that is also red on `origin/main`, or a sub-PR's base, done is § 2, step 3's
+release instead, with no block.
 
 ### 5. Merge and learn (Owner)
 
-The owner merges. Then `/retro` looks back over the session and proposes changes to the **environment**
-rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
-standard where it was a judgement call.
+The owner merges. The default branch's ruleset, set by
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh), requires one approving review, which no session
+can give: every session shares the owner's account, and GitHub forbids approving your own PR. So
+the `status:approved` label carries the verdict, and the owner merges with the ruleset's one bypass,
+the admin role. Agents run as that account and hold the bypass too; none merges on its own, only
+when the owner directs it (§ Roles). Then `/retro` looks back over the session and proposes changes
+to the **environment** rather than the work: pointers in `AGENTS.md`, a deterministic check where a
+mistake was mechanical, a standard where it was a judgement call.
 
 **Unblocking.** When an issue closes, the session closing it removes `status:blocked` from every
 issue whose native blockers are now all closed, per **Unblock** in
 [`docs/agents/issue-tracker.md`](agents/issue-tracker.md). When a merge closes the issue, that is
 whoever merged it: the owner, or the session the owner merged through.
 
+**Sub-PRs.** `Closes #<n>` closes an issue only when its PR merges into the default branch, so a
+sub-PR into an integration branch (§ Integration branches) leaves its issue open. The session that
+merges a sub-PR closes its issue with a comment linking the PR, per **Close**, then runs **Unblock**
+for it.
+
+**Eval sandboxes.** Every eval run leaves a private sandbox repo, per
+[`evals/README.md`](../evals/README.md) § Sandbox, and the PR's `## Evidence` lists each run by its
+token. When the PR merges, the session that merged it, the owner or the session the owner merged
+through, runs `scripts/eval-cleanup.sh <pr>` from the main clone's root. It deletes each listed
+run's sandbox that every guard proves is one, and its folders beside the main clone. It prints a
+`kept` line, with the reason, for a listed run whose repo it did not delete, and an
+`older than 7 days, not deleted` line for every other `eval-*` repo it found; the owner decides
+about each. A PR that lists no run leaves nothing to clean up.
+
 **Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
-`status:blocked`, and every accepted retro action has either landed or become its own issue.
+`status:blocked`, `scripts/eval-cleanup.sh` has run for a PR whose Evidence lists eval runs, and
+every accepted retro action has either landed or become its own issue.
+
+## Integration branches
+
+An effort too large for one PR to `main`, such as a spec whose tickets land in waves, collects
+its tickets on `integration/<name>`, cut from `main`. Each ticket is still one issue, one worktree,
+one branch and one PR, but that PR, a sub-PR, targets the integration branch: § 2 branches from
+`origin/integration/<name>` and opens the PR with `--base integration/<name>`, per **Branch** and
+**Open a PR**. § 3 reviews a sub-PR against its base, and § 5 says who closes its issue. Once every
+sub-PR has merged, one PR from `integration/<name>` to `main` takes the whole effort through the
+loop, and the branch is deleted when it merges.
+
+**Protected by a ruleset.** The `integration-branches` ruleset that
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) sets covers every `integration/*` branch: changes
+land only by PR with `verify` green, and its history is never rewritten. It requires no approving
+review and has no bypass actor, so the owner merges an approved sub-PR, by hand or through a
+session, without one, and no one, agent or owner, pushes to the branch directly. It has no deletion
+rule, so the branch can be deleted after its integration PR merges.
+
+**Fix rounds land by PR.** A fix round on a sub-PR pushes to the sub-PR's own branch, per § 4. A
+fix round on the integration PR to `main` lands through a small PR into `integration/<name>`, like
+any sub-PR, never by a push to the integration branch.
 
 ## Review checklist
 
@@ -259,7 +313,8 @@ Before ending a session, in this order:
 1. The tracker reflects reality: claimed items claimed, and finished work handed on. An
    Implementer's `Plan:` comment is current, per § 2, and its PR is open and labelled
    `status:in-review`; the PR a Reviewer checked carries its verdict.
-   The merge closes the issue, per § 5; an Implementer or Reviewer never closes it.
+   The merge, or for a sub-PR the session that merges it, closes the issue, per § 5; an
+   Implementer or Reviewer never closes it.
 2. The Working Agreement in `AGENTS.md` holds for everything this session committed.
 3. This session's worktree is removed, per **Worktree** in
    [`docs/agents/issue-tracker.md`](agents/issue-tracker.md).

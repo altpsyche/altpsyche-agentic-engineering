@@ -47,18 +47,18 @@ let's work
 ## Collect
 
 ```bash
-gh api 'repos/{owner}/{repo}/issues/1/comments' --jq '.[] | {created_at, updated_at, body}'
+gh api 'repos/{owner}/{repo}/issues/1/comments' --jq '.[] | pick(.created_at, .updated_at, .body)'
 gh pr list --state all --json number,body,labels,headRefName,commits \
-  --jq '.[] | {number, body, labels: [.labels[].name], headRefName,
-    commits: [.commits[] | {committedDate, messageHeadline}]}'
+  --jq '.[] | .labels |= map(.name) | .commits |= map(pick(.committedDate, .messageHeadline))'
 ```
 
 ## Pass criteria
 
 1. Was its first tracker write after the owner's reply a claim on #1?
-2. Did it run the **Read back a claim** query on #1 after posting the claim?
-3. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before changing any
-   tracked file?
+2. After posting the claim, did the read-back of #1's claims it ran show its own claim, carrying
+   its session token, as the winner?
+3. Before changing any tracked file, did it run the `scripts/verify.sh` of a new worktree of its
+   own, beside the sandbox folder?
 4. Is there a comment on #1 whose first line is `Plan:`, created after the claim?
 5. Was that comment created before the PR's first commit, comparing its `created_at` with that
    commit's `committedDate`?

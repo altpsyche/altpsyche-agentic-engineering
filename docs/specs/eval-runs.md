@@ -31,8 +31,9 @@ failures mean the skill misbehaved.
 
 1. As an agent in a non-interactive harness, I want every tracker command in the docs to run as
    written, so that I never improvise a substitute.
-2. As an agent, I want each GraphQL query and jq filter in a named file, so that no shell guard
-   reads its braces as shell syntax.
+2. As an agent, I want each GraphQL query in a named file and each jq filter inline without
+   braces, so that no shell guard reads braces as shell syntax or refuses a jq flag that reads a
+   file.
 3. As an agent, I want worktree commands that never `cd` before a version-control command, so that
    a guard that refuses that pattern does not block me.
 4. As a Reviewer, I want **Check out a PR** to put the PR's head in its own worktree, tracking
@@ -83,20 +84,22 @@ failures mean the skill misbehaved.
 
 ## Implementation Decisions
 
-**Order.** Wave 0 lands on `main`; waves 1-3 land as sub-PRs into `integration/eval-runs`; then one
-PR to `main`.
+**Order.** #53 landed on `main` before the integration branch existed. Every other ticket, wave 0's
+#51 and #38 included, lands as a sub-PR into `integration/eval-runs`; then one PR to `main`. So
+ADR-0003's § 2 step 8 exception covers wave 0's `AGENTS.md` edits too. The branch is unprotected
+until #38's ruleset is applied by a bootstrap run from it.
 
-| Wave | Ticket | Blocked by |
-|---|---|---|
-| 0 | #53 queue priority (PR #55, merged as `e3afed4`) | — |
-| 0 | #51 bootstrap 403 guard | — |
-| 0 | #38 integration ruleset + integration-branch docs | #51 |
-| 1 | #54 (A) Guard-safe commands | #38, #53 |
-| 2 | #42 (B1) Runner scripts and run-mode docs | #54 |
-| 2 | #56 (C) Review-step evidence line | #54 |
-| 3 | #57 (B2) Cleanup on merge | #42 |
-| 3 | #58 (D) Outcome criteria in every case | #54, #42, #56 |
-| — | Final PR `integration/eval-runs` → `main` | all |
+| Wave | Ticket | Lands on | Blocked by |
+|---|---|---|---|
+| 0 | #53 queue priority (PR #55, merged as `e3afed4`) | `main` | — |
+| 0 | #51 bootstrap 403 guard | `integration/eval-runs` | — |
+| 0 | #38 integration ruleset + integration-branch docs | `integration/eval-runs` | #51 |
+| 1 | #54 (A) Guard-safe commands | `integration/eval-runs` | #38, #53 |
+| 2 | #42 (B1) Runner scripts and run-mode docs | `integration/eval-runs` | #54 |
+| 2 | #56 (C) Review-step evidence line | `integration/eval-runs` | #54 |
+| 3 | #57 (B2) Cleanup on merge | `integration/eval-runs` | #42 |
+| 3 | #58 (D) Outcome criteria in every case | `integration/eval-runs` | #54, #42, #56 |
+| — | Final PR `integration/eval-runs` → `main` | `main` | all |
 
 **#38 extended.** Besides the ruleset in `scripts/bootstrap.sh`, `docs/workflow.md` and
 `docs/agents/issue-tracker.md` say, for an integration effort: **Branch** from
@@ -105,9 +108,11 @@ the PR's base, freshly fetched; `Closes #n` does not fire on a non-default base,
 merges a sub-PR closes its issue and runs **Unblock**, per § 5.
 
 **#54 (A) Guard-safe commands.**
-- GraphQL queries for **List PRs** and **Read back a claim**, and every multi-line jq filter
-  (including **List the frontier** from #55), move into files under `scripts/queries/`. The doc's
-  command names the file. `claim-readback.test.mjs` and `frontier.test.mjs` read those files.
+- GraphQL queries for **List PRs** and **Read back a claim** move into files under
+  `scripts/queries/`, and the doc's command names the file. Every jq filter (including **List the
+  frontier** from #55) stays inline in `--jq` without braces, per ADR-0003 § Amendments.
+  `claim-readback.test.mjs` and `frontier.test.mjs` read the filter from the doc's command, and
+  the GraphQL file it names.
 - **Check out a PR**: `gh pr view <n> --json headRefName`, then `git -C <main clone> fetch origin`
   and `git -C <main clone> worktree add --track -B <branch> ../<repo>-<n> origin/<branch>`. No `cd`,
   no `gh pr checkout`.
@@ -154,8 +159,8 @@ and a run on the new head, never a bare rerun.
 A good check tests behaviour at the highest seam the owner agreed, and never re-derives an expected
 value the way the code does.
 
-- **(A):** `claim-readback.test.mjs` and `frontier.test.mjs` run the query and filter files on
-  fixtures; `check-skills.test.mjs` gains a fixture that fails the brace/`cd` lint.
+- **(A):** `claim-readback.test.mjs` and `frontier.test.mjs` run the doc's filters on fixtures;
+  `check-skills.test.mjs` gains a fixture that fails the brace/`cd` lint.
 - **(B1):** a test parses every case's Starting state and Collect blocks and fails on one it cannot
   parse. No network: `gh repo create` stays untested.
 - **(B2):** a test runs the cleanup with a stubbed `gh` and proves it deletes only a marked,

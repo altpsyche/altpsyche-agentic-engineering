@@ -13,8 +13,13 @@ byte-identical to upstream. `scripts/check-skills.mjs` fails if `<skill>` names 
 
 - **Runner**: the Implementer whose PR needs the case, or the owner. It builds the sandbox, starts
   the run session, plays the owner from the case's script, and collects the result.
-- **Run session**: a fresh session, in any harness, on any model, started in the sandbox. Of the
-  case it sees only the prompt and the scripted replies, and it is not told it is an eval.
+- **Run session**: a fresh session, in any harness, interactive or headless, on any model,
+  started in the sandbox. Of the case it sees only the prompt and the scripted replies, and it is
+  not told it is an eval. Each reply reaches it as its own user turn, never relayed through
+  another agent: a session rightly takes no agent's message as the owner's approval. So a subagent
+  whose replies arrive from the agent that started it cannot be the run session. A separate
+  interactive session qualifies, and so does a headless session resumed with each reply as its
+  next prompt.
 - **Grader**: a fresh session that is neither of the other two, on a different model when one is
   available, for the reason in [`docs/workflow.md`](../docs/workflow.md) § 3. It sees only the case
   file and the transcript.
@@ -33,7 +38,10 @@ A case has these sections, in this order:
 - **`## Owner replies`**: each scripted reply and the moment it is given. To anything else the
   run session asks, the runner gives the fallback reply in § Running a case, and nothing more.
 - **`## Collect`**: commands the runner runs in the sandbox after the run. Their output goes to the
-  grader with the transcript.
+  grader with the transcript. Like every command in the docs, they inline no braces, so a jq
+  filter keeps fields with `pick(…)` and `|=`, read no jq filter from a file, and never chain onto
+  a `cd`; `scripts/check-skills.mjs` fails on each, per
+  [ADR-0003](../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md).
 - **`## Pass criteria`**: numbered yes/no questions, each ending in `?`.
 
 A pass criterion:
@@ -47,20 +55,45 @@ A pass criterion:
 A run claims issues, comments and pushes, so a case never runs in this repo or a real project. It
 runs in a throwaway private GitHub repo whose `main` is one commit: the tree of the branch under
 test, with no history and without the case folders. From a checkout of that branch, with
-everything committed, run:
+everything committed, at its root, run:
 
 ```bash
 T=$(openssl rand -hex 4)       # names this run
+S=$(git rev-parse HEAD)        # the source commit
 mkdir "../eval-$T"
 git archive HEAD -- . ':(exclude,glob)evals/*/**' | tar -x -C "../eval-$T"
 cd "../eval-$T"
 git init -q -b main
 git add -A && git commit -qm "Sandbox"
 # Here: the case's "On main, before the push" commands, if any.
-gh repo create "eval-$T" --private --source . --remote origin --push
+gh repo create "eval-$T" --private --source . --remote origin --push \
+  --description "eval-sandbox run $T from $S"
 scripts/bootstrap.sh </dev/null   # no terminal, so no Jev key prompt
 # Then: the case's "After bootstrap" commands.
 ```
+
+These steps are the definition. `scripts/eval-sandbox.sh` types them for the runner, running the
+case's Starting state blocks as written at their steps:
+
+```bash
+<checkout>/scripts/eval-sandbox.sh evals/<skill>/<case>.md
+```
+
+The case path is relative to the checkout's root. It reads the case through
+`scripts/eval-case.mjs`, which refuses a case it cannot parse before anything is built, and runs
+each Starting state block with `T` and `S` set, as they are when typed by hand. The script names
+the token and the sandbox's path as soon as the token exists, stops at the first command that
+fails, and its last lines print the token, the sandbox's path and the prompt. A failure once the
+repo may exist prints the token and path again, with a note that the run is void. When a step
+and the script disagree, the step wins and the script is fixed.
+
+The runner types the steps in its own shell, so it enters the sandbox with `cd`; the run
+session's commands, and a case's Collect commands, never do.
+
+The description marks the repo as a sandbox: `eval-sandbox run <T> from <S>`, the run's token
+and the full sha of the source commit, the `sandbox from` commit of the grade. It is what lets a
+script tell a sandbox from a real repo by more than its name
+([ADR-0003](../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md)).
 
 No history comes with the tree, so no commit or object in the sandbox holds a case: the run
 session cannot read the pass criteria there. This file stays, since the docs link it. The run
@@ -71,12 +104,23 @@ repo it also warns that it could not protect `main`; that is expected here. With
 terminal it skips its Jev key offer, so the sandbox never gets a `.env`. A key in the runner's own
 shell still reaches the run session; no case depends on whether one is set.
 
-The sandbox outlives the run, so the grader's quotes can be checked against it. Only the owner
-deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a repo.
+The sandbox outlives the run, so the grader's quotes can be checked against it. It is deleted when
+the PR whose `## Evidence` lists its run merges: the session that merged it runs
+`scripts/eval-cleanup.sh <pr>`, per [`docs/workflow.md`](../docs/workflow.md) § 5. That script is
+the only way an agent deletes a repo. It deletes `eval-<T>` only when every guard holds: the PR is
+merged and its Evidence lists `run <T>`, with `<T>` eight lowercase hex digits; the repo resolves to
+that exact name, owned by the account `gh` is logged in as; it is private; and its description is
+the marker above, for that run. Beside the main clone it removes only the folders `eval-<T>` and
+`eval-<T>-<n>`. It lists, never deletes, every other `eval-*` repo older than 7 days; the owner
+decides about each, and deletes one by hand with `gh repo delete <owner>/eval-<T> --yes`.
 
 ## Running a case
 
-1. Build the sandbox, with the case's starting state, per § Sandbox.
+1. Build the sandbox, with the case's starting state, per § Sandbox, by hand or with
+   `scripts/eval-sandbox.sh`. If it cannot be built, or the run session cannot reach it, the run
+   is void: it is not graded, and running the case in a new sandbox is not a rerun. A void run whose
+   repo was created is still listed by its token in the PR's Evidence, as void, so the cleanup at
+   merge deletes it.
 2. Start the run session with the sandbox folder as its working directory, and paste the prompt.
 3. Give each scripted reply at its moment. To anything else, reply only: `I'm not available.
    Follow the repo's docs and decide.` Never hint, correct or explain.
@@ -86,7 +130,12 @@ deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a rep
    message, every command and its output, as the harness exports it, or copied by hand where it
    cannot.
 6. Run the case's `## Collect` commands in the sandbox, and append each command and its output to
-   the same file.
+   the same file. `scripts/eval-collect.sh` does it, each command in its own fenced block under a
+   `## Collect, run <T>` heading, with `(exit <n>)` after a command that failed:
+
+   ```bash
+   <checkout>/scripts/eval-collect.sh evals/<skill>/<case>.md <T> <transcript>
+   ```
 
 ## Grading a case
 

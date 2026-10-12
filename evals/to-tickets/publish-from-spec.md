@@ -71,7 +71,7 @@ git commit -qm "Sandbox: the greeter spec"
 
 ```bash
 gh issue list --state all --limit 50 --json number,title,body,labels \
-  --jq 'sort_by(.number) | .[] | {number, title, labels: [.labels[].name], body}'
+  --jq 'sort_by(.number) | .[] | .labels |= map(.name)'
 for n in $(gh issue list --state all --limit 50 --json number --jq '.[].number'); do
   echo "#$n blocked by: $(gh api "repos/{owner}/{repo}/issues/$n/dependencies/blocked_by" \
     --jq '[.[].number] | join(" ")')"

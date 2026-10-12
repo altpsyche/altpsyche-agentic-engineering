@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Checks the agent layer: skill frontmatter, relative links, pointer integrity, that nothing in the
-// repo is wired for one harness, that every eval folder names a skill, and that every Jev CLI is in
-// its registry.
+// repo is wired for one harness, that every eval folder names a skill, that every Jev CLI is in
+// its registry, and that no command the docs give agents carries what a shell guard refuses.
 //
 // This is the repo's deterministic check for the class of mistake an agent makes most often when
 // editing skills or AGENTS.md: a renamed folder, a missing description, a pointer to a file that
@@ -302,6 +302,125 @@ async function checkLinks(root, file, { err }) {
   }
 }
 
+// Commands an agent types must run as written under the strictest non-interactive shell guard seen
+// (ADR-0003). That guard reads braces as shell expansion, refuses jq flags that read a file, and
+// refuses `cd <dir>` chained to another command. So a GraphQL query lives in a file named with
+// `-F query=@<file>`, a jq filter stays inline without braces, and a folder is addressed with
+// `git -C`, never entered. gh's own placeholders are not shell syntax.
+const SHELL_FENCE = new Set(['', 'bash', 'sh', 'shell', 'console', 'zsh']);
+const RUNS_TOOL = /(?:^|[\s;&|(`])(?:gh|git|jq)\s/;
+const GH_PLACEHOLDER = /\{(?:owner|repo)\}/g;
+// A jq flag that reads a file: a short-flag bundle holding f (`-f`, `-cf`, `-nrf`), -L or
+// -L<dir>, or a long one. Checked on unquoted shell words only, so a filter's text never counts.
+const JQ_FILE_FLAG = /^(?:-[a-zA-Z]*f[a-zA-Z]*|-L.*|--(?:from-file|rawfile|slurpfile|argfile)(?:=.*)?)$/;
+
+// A command's simple commands, each a list of shell words: quotes group a word and are kept
+// apart from the text (`quoted`), and an unquoted |, ;, &, (, ) or newline ends the command.
+export function simpleCommands(command) {
+  const commands = [[]];
+  let word = null;
+  let quote = null;
+  const end = () => {
+    if (word) commands.at(-1).push(word);
+    word = null;
+  };
+  for (let i = 0; i < command.length; i++) {
+    const c = command[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      else if (quote === '"' && c === '\\' && i + 1 < command.length) word.text += command[++i];
+      else word.text += c;
+    } else if (c === "'" || c === '"') {
+      word ??= { text: '', quoted: false };
+      word.quoted = true;
+      quote = c;
+    } else if (c === '\\' && i + 1 < command.length) {
+      word ??= { text: '', quoted: false };
+      word.text += command[++i];
+    } else if (/[|;&()\n]/.test(c)) {
+      end();
+      if (commands.at(-1).length) commands.push([]);
+    } else if (/\s/.test(c)) {
+      end();
+    } else {
+      word ??= { text: '', quoted: false };
+      word.text += c;
+    }
+  }
+  end();
+  return commands.filter((words) => words.length);
+}
+
+// True when a jq invocation in the command, not gh's --jq, gives jq a flag that reads a file.
+export function jqReadsFile(command) {
+  return simpleCommands(command).some((words) => {
+    const at = words.findIndex((w) => !w.quoted && (w.text === 'jq' || w.text.endsWith('/jq')));
+    return at !== -1 && words.slice(at + 1).some((w) => !w.quoted && JQ_FILE_FLAG.test(w.text));
+  });
+}
+const NAMED_FILE = /-F query=@([^\s'"`|<]+)(?=[\s'"`|]|$)/g;
+
+// The commands in a markdown file: each code span, and each logical line of a shell fence, with
+// backslash continuations and lines inside an open single quote joined. Whitespace is collapsed.
+export function shellCommands(markdown) {
+  const out = [];
+  const prose = [];
+  let fence = null;
+  let shell = false;
+  let pending = '';
+  for (const line of markdown.split(/\r\n?|\n/)) {
+    const content = line.slice(CONTAINER.exec(line)[0].length);
+    if (fence) {
+      const run = /^(`+|~+)[ \t]*$/.exec(content);
+      if (run && run[1][0] === fence[0] && run[1].length >= fence.length) {
+        if (pending) out.push(pending);
+        fence = null;
+        pending = '';
+      } else if (shell) {
+        pending = `${pending} ${line.trim()}`.trim();
+        if (pending.endsWith('\\')) pending = pending.slice(0, -1).trimEnd();
+        else if ((pending.match(/'/g) ?? []).length % 2 === 0) {
+          out.push(pending);
+          pending = '';
+        }
+      }
+      prose.push('');
+      continue;
+    }
+    const opener = /^(`{3,}|~{3,})(.*)$/.exec(content);
+    if (opener && !(opener[1][0] === '`' && opener[2].includes('`'))) {
+      fence = opener[1];
+      shell = SHELL_FENCE.has(opener[2].trim().split(/\s/)[0]);
+      prose.push('');
+      continue;
+    }
+    prose.push(content);
+  }
+  if (pending) out.push(pending);
+  for (const match of prose.join('\n').matchAll(CODE_SPAN)) {
+    out.push(match[0].slice(match[1].length, -match[1].length));
+  }
+  return out.map((c) => c.replace(/\s+/g, ' ').trim().replace(/^\$ /, '')).filter(Boolean);
+}
+
+async function checkCommands(root, file, { err }) {
+  const label = path.relative(root, file);
+  for (const command of shellCommands(await readFile(file, 'utf8'))) {
+    if (/^cd\s/.test(command) && /&&|;/.test(command)) {
+      err(`${label}: command starts with cd and chains another; address the folder with git -C (ADR-0003): ${command}`);
+    } else if (RUNS_TOOL.test(command) && /[{}]/.test(command.replace(GH_PLACEHOLDER, ''))) {
+      err(`${label}: command inlines braces; put a query in a file, build jq objects with pick (ADR-0003): ${command}`);
+    }
+    if (jqReadsFile(command)) {
+      err(`${label}: jq reads a file through a flag a shell guard refuses; keep the filter inline (ADR-0003): ${command}`);
+    }
+    if (!RUNS_TOOL.test(command)) continue;
+    for (const [, named] of command.matchAll(NAMED_FILE)) {
+      if (!existsSync(path.join(root, named))) err(`${label}: command names ${named}, which does not exist`);
+    }
+  }
+}
+
 export async function checkRepo(root) {
   const skillsDir = path.join(root, '.agents', 'skills');
   const agentsMd = path.join(root, 'AGENTS.md');
@@ -368,6 +487,17 @@ export async function checkRepo(root) {
     ...(await markdownFiles(evalsDir)),
   ];
   for (const file of linked) if (existsSync(file)) await checkLinks(root, file, { err });
+
+  // Commands agents type: AGENTS.md, the tracker and workflow docs, the skills and the eval cases.
+  // ADRs and specs are left out: they quote the old commands they replace.
+  const commanded = [
+    agentsMd,
+    ...(await markdownFiles(path.join(docsDir, 'agents'))),
+    path.join(docsDir, 'workflow.md'),
+    ...(await markdownFiles(skillsDir)),
+    ...(await markdownFiles(evalsDir)),
+  ];
+  for (const file of commanded) if (existsSync(file)) await checkCommands(root, file, { err });
 
   // Every skill must be indexed in the skills README, so none is silently unreachable.
   if (hasSkills && !existsSync(skillsReadme)) {
