@@ -88,14 +88,14 @@ PR to `main`.
 
 | Wave | Ticket | Blocked by |
 |---|---|---|
-| 0 | PR #55 merged (queue priority), settled first | — |
+| 0 | #53 queue priority (PR #55, merged as `e3afed4`) | — |
 | 0 | #51 bootstrap 403 guard | — |
 | 0 | #38 integration ruleset + integration-branch docs | #51 |
-| 1 | (A) Guard-safe commands | #38, #55 |
-| 2 | (B1) Runner scripts and run-mode docs | (A) |
-| 2 | (C) Review-step evidence line | (A) |
-| 3 | (B2) Cleanup on merge | (B1) |
-| 3 | (D) Outcome criteria in every case | (A), (B1), (C) |
+| 1 | #54 (A) Guard-safe commands | #38, #53 |
+| 2 | #42 (B1) Runner scripts and run-mode docs | #54 |
+| 2 | #56 (C) Review-step evidence line | #54 |
+| 3 | #57 (B2) Cleanup on merge | #42 |
+| 3 | #58 (D) Outcome criteria in every case | #54, #42, #56 |
 | — | Final PR `integration/eval-runs` → `main` | all |
 
 **#38 extended.** Besides the ruleset in `scripts/bootstrap.sh`, `docs/workflow.md` and
@@ -104,7 +104,7 @@ PR to `main`.
 the PR's base, freshly fetched; `Closes #n` does not fire on a non-default base, so the session that
 merges a sub-PR closes its issue and runs **Unblock**, per § 5.
 
-**(A) Guard-safe commands.**
+**#54 (A) Guard-safe commands.**
 - GraphQL queries for **List PRs** and **Read back a claim**, and every multi-line jq filter
   (including **List the frontier** from #55), move into files under `scripts/queries/`. The doc's
   command names the file. `claim-readback.test.mjs` and `frontier.test.mjs` read those files.
@@ -120,7 +120,7 @@ merges a sub-PR closes its issue and runs **Unblock**, per § 5.
 - `verify.sh` prints one line when `jq` is missing (absorbs #32).
 - Every doc, skill and case line that names `gh pr checkout` or the old commands is updated.
 
-**(B1) Runner scripts.** `scripts/eval-sandbox.sh <case>` builds the sandbox exactly as
+**#42 (B1) Runner scripts.** `scripts/eval-sandbox.sh <case>` builds the sandbox exactly as
 `evals/README.md` § Sandbox defines it, marks the repo (its description names the run token and
 source commit), runs the case's Starting state blocks at their marked steps, and prints the token,
 the path and the prompt. `scripts/eval-collect.sh <case> <token> <transcript>` runs the Collect
@@ -128,7 +128,7 @@ block command by command and appends each with its output. `evals/README.md` poi
 keeps the manual steps as the definition. § Three sessions says the run session is any harness and
 receives replies as its own turns (#43).
 
-**(B2) Cleanup on merge.** `scripts/eval-cleanup.sh <pr>` reads the run tokens from the merged PR's
+**#57 (B2) Cleanup on merge.** `scripts/eval-cleanup.sh <pr>` reads the run tokens from the merged PR's
 Evidence and deletes each `eval-<token>` repo only when the name matches `^eval-[0-9a-f]{8}$`, the
 owner is the logged-in account, it is private and its description carries the marker; it removes
 only local folders matching that name with an optional `-<n>` suffix, beside the main clone. It
@@ -136,11 +136,11 @@ lists, never deletes, other `eval-*` repos older than 7 days. § 5 adds the step
 every run of a case is listed by token; `evals/README.md` § Sandbox replaces "only the owner
 deletes it" with this script.
 
-**(C) Review-step evidence line.** § 3's report gains a `Jev:` line per tool run, quoting its first
+**#56 (C) Review-step evidence line.** § 3's report gains a `Jev:` line per tool run, quoting its first
 output line. `docs/agents/jev.md` documents that `evidence-cli` skips without a key before reading
 its outputs file, so running it costs nothing when Jev is off.
 
-**(D) Outcome criteria.** Each case's criteria about mechanics are reworded to outcomes, per
+**#58 (D) Outcome criteria.** Each case's criteria about mechanics are reworded to outcomes, per
 ADR-0003; criteria about behaviour are unchanged. Each rewrite says, in the PR, which criterion it
 replaces and why it tests no less.
 
