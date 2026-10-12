@@ -29,7 +29,10 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh api -X POST 'repos/{owner}/{repo}/issues/<item>/dependencies/blocked_by' -F issue_id=<id>`,
   then `gh issue edit <item> --add-label status:blocked`. **Link first, then label**: a label with
   no native blocker behind it is never removed by **Unblock**, so the item stays off the frontier
-  after the breakage is fixed.
+  after the breakage is fixed. If the POST fails, check
+  `gh api 'repos/{owner}/{repo}/issues/<item>/dependencies/blocked_by' --jq '.[].number'`: when
+  it lists the blocker, the link already exists, so label; otherwise do not label, and say on the
+  item that the block failed.
 - **Unblock**, straight after an issue closes, per [`docs/workflow.md`](../workflow.md) § 5. List
   the open issues it was blocking:
   `gh api 'repos/{owner}/{repo}/issues/<closed>/dependencies/blocking' --jq '.[] | select(.state == "open") | .number'`.
