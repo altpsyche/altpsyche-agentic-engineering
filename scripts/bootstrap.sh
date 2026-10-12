@@ -37,6 +37,10 @@ label status:changes-requested  d93f0b "Review found open findings; fix round ne
 label status:approved           0e8a16 "Zero open findings; owner merges"
 label status:blocked            b60205 "Blocked by another item"
 
+# Priority, set only by the owner; no label means normal: docs/agents/triage-labels.md.
+label priority:high  d73a4a "Owner priority: picked before normal and low"
+label priority:low   c2e0c6 "Owner priority: picked after normal"
+
 # Phases: one per `### Phase N — Title` under docs/idea.md § Roadmap.
 phases="$(awk '/^## /{r=tolower($0) ~ /roadmap/} r && /^### Phase [0-9]+/{print}' docs/idea.md)"
 if [ -z "$phases" ]; then
