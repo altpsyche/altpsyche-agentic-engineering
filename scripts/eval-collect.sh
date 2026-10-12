@@ -32,7 +32,7 @@ while IFS= read -r -d '' command; do
   status=0
   (cd "$sandbox" && bash -c "$command") </dev/null >"$work/output" 2>&1 || status=$?
   # The fence outgrows every backtick run in the command or its output, so neither can close it.
-  longest="$( { printf '%s\n' "$command"; cat "$work/output"; } | { grep -o '`\+' || true; } | awk '{ if (length > n) n = length } END { print n + 0 }')"
+  longest="$( { printf '%s\n' "$command"; cat "$work/output"; } | { grep -oE '`+' || true; } | awk '{ if (length > n) n = length } END { print n + 0 }')"
   fence="$(printf '%*s' "$(( longest < 3 ? 3 : longest + 1 ))" '' | tr ' ' '`')"
   {
     printf '\n%sconsole\n$ %s\n' "$fence" "$command"
