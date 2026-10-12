@@ -56,8 +56,9 @@ has confirmed the spec's testing seams.
 2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`, or
    `origin/integration/<name>` for a ticket in an integration effort (§ Integration branches).
    Nothing is committed to `main` or to an integration branch.
-3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
-   breakage you inherit is never mistaken for yours. If it is red, do not start. Find the issue for
+3. Clean baseline: before any change, run the fresh worktree's `scripts/verify.sh` by path, per
+   the Conventions in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md), so breakage you
+   inherit is never mistaken for yours. If it is red, do not start. Find the issue for
    the breakage; when none exists, file one per **Create**, labelled `needs-triage`. The fix is
    its own ticket, not part of this one. Then, in this order, per **Block** and **Release a
    claim**: link the breakage issue as the item's native blocker, add `status:blocked`, then
@@ -114,7 +115,8 @@ blind spots, as an author grading its own work is lenient.
 3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
    local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base, freshly
    fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR already
-   merged into the integration branch (§ Integration branches). On a re-review, scope new findings
+   merged into the integration branch (§ Integration branches). Its git commands take
+   `git -C <worktree>`, per **Check out a PR**. On a re-review, scope new findings
    from the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,

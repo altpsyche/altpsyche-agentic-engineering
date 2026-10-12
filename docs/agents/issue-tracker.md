@@ -18,7 +18,10 @@ guard refuses some shapes of command, so these never use them
 ([ADR-0003](../adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md)). A GraphQL query lives
 in a file passed with `-F query=@<file>`. A jq filter stays inline, in `--jq`, and carries no
 braces: it builds objects with `pick(…)` and `|=`, since a guard reads braces as shell expansion
-and refuses `jq -f`, which reads a file.
+and refuses `jq -f`, which reads a file. No command enters another folder. It names it instead,
+`git -C <worktree> …` for git and `<worktree>/scripts/verify.sh` for a script, because a guard
+refuses a `cd` chained to another command. `<main clone>` and `<worktree>` are absolute paths; a
+relative path after `git -C <main clone>` resolves from the main clone.
 
 - **Create**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read**: `gh issue view <number> --comments`, also fetching labels:
@@ -67,7 +70,8 @@ and refuses `jq -f`, which reads a file.
   unassign**: the other way round, the issue is back on the frontier while the old claim stands,
   so a new session's claim either loses to it or is ended by the late comment. On a PR, the
   comment alone releases it and the label stays as it was. On an issue, the branch was never
-  pushed: after **Worktree** removes the worktree, delete it with `git branch -D <number>-<slug>`,
+  pushed: after **Worktree** removes the worktree, delete it with
+  `git -C <main clone> branch -D <number>-<slug>`,
   so the next claimant's **Branch** does not fail on a branch that already exists.
 - **Claim a PR** for a review or a fix round:
   `gh pr comment <number> --body "Claimed: review (session <token>)"` or
@@ -110,20 +114,28 @@ and refuses `jq -f`, which reads a file.
   **Read back a claim**. A plan lives on the issue only, never on a PR.
 - **Worktree**: one item, one worktree, one branch. Sessions run in parallel, and two sessions in
   one checkout switch branches under each other. So a session never works in the main clone: it
-  adds a sibling worktree, works only there, and removes it once its last write is posted, with
-  `git worktree remove ../<repo>-<number>`. Git refuses to check one branch out in two worktrees,
-  which is a second guard against two sessions on one branch.
-- **Branch**: `git fetch origin` then
-  `git worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, and `cd` into it. Branch
-  from `origin/main`, not a local `main` that may be stale. A ticket in an integration effort, per
+  adds a sibling worktree per **Branch** or **Check out a PR**, works only there, addressing it by
+  path, and removes it once its last write is posted, with
+  `git -C <main clone> worktree remove ../<repo>-<number>`. Git refuses while the tree holds a
+  change or an untracked file. When it refuses although `git -C <worktree> status --short` prints
+  nothing, only ignored files are left, which `git -C <worktree> status --short --ignored` lists
+  as `!!` lines: move out the `.scratch/` files still needed, then
+  `git -C <main clone> worktree remove --force ../<repo>-<number>`. Anything `status --short`
+  lists is work: commit it or discard it on purpose, never force it away. Git refuses to check one
+  branch out in two worktrees, which is a second guard against two sessions on one branch.
+- **Branch**: `git -C <main clone> fetch origin` then
+  `git -C <main clone> worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, which puts
+  the worktree beside the main clone. Branch from `origin/main`, not a local `main` that may be
+  stale. A ticket in an integration effort, per
   [`docs/workflow.md`](../workflow.md) § Integration branches, branches from
   `origin/integration/<name>` in place of `origin/main`.
-- **Open a PR**: `git push -u origin HEAD` then
-  `gh pr create --title "..." --body-file <file> --label status:in-review`. The body contains
-  `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**. A
-  sub-PR in an integration effort adds `--base integration/<name>`. GitHub closes an issue from
-  `Closes #<number>` only on a merge into the default branch, so a sub-PR's issue is closed by the
-  session that merges it, per [`docs/workflow.md`](../workflow.md) § 5.
+- **Open a PR**: `git -C <worktree> push -u origin HEAD` then
+  `gh pr create --head <number>-<slug> --title "..." --body-file <file> --label status:in-review`.
+  `--head` names the branch, since `gh` runs in the main clone, whose branch is `main`. The body
+  contains `Closes #<number>` so merging closes the issue, and a `## Evidence` section per
+  **Evidence**. A sub-PR in an integration effort adds `--base integration/<name>`. GitHub closes
+  an issue from `Closes #<number>` only on a merge into the default branch, so a sub-PR's issue is
+  closed by the session that merges it, per [`docs/workflow.md`](../workflow.md) § 5.
 - **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
   Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
   criterion of the issue the body closes, in the issue's order, and no other criterion entry. A
@@ -143,13 +155,18 @@ and refuses `jq -f`, which reads a file.
   requires: the case's path, the run's token and the grade's `Verdict:` line, with the whole grade
   beneath it in a `<details>` block. The grade is defined in
   [`evals/README.md`](../../evals/README.md) § Grading a case.
-- **Check out a PR** for review or a fix round: `git fetch origin`, then
-  `git worktree add --detach ../<repo>-<number> origin/main`, `cd` into it, and
-  `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
-  `main` gives an empty diff.
-- **Check the base**, when a fix round's branch is red before any change: `git fetch origin`,
-  `git checkout --detach origin/main` (for a sub-PR, `origin/integration/<name>`), run
-  `scripts/verify.sh`, then `gh pr checkout <number>` to return to the branch.
+- **Check out a PR** for review or a fix round, in its own worktree on the PR's head branch,
+  tracking `origin`: `gh pr view <number> --json headRefName --jq .headRefName` prints its
+  `<branch>`, then `git -C <main clone> fetch origin` and
+  `git -C <main clone> worktree add --track -B <branch> ../<repo>-<number> origin/<branch>`. `-B`
+  resets a local `<branch>` an earlier session left to what was pushed. `/review-pr` diffs against
+  `HEAD`, so its git commands take `git -C <worktree>`: in the main clone, `HEAD` is `main` and
+  the diff is empty.
+- **Check the base**, when a fix round's branch is red before any change, in a second worktree,
+  so the branch's own never moves: `git -C <main clone> fetch origin`, then
+  `git -C <main clone> worktree add --detach ../<repo>-<number>-base origin/main` (for a sub-PR,
+  `origin/integration/<name>`), run that worktree's `scripts/verify.sh` by path, then remove it
+  per **Worktree**.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
   is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
