@@ -144,16 +144,25 @@ blind spots, as an author grading its own work is lenient.
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
 There is no "non-blocking" finding and no "approve, but consider…": a finding worth writing down is
-worth a fix round. Severity orders the list; it does not decide the verdict.
+worth a fix round. Severity orders the list; it does not decide the verdict. The one exception is a
+finding that waits on the owner, per **Relayed owner rulings** below.
+
+**Relayed owner rulings.** Every session and the owner share one account, so a Reviewer cannot tell
+an owner's ruling from an agent's claim of one, whoever posted it. A finding answered with a relayed
+owner ruling, per § 4, step 4, is neither accepted nor held: it waits on the owner. Any other open
+finding still sets `status:changes-requested`, and the waiting one is carried over, not raised
+again. When the only open findings are waiting ones, the verdict is `ready-for-human` in place of
+`status:changes-requested`, and the report names each. The owner's merge is the ruling, and closing
+the PR rejects it.
 
 **Re-reviews converge.** Every report opens with `Reviewed at <sha>`, the head it reviewed. A
-re-review first checks each earlier finding is either fixed or closed by a dispute the reviewer
-accepted. It then raises new findings only on lines changed since that sha
-(`git diff <sha>..HEAD`), plus any constitution violation anywhere, which always blocks. Code that
-passed one round is not re-litigated in the next. If round 3 still ends in changes requested, the
-reviewer sets `ready-for-human` instead of `status:changes-requested` and says why in the report:
-the loop is not converging, and the owner decides whether to merge, rescope or close. A round's
-number is one more than the count of earlier reports on the PR.
+re-review first checks each earlier finding is either fixed, closed by a dispute the reviewer
+accepted, or waiting on a relayed owner ruling. It then raises new findings only on lines changed
+since that sha (`git diff <sha>..HEAD`), plus any constitution violation anywhere, which always
+blocks. Code that passed one round is not re-litigated in the next. If round 3 still ends in
+changes requested, the reviewer sets `ready-for-human` instead of `status:changes-requested` and
+says why in the report: the loop is not converging, and the owner decides whether to merge,
+rescope or close. A round's number is one more than the count of earlier reports on the PR.
 
 **Done when:** the PR carries the verdict label this section sets, and the report, opening with
 `Reviewed at <sha>` and its `Jev:` lines, is posted on the PR after it, every finding naming its
@@ -174,13 +183,19 @@ and PR steps.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
-   in review becomes a new ticket, not a bigger diff. A fix that touches an eval case's paths
-   reruns that case, per § 2, step 8.
+   in review becomes a new ticket, not a bigger diff: an Implementer never widens a PR to close
+   another ticket on its own. When the owner has ruled on a finding, for instance to widen the PR,
+   accept a failing grade or leave a file as it is, the answer is a relayed owner ruling, not a
+   dispute: the answer names the ruling, and where and when the owner gave it. The Reviewer cannot
+   verify it, so the finding waits on the owner, per § 3, **Relayed owner rulings**. A fix that
+   touches an eval case's paths reruns that case, per § 2, step 8.
 5. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
-   for a behaviour change, or disputed with a reason and a source.
+   for a behaviour change, disputed with a reason and a source, or answered with a relayed owner
+   ruling. A finding already waiting on the owner from an earlier round is listed as still waiting.
 
-**Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
-pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
+**Done when:** every finding is fixed, disputed or answered with a relayed owner ruling,
+`scripts/verify.sh` is green, the branch is pushed, the PR is back on `status:in-review`, and the
+answering comment is posted after the label.
 On a red baseline that is also red on `origin/main`, or a sub-PR's base, done is § 2, step 3's
 release instead, with no block.
 
