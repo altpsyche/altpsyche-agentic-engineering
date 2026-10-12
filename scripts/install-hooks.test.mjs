@@ -1,6 +1,7 @@
 // Tests for the pre-push hook, through scripts/install-hooks.sh, the script scripts/bootstrap.sh
 // calls. Each case builds a real repo and a bare remote in a temp dir, with this repo's hook and
-// install script copied in and a stand-in scripts/verify.sh that passes or fails on demand.
+// install script copied in and a stand-in scripts/verify.sh that passes or fails on demand. The
+// hook refuses a dirty tree, so a case that changes verify.sh commits the change before it pushes.
 
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
@@ -71,8 +72,28 @@ function install(clone) {
   assert.equal(result.status, 0, `install-hooks.sh: ${result.stderr}`);
 }
 
+async function commitVerify(clone, exitCode) {
+  await setVerify(clone, exitCode);
+  git(clone, 'commit', '-q', '-am', `verify exits ${exitCode}`);
+}
+
+function push(clone) {
+  const result = run(clone, 'git', 'push', '-q', 'origin', 'main');
+  return { ...result, output: result.stdout + result.stderr };
+}
+
+const DIRTY_TREE_LINE = /^pre-push: the working tree has uncommitted changes or untracked files; commit or stash them first\. Push blocked\.$/m;
+
 function remoteHasMain(remote) {
   return run(remote, 'git', 'rev-parse', '--verify', '-q', 'refs/heads/main').status === 0;
+}
+
+// Blocked by the dirty-tree line, and verify.sh never ran.
+function assertBlockedDirty(result, remote) {
+  assert.notEqual(result.status, 0);
+  assert.match(result.output, DIRTY_TREE_LINE);
+  assert.doesNotMatch(result.output, /stand-in verify/);
+  assert.equal(remoteHasMain(remote), false);
 }
 
 test('the install script sets core.hooksPath to .githooks', () =>
@@ -81,20 +102,49 @@ test('the install script sets core.hooksPath to .githooks', () =>
     assert.equal(git(clone, 'config', '--get', 'core.hooksPath'), '.githooks');
   }));
 
-test('a red verify.sh blocks the push', () =>
+test('a clean tree with a red verify.sh blocks the push', () =>
   withClone(async ({ clone, remote }) => {
     install(clone);
-    await setVerify(clone, 1);
-    const push = run(clone, 'git', 'push', '-q', 'origin', 'main');
-    assert.notEqual(push.status, 0);
-    assert.match(push.stderr, /pre-push: scripts\/verify\.sh failed; push blocked\./);
+    await commitVerify(clone, 1);
+    const result = push(clone);
+    assert.notEqual(result.status, 0);
+    assert.match(result.output, /pre-push: scripts\/verify\.sh failed; push blocked\./);
     assert.equal(remoteHasMain(remote), false);
   }));
 
-test('a green verify.sh lets the push through', () =>
+test('a clean tree with a green verify.sh lets the push through', () =>
   withClone(async ({ clone, remote }) => {
     install(clone);
-    const push = run(clone, 'git', 'push', '-q', 'origin', 'main');
-    assert.equal(push.status, 0, push.stderr);
+    const result = push(clone);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(remoteHasMain(remote), true);
+  }));
+
+test('a tracked change blocks the push with one line, before verify.sh runs', () =>
+  withClone(async ({ clone, remote }) => {
+    install(clone);
+    const verify = path.join(clone, 'scripts', 'verify.sh');
+    await writeFile(verify, '#!/usr/bin/env bash\necho "stand-in verify"\n');
+    assertBlockedDirty(push(clone), remote);
+  }));
+
+test('an untracked file blocks the push with one line, before verify.sh runs', () =>
+  withClone(async ({ clone, remote }) => {
+    install(clone);
+    await writeFile(path.join(clone, 'notes.txt'), 'not committed\n');
+    assertBlockedDirty(push(clone), remote);
+  }));
+
+test('an ignored file does not block the push', () =>
+  withClone(async ({ clone, remote }) => {
+    install(clone);
+    await writeFile(path.join(clone, '.gitignore'), '.scratch/\n');
+    git(clone, 'add', '.gitignore');
+    git(clone, 'commit', '-q', '-m', 'ignore .scratch');
+    await mkdir(path.join(clone, '.scratch'));
+    await writeFile(path.join(clone, '.scratch', 'notes.txt'), 'ignored\n');
+    const result = push(clone);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.output, /stand-in verify/);
     assert.equal(remoteHasMain(remote), true);
   }));
