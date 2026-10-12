@@ -101,6 +101,8 @@ const writes = (calls) => calls.filter((c) => /^api -X (PUT|POST) /.test(c));
 const lines = (text) => text.split('\n').filter(Boolean);
 const named = (sent, name) => sent.find((r) => r.name === name);
 const rule = (ruleset, type) => ruleset.rules.find((r) => r.type === type);
+// GitHub applies every rule in a ruleset whatever its order, so the cases compare the set of types.
+const ruleTypes = (ruleset) => ruleset.rules.map((r) => r.type).sort();
 
 test('a refused rulesets list sets no ruleset and warns once with the API message', async () => {
   const run = await bootstrap({ list: 'refused' });
@@ -155,7 +157,7 @@ test('the integration-branches ruleset takes changes only by PR with verify gree
   assert.deepEqual(integration.conditions.ref_name.include, ['refs/heads/integration/*']);
   assert.deepEqual(integration.bypass_actors, []);
   // No deletion rule: the branch is deleted once its integration PR merges.
-  assert.deepEqual(integration.rules.map((r) => r.type), ['non_fast_forward', 'pull_request', 'required_status_checks']);
+  assert.deepEqual(ruleTypes(integration), ['non_fast_forward', 'pull_request', 'required_status_checks']);
   assert.equal(rule(integration, 'pull_request').parameters.required_approving_review_count, 0);
   assert.deepEqual(rule(integration, 'required_status_checks').parameters.required_status_checks, [{ context: 'verify' }]);
 });
@@ -171,8 +173,8 @@ test('the default-branch ruleset is named main and keeps the admin bypass and ev
   assert.equal(main.enforcement, 'active');
   assert.deepEqual(main.conditions.ref_name.include, ['~DEFAULT_BRANCH']);
   assert.deepEqual(main.bypass_actors, [{ actor_id: 5, actor_type: 'RepositoryRole', bypass_mode: 'always' }]);
-  assert.deepEqual(main.rules.map((r) => r.type),
-    ['deletion', 'non_fast_forward', 'required_linear_history', 'pull_request', 'required_status_checks']);
+  assert.deepEqual(ruleTypes(main),
+    ['deletion', 'non_fast_forward', 'pull_request', 'required_linear_history', 'required_status_checks']);
   assert.deepEqual(rule(main, 'pull_request').parameters, {
     required_approving_review_count: 1,
     dismiss_stale_reviews_on_push: false,

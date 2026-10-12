@@ -69,7 +69,7 @@ else
     "On a private repo, a plan without rulesets is the usual cause." >&2
 fi
 
-# ruleset <name> <what it protects> <json>: PUTs the ruleset the list names <name>, else POSTs a new
+# ruleset <name> <what it does> <json>: PUTs the ruleset the list names <name>, else POSTs a new
 # one. After a refused list it does nothing, since the warning above said why. A refused write
 # warns for that ruleset and the setup goes on. Every ruleset goes through here, so each gets this
 # guard.
@@ -84,7 +84,7 @@ ruleset() {
     method=POST endpoint="repos/$repo/rulesets"
   fi
   if gh api -X "$method" "$endpoint" --input - <<<"$json" >/dev/null; then
-    echo "Ruleset $name: $what takes changes only by PR with verify green"
+    echo "Ruleset $name: $what"
   else
     echo "Could not set ruleset $name; $what is unprotected. The gh error above says why; on a" >&2
     echo "private repo, a plan without rulesets is the usual cause." >&2
@@ -92,12 +92,14 @@ ruleset() {
 }
 
 # Protect the default branch: changes land only through a PR with `verify` green and one approving
-# review, history stays linear and is never rewritten or deleted. Prose says "never commit to main";
-# this makes it true. The one bypass actor is the admin role, and it exists because every session
-# shares the owner's account, which GitHub forbids from approving its own PR: the review verdict is
-# the `status:approved` label (docs/workflow.md § 3), and the owner merges with the bypass. It also
-# exempts agents, so agents never merge (docs/workflow.md § Roles); the pre-push hook and CI still
-# run. Named `main` to match the ruleset this repo already had, so a run updates it in place.
+# review, history stays linear and is never rewritten or deleted. The one bypass actor is the admin
+# role, and it exists because every session shares the owner's account, which GitHub forbids from
+# approving its own PR: the review verdict is the `status:approved` label (docs/workflow.md § 3),
+# and the owner merges with the bypass. The bypass also lets that account push to the branch
+# directly, so for agents "nothing is committed to main" stays a rule of the prose
+# (docs/workflow.md § 2), not of this ruleset. Named `main` to match the ruleset this repo already
+# had, so a run updates it in place.
+admin_role_id=5 # GitHub's id for the repository admin role, as a RepositoryRole bypass actor
 default_branch_name="main"
 default_branch_ruleset="$(cat <<JSON
 {
@@ -105,7 +107,7 @@ default_branch_ruleset="$(cat <<JSON
   "target": "branch",
   "enforcement": "active",
   "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
-  "bypass_actors": [{"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}],
+  "bypass_actors": [{"actor_id": $admin_role_id, "actor_type": "RepositoryRole", "bypass_mode": "always"}],
   "rules": [
     {"type": "deletion"},
     {"type": "non_fast_forward"},
@@ -127,7 +129,9 @@ default_branch_ruleset="$(cat <<JSON
 }
 JSON
 )"
-ruleset "$default_branch_name" "the default branch" "$default_branch_ruleset"
+ruleset "$default_branch_name" \
+  "the default branch takes changes only by PR with verify green and one approval, admin bypass aside" \
+  "$default_branch_ruleset"
 
 # Protect integration branches (docs/workflow.md § Integration branches): an effort's sub-PRs land
 # only by PR with `verify` green, and the history is never rewritten. No approval is required, since
@@ -157,4 +161,6 @@ integration_ruleset="$(cat <<JSON
 }
 JSON
 )"
-ruleset "$integration_name" "every integration/* branch" "$integration_ruleset"
+ruleset "$integration_name" \
+  "every integration/* branch takes changes only by PR with verify green, no bypass" \
+  "$integration_ruleset"
