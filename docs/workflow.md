@@ -83,8 +83,9 @@ has confirmed the spec's testing seams.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-7. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
-   it is not the review (§ Roles).
+7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, on every diff,
+   however small: read `.agents/skills/review-pr/SKILL.md` and run it. Reading the diff yourself
+   is not the self-check. Fix what it finds; it is not the review (§ Roles).
 8. Evals, so a skill change is proven like code: when the diff touches `.agents/skills/<name>/`,
    run every case in `evals/<name>/`; when it touches `AGENTS.md`, every case in `evals/`. Run
    each, and have another session grade it, per [`evals/README.md`](../evals/README.md). A skill

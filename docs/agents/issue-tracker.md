@@ -104,7 +104,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**.
 - **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
   Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
-  criterion of the issue the body closes, in the issue's order. Each entry names the criterion,
+  criterion of the issue the body closes, in the issue's order, and no other criterion entry. A
+  green `scripts/verify.sh` is part of done, not a criterion, and CI's `verify` check shows it, so
+  it gets an entry only when the issue lists it as a criterion. Each entry names the criterion,
   the command run this session that proves it, and that command's decisive result line, quoted
   as printed. Where the change is visible, such as rendered output or a screenshot, the entry adds
   a **Before** and an **After**. A criterion proven by reading still names the command whose
