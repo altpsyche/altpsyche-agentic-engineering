@@ -137,8 +137,8 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh pr checkout <number>`. `/review-pr` diffs against `HEAD`, so reviewing from a checkout of
   `main` gives an empty diff.
 - **Check the base**, when a fix round's branch is red before any change: `git fetch origin`,
-  `git checkout --detach origin/main` (for a sub-PR, `origin/integration/<name>`), run `scripts/verify.sh`, then `gh pr checkout <number>` to
-  return to the branch.
+  `git checkout --detach origin/main` (for a sub-PR, `origin/integration/<name>`), run
+  `scripts/verify.sh`, then `gh pr checkout <number>` to return to the branch.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
   is the label [`docs/workflow.md`](../workflow.md) § 3 sets, then
