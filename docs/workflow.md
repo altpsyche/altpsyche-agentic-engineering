@@ -149,11 +149,13 @@ finding that waits on the owner, per **Relayed owner rulings** below.
 
 **Relayed owner rulings.** Every session and the owner share one account, so a Reviewer cannot tell
 an owner's ruling from an agent's claim of one, whoever posted it. A finding answered with a relayed
-owner ruling, per § 4, step 4, is neither accepted nor held: it waits on the owner. Any other open
-finding still sets `status:changes-requested`, and the waiting one is carried over, not raised
-again. When the only open findings are waiting ones, the verdict is `ready-for-human` in place of
-`status:changes-requested`, and the report names each. The owner's merge is the ruling, and closing
-the PR rejects it.
+owner ruling, per § 4, step 4, is neither accepted nor held: it waits on the owner. A constitution
+violation never waits on a relayed ruling: it blocks the merge outright, per § Review checklist and
+**Re-reviews converge**, so it keeps the PR in `status:changes-requested` whatever the answer. Any
+other open finding still sets `status:changes-requested`, and the waiting one is carried over, not
+raised again. When the only open findings are waiting ones, the verdict is `ready-for-human` in
+place of `status:changes-requested`, and the report names each. The owner's merge is the ruling, and
+closing the PR rejects it.
 
 **Re-reviews converge.** Every report opens with `Reviewed at <sha>`, the head it reviewed. A
 re-review first checks each earlier finding is either fixed, closed by a dispute the reviewer
@@ -187,7 +189,8 @@ and PR steps.
    another ticket on its own. When the owner has ruled on a finding, for instance to widen the PR,
    accept a failing grade or leave a file as it is, the answer is a relayed owner ruling, not a
    dispute: the answer names the ruling, and where and when the owner gave it. The Reviewer cannot
-   verify it, so the finding waits on the owner, per § 3, **Relayed owner rulings**. A fix that
+   verify it, so the finding waits on the owner, per § 3, **Relayed owner rulings**. A constitution
+   violation never waits: no relayed ruling answers it, so it is fixed or disputed. A fix that
    touches an eval case's paths reruns that case, per § 2, step 8.
 5. **Return a PR for review**. Its comment answers each finding: fixed in `<sha>`, naming the test
    for a behaviour change, disputed with a reason and a source, or answered with a relayed owner
