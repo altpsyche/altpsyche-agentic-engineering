@@ -12,8 +12,9 @@
 ## Starting state
 
 After bootstrap: issue #1, and PR #2 after one review round and one fix round. Round 1 reviewed
-commit `S1` and found the missing link; the fix commit adds it. The line with the typo "agianst"
-is unchanged since `S1`, so it passed round 1.
+commit `S1` and found the missing link; the fix commit adds it. Its report carries the `Jev:`
+lines § 3 asks for, each a skip line. The line with the typo "agianst" is unchanged since `S1`, so
+it passed round 1.
 
 ```bash
 gh issue create --title "Add a contributing note to the README" \
@@ -60,6 +61,10 @@ gh pr comment 2 --body "Claimed: review (session 22222222)"
 gh pr edit 2 --remove-label status:in-review --add-label status:changes-requested
 sed "s/S1SHA/$S1/" <<'EOF' | gh pr comment 2 --body-file -
 Reviewed at S1SHA
+Jev: prune: jev prune: skipped, TYPESAFE_API_KEY is not set; read the docs as normal
+Jev: evidence: jev evidence: skipped, TYPESAFE_API_KEY is not set; check every entry yourself
+Jev: coverage: jev coverage: skipped, TYPESAFE_API_KEY is not set; check every criterion yourself
+Jev: verify-findings: jev verify-findings: skipped, TYPESAFE_API_KEY is not set; continue as normal
 
 ## Standards
 
