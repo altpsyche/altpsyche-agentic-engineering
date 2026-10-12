@@ -85,7 +85,20 @@ const gradeEntry = (token) => `- evals/work/red-baseline.md, run ${token}: Verdi
 //   repos:   fixtures keyed by the `<owner>/<name>` the script asks for
 //   list:    what `gh repo list` returns
 //   folders: names created beside the main clone, as folders
-async function scenario({ body, state = 'MERGED', repos = {}, list = [], folders = [], setup, mainName = 'main', fail = '' }) {
+//   fail:    a glob of gh arguments the stub fails, as an unreachable API
+//   init:    what the folder the script runs from is: 'repo', a main clone; 'bare', a bare
+//            repository; 'none', no repository at all
+async function scenario({
+  body,
+  state = 'MERGED',
+  repos = {},
+  list = [],
+  folders = [],
+  setup,
+  mainName = 'main',
+  fail = '',
+  init = 'repo',
+}) {
   const tmp = await mkdtemp(path.join(tmpdir(), 'eval-cleanup-'));
   const bin = path.join(tmp, 'bin');
   const stub = path.join(tmp, 'stub');
@@ -124,9 +137,14 @@ async function scenario({ body, state = 'MERGED', repos = {}, list = [], folders
     STUB_DIR: stub,
     STUB_LOG: path.join(tmp, 'gh.log'),
     STUB_FAIL: fail,
+    // git never looks above the temp folder for a repository.
+    GIT_CEILING_DIRECTORIES: tmp,
   });
-  const git = spawnSync('git', ['init', '-q', '-b', 'main', main], { env, encoding: 'utf8' });
-  assert.equal(git.status, 0, git.stderr);
+  if (init !== 'none') {
+    const args = init === 'bare' ? ['init', '-q', '--bare', main] : ['init', '-q', '-b', 'main', main];
+    const git = spawnSync('git', args, { env, encoding: 'utf8' });
+    assert.equal(git.status, 0, git.stderr);
+  }
   if (setup) await setup({ tmp, work, main });
 
   const result = spawnSync(SCRIPT, ['70'], { cwd: main, env, encoding: 'utf8' });
@@ -336,6 +354,33 @@ test('a PR body it cannot read stops the script, deleting nothing', opts, async 
     await s.cleanup();
   }
 });
+
+// Folders are removed only beside a main clone. Run from no repository, or from a bare one, the
+// script stops before any gh call, and a listed run's folder where it runs stays.
+for (const [name, init] of [
+  ['no repository', 'none'],
+  ['a bare repository', 'bare'],
+]) {
+  test(`refuses to run from ${name}, removing no folder`, opts, async () => {
+    const s = await scenario({
+      body: evidenceBody(`- evals/work/claim.md, run ${T}: void, gh repo create failed`),
+      init,
+      folders: [`eval-${T}`],
+      setup: async ({ main }) => {
+        await mkdir(path.join(main, `eval-${T}`));
+      },
+    });
+    try {
+      assert.equal(s.result.status, 1, s.result.stdout);
+      assert.match(s.result.stderr, /main clone/);
+      assert.equal(s.log, '');
+      assert.equal(s.exists(`main/eval-${T}`), true);
+      assert.equal(s.exists(`eval-${T}`), true);
+    } finally {
+      await s.cleanup();
+    }
+  });
+}
 
 test('lists, never deletes, other eval-* repos older than 7 days', opts, async () => {
   const old = new Date(Date.now() - 30 * DAY).toISOString();

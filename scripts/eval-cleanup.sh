@@ -27,7 +27,18 @@ usage() { echo "usage: scripts/eval-cleanup.sh <pr>" >&2; exit 2; }
 pr="$1"
 
 # The main clone, whether run from it or from one of its worktrees, and the folder that holds it.
-main_clone="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+# Its own step, so a failed read stops the script: dirname of nothing is `.`, the current folder.
+# Only a main clone's common dir is <main clone>/.git; anything else, such as a bare repository,
+# has no main clone to remove folders beside.
+no_main_clone() {
+  echo "eval-cleanup: run it from the main clone or one of its worktrees; no main clone found from $PWD" >&2
+  exit 1
+}
+common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || no_main_clone
+case "$common_dir" in /*/.git) ;; *) no_main_clone ;; esac
+[ -d "$common_dir" ] && [ ! -L "$common_dir" ] || no_main_clone
+main_clone="${common_dir%/.git}"
+[ "$(git -C "$main_clone" rev-parse --is-bare-repository 2>/dev/null)" = false ] || no_main_clone
 beside="$(dirname "$main_clone")"
 
 me="$(gh api user --jq .login)"
