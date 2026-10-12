@@ -146,8 +146,8 @@ replaces and why it tests no less.
 
 **Final PR.** It adds ADR-0003 to the `AGENTS.md` ADR index, which the planning PR leaves out
 so that it needs no eval run. Every case runs once on the integration head with the new scripts,
-graded by a Sonnet session; the Evidence lists every run by token. A failure gets a fix sub-PR and a run on the
-new head, never a bare rerun.
+graded by a Sonnet session; the Evidence lists every run by token. A failure gets a fix sub-PR
+and a run on the new head, never a bare rerun.
 
 ## Testing Decisions
 
