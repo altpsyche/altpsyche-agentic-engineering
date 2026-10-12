@@ -18,7 +18,7 @@ guard refuses some shapes of command, so these never use them
 ([ADR-0003](../adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md)). A GraphQL query lives
 in a file passed with `-F query=@<file>`. A jq filter stays inline, in `--jq`, and carries no
 braces: it builds objects with `pick(…)` and `|=`, since a guard reads braces as shell expansion
-and refuses `jq -f`, which reads a file. No command enters another folder. It names it instead,
+and refuses jq's `-f`, which reads a file. No command enters another folder. It names it instead,
 `git -C <worktree> …` for git and `<worktree>/scripts/verify.sh` for a script, because a guard
 refuses a `cd` chained to another command. `<main clone>` and `<worktree>` are absolute paths; a
 relative path after `git -C <main clone>` resolves from the main clone.

@@ -388,7 +388,7 @@ test('a command naming a query file that does not exist is reported; one that ex
     ]);
   }));
 
-test('a jq command that reads its filter or data through a file flag is reported; a file argument is not', () =>
+test('a jq command that reads its filter or data through a file flag is reported, bundled short flags and --argfile included; a file argument is not', () =>
   withRepo(async (root) => {
     await writeFile(
       path.join(root, 'docs', 'workflow.md'),
@@ -396,6 +396,13 @@ test('a jq command that reads its filter or data through a file flag is reported
         '`gh issue list --json number | jq -c -f scripts/queries/a.jq`',
         "`jq -n --rawfile v out.txt '.[\"a\"] = $v'`",
         "`jq -Rs '. as $v | null | .[\"a\"] = $v' out.txt`",
+        '`gh issue list --json number | jq -cf scripts/queries/a.jq`',
+        '`jq -nrf a.jq in.json`',
+        '`jq -f a.jq in.json`',
+        "`jq -n --argfile a f.json '.'`",
+        "`jq -n --slurpfile a f.json '.'`",
+        "`jq -L lib -n '.'`",
+        "`gh issue list --json number,title --jq '.[] | pick(.number, .title)'`",
         '',
       ].join('\n'),
     );
@@ -403,6 +410,12 @@ test('a jq command that reads its filter or data through a file flag is reported
     assert.deepEqual(errors, [
       `docs/workflow.md: ${JQ_FILE}: gh issue list --json number | jq -c -f scripts/queries/a.jq`,
       `docs/workflow.md: ${JQ_FILE}: jq -n --rawfile v out.txt '.["a"] = $v'`,
+      `docs/workflow.md: ${JQ_FILE}: gh issue list --json number | jq -cf scripts/queries/a.jq`,
+      `docs/workflow.md: ${JQ_FILE}: jq -nrf a.jq in.json`,
+      `docs/workflow.md: ${JQ_FILE}: jq -f a.jq in.json`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --argfile a f.json '.'`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --slurpfile a f.json '.'`,
+      `docs/workflow.md: ${JQ_FILE}: jq -L lib -n '.'`,
     ]);
   }));
 

@@ -310,7 +310,10 @@ async function checkLinks(root, file, { err }) {
 const SHELL_FENCE = new Set(['', 'bash', 'sh', 'shell', 'console', 'zsh']);
 const RUNS_TOOL = /(?:^|[\s;&|(`])(?:gh|git|jq)\s/;
 const GH_PLACEHOLDER = /\{(?:owner|repo)\}/g;
-const JQ_READS_FILE = /(?:^|[\s;&|(`])jq\s[^|]*?(?:\s-f\s|\s--from-file\s|\s--rawfile\s|\s--slurpfile\s|\s-L)/;
+// A short-flag cluster holding f (`-f`, `-cf`, `-nrf`) or -L, or a long flag that reads a file,
+// anywhere after `jq` and before the next pipe.
+const JQ_READS_FILE =
+  /(?:^|[\s;&|(`])jq\b[^|]*?\s(?:-[a-zA-Z]*f[a-zA-Z]*(?=\s|$)|-L|--(?:from-file|rawfile|slurpfile|argfile)\b)/;
 const NAMED_FILE = /-F query=@([^\s'"`|<]+)(?=[\s'"`|]|$)/g;
 
 // The commands in a markdown file: each code span, and each logical line of a shell fence, with
