@@ -13,9 +13,11 @@
 #
 #   eval-sandbox run <token> from <40-hex source commit>
 #
-# Its last lines are `token: <token>`, `path: <sandbox>` and `prompt:` followed by the prompt. Any
-# failure stops it: the run has no sandbox to reach, so it is void, not graded (evals/README.md
-# § Running a case). Needs gh, authenticated, git, node and openssl.
+# It names the token and sandbox on stderr as soon as the token exists. Its last lines are
+# `token: <token>`, `path: <sandbox>` and `prompt:` followed by the prompt. Any failure stops it:
+# the run is void, not graded (evals/README.md § Running a case). A failure once the repo may exist
+# prints `token:` and `path:` again on stderr, with a note to list the token in the PR's Evidence
+# as void. Needs gh, authenticated, git, node and openssl.
 set -euo pipefail
 shopt -s inherit_errexit # a parse that fails inside $(…) stops the script too
 
@@ -46,6 +48,19 @@ step() {
 T="$(openssl rand -hex 4)"
 source_sha="$(git -C "$root" rev-parse HEAD)"
 sandbox="$(dirname "$root")/eval-$T"
+echo "eval-sandbox: run $T, sandbox $sandbox" >&2
+
+# From `gh repo create` on, a marked repo may exist. If anything after it fails, the run is void,
+# and the repo must still be named, so the runner lists its token in the PR's Evidence and the
+# cleanup at merge finds it.
+void_note() {
+  local status=$?
+  [ "$status" -eq 0 ] && return
+  printf 'token: %s\npath: %s\n' "$T" "$sandbox" >&2
+  echo "eval-sandbox: eval-$T exists on GitHub, or may if gh repo create failed, but its setup" \
+    "failed, so the run is void; list token $T in the PR's Evidence as void" >&2
+  exit "$status"
+}
 
 mkdir "$sandbox"
 git -C "$root" archive HEAD -- . ':(exclude,glob)evals/*/**' | tar -x -C "$sandbox"
@@ -53,9 +68,11 @@ cd "$sandbox"
 git init -q -b main
 git add -A && git commit -qm "Sandbox"
 step "$before_push"
+trap void_note EXIT
 gh repo create "eval-$T" --private --source . --remote origin --push \
   --description "eval-sandbox run $T from $source_sha"
 scripts/bootstrap.sh </dev/null
 step "$after_bootstrap"
+trap - EXIT
 
 printf 'token: %s\npath: %s\nprompt:\n%s' "$T" "$sandbox" "${prompt%.}"

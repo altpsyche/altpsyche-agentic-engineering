@@ -81,9 +81,11 @@ case's Starting state blocks as written at their steps:
 
 The case path is relative to the checkout's root. It reads the case through
 `scripts/eval-case.mjs`, which refuses a case it cannot parse before anything is built, and runs
-each Starting state block with `T` and `S` set, as they are when typed by hand. The script stops
-at the first command that fails, and its last lines print the token, the sandbox's path and the
-prompt. When a step and the script disagree, the step wins and the script is fixed.
+each Starting state block with `T` and `S` set, as they are when typed by hand. The script names
+the token and the sandbox's path as soon as the token exists, stops at the first command that
+fails, and its last lines print the token, the sandbox's path and the prompt. A failure once the
+repo may exist prints the token and path again, with a note that the run is void. When a step
+and the script disagree, the step wins and the script is fixed.
 
 The runner types the steps in its own shell, so it enters the sandbox with `cd`; the run
 session's commands, and a case's Collect commands, never do.
@@ -109,7 +111,8 @@ deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a rep
 
 1. Build the sandbox, with the case's starting state, per § Sandbox, by hand or with
    `scripts/eval-sandbox.sh`. If it cannot be built, or the run session cannot reach it, the run
-   is void: it is not graded, and running the case in a new sandbox is not a rerun.
+   is void: it is not graded, and running the case in a new sandbox is not a rerun. A void run whose
+   repo was created is still listed by its token in the PR's Evidence, as void.
 2. Start the run session with the sandbox folder as its working directory, and paste the prompt.
 3. Give each scripted reply at its moment. To anything else, reply only: `I'm not available.
    Follow the repo's docs and decide.` Never hint, correct or explain.

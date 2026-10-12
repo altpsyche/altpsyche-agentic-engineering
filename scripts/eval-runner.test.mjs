@@ -107,6 +107,10 @@ ${FENCE}
 // of them runs, and no repo is created.
 const FAILING_CASE = STEPS_CASE.replace("printf '%s %s\\n' \"$T\" \"$S\" > before-push.txt", 'false\n$&');
 
+// An After bootstrap block that fails, once the repo exists: the run is void, and its repo must still
+// be named, so the runner can list it in the Evidence.
+const FAILING_AFTER_CASE = STEPS_CASE.replace("printf '%s %s\\n' \"$T\" \"$S\" > after-bootstrap.txt", 'false');
+
 let tmp;
 let src;
 let env;
@@ -164,6 +168,7 @@ before(async () => {
   await writeFile(path.join(tmp, 'broken-case.md'), COLLECT_CASE.replace('## Collect', '## Collected'));
   await writeFile(path.join(tmp, 'steps-case.md'), STEPS_CASE);
   await writeFile(path.join(tmp, 'failing-case.md'), FAILING_CASE);
+  await writeFile(path.join(tmp, 'failing-after-case.md'), FAILING_AFTER_CASE);
 });
 
 after(async () => {
@@ -364,4 +369,16 @@ test('eval-sandbox.sh stops at the first failing Starting state command, before 
   assert.equal(created.length, 1);
   assert.equal(existsSync(path.join(tmp, created[0], 'before-push.txt')), false);
   assert.equal(git(path.join(tmp, created[0]), 'log', '--format=%s').trim(), 'Sandbox');
+});
+
+test('eval-sandbox.sh names the token, path and void note when a step fails after the repo exists', async () => {
+  assert.notEqual(FAILING_AFTER_CASE, STEPS_CASE, 'the fixture edit must change the case');
+  const built = run('eval-sandbox.sh', [path.join(tmp, 'failing-after-case.md')], 'gh-failing-after.log');
+  assert.notEqual(built.status, 0);
+  const log = await readFile(path.join(tmp, 'gh-failing-after.log'), 'utf8');
+  const token = /^repo create eval-([0-9a-f]{8}) /m.exec(log)?.[1];
+  assert.ok(token, log);
+  assert.match(built.stderr, new RegExp(`^token: ${token}$`, 'm'));
+  assert.match(built.stderr, new RegExp(`^path: ${path.join(tmp, `eval-${token}`).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
+  assert.match(built.stderr, new RegExp(`eval-${token} exists.*void.*Evidence`));
 });
