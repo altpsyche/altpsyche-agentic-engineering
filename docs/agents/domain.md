@@ -25,6 +25,18 @@ genuinely better, `/domain-modeling` changes the model and the vocabulary togeth
 <!-- TEMPLATE: once terms settle, list the distinctions agents most often blur here, e.g.
 - **Term A** vs **Term B** — what separates them. Never "synonym". -->
 
+## Where the skills' open questions are answered
+
+Two vendored skills leave a step to the project. This repo answers them here:
+
+- **`/tdd` asks you to confirm the seams with the user before writing a test.** The testing seams
+  in the spec, which the owner confirmed during planning ([`workflow.md`](../workflow.md) § 1),
+  count as that confirmation. Test at them without stopping to ask again. A seam the spec does not
+  name still needs the owner.
+- **`/research` saves its notes "where the repo already keeps such notes".** That place is
+  `.scratch/research/`, one Markdown file per question. It is scratch: a finding that matters is
+  promoted to an ADR, a spec or an issue.
+
 ## Flag conflicts
 
 If your output contradicts an ADR or a decided constraint, say so explicitly rather than silently

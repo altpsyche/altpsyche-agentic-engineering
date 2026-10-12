@@ -188,6 +188,12 @@ restating them.
 **Bug tickets.** `docs/workflow.md` § 2 sends an Implementer on a bug ticket to `/diagnosing-bugs`
 for the reproduction loop. Its failing check becomes the first slice of `/tdd`.
 
+**Unblocking.** `docs/workflow.md` § 5 says who removes `status:blocked`: the session that closes an
+issue removes it from every issue whose native blockers are now all closed, with the **Unblock**
+command in `docs/agents/issue-tracker.md`. Without an owner the label outlived its blockers, and the
+frontier never offered the freed issue. Ticket #4 added this during the DRY pass; it is recorded
+here so the spec matches what landed.
+
 **Pre-push hook.** Lives under `.githooks/`, runs `scripts/verify.sh`, and is switched on by a small
 install script that `scripts/bootstrap.sh` calls, which sets `core.hooksPath`. `AGENTS.md` lists
 `--no-verify` by an agent as an anti-pattern. A git hook belongs to git, not to any harness.

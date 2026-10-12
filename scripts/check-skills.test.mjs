@@ -274,3 +274,41 @@ test('AGENTS.md over 32 KiB is reported even under the line budget', () =>
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, ['AGENTS.md is 33793 bytes, over the 32768-byte budget']);
   }));
+
+test('a Jev CLI missing from the registry in docs/agents/jev.md is reported; a listed one is not', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'scripts', 'jev'), { recursive: true });
+    await mkdir(path.join(root, 'docs', 'agents'));
+    await writeFile(path.join(root, 'scripts', 'jev', 'triage-cli.mjs'), '');
+    await writeFile(path.join(root, 'scripts', 'jev', 'prune-cli.mjs'), '');
+    await writeFile(path.join(root, 'scripts', 'jev', 'client.mjs'), '');
+    await writeFile(path.join(root, 'docs', 'agents', 'jev.md'), '| triage | `scripts/jev/triage-cli.mjs` |\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['scripts/jev/prune-cli.mjs: Jev CLI not listed in docs/agents/jev.md']);
+  }));
+
+test('Jev CLIs with no registry at all are each reported', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'scripts', 'jev'), { recursive: true });
+    await writeFile(path.join(root, 'scripts', 'jev', 'triage-cli.mjs'), '');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['scripts/jev/triage-cli.mjs: Jev CLI not listed in docs/agents/jev.md']);
+  }));
+
+test('an evals/ folder that names no skill is reported; one naming a skill, and a file, are not', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await mkdir(path.join(root, 'evals', 'gone'));
+    await writeFile(path.join(root, 'evals', 'README.md'), '# Evals\n');
+    await writeFile(path.join(root, 'evals', 'demo', 'case.md'), '# Case\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['evals/gone/: names no skill in .agents/skills/']);
+  }));
+
+test('a broken link in an eval case is reported', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await writeFile(path.join(root, 'evals', 'demo', 'case.md'), '[gone](../nope.md)\n');
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, ['evals/demo/case.md: broken relative link -> ../nope.md']);
+  }));

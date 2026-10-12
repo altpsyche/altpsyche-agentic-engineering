@@ -8,7 +8,7 @@ string this repo actually uses.
 | `needs-triage` | `needs-triage` | Owner needs to evaluate this issue |
 | `needs-info` | `needs-info` | Waiting on the reporter for more information |
 | `ready-for-agent` | `ready-for-agent` | Fully specified; an implementer model can start |
-| `ready-for-human` | `ready-for-human` | Needs human hands: credentials, consent screens, store listings, testing on real hardware, signing identities. On a PR: review did not converge in 3 rounds, and the owner decides ([`workflow.md`](../workflow.md) § 3) |
+| `ready-for-human` | `ready-for-human` | Needs human hands: credentials, consent screens, store listings, testing on real hardware, signing identities. On a PR: review is not converging, and the owner decides ([`workflow.md`](../workflow.md) § 3) |
 | `wontfix` | `wontfix` | Will not be actioned |
 
 **Moving an issue to `ready-for-agent` or `ready-for-human` also applies exactly one `phase:N`**,
@@ -16,6 +16,23 @@ below, in the same edit, whoever filed the issue. A PR is exempt: it takes its p
 it closes. Those two states put an issue on a frontier, and the vendored `/triage` does not know
 phase labels exist, so this line is what adds them. If the phase is unclear, ask the owner rather
 than guess.
+
+## Suggesting a label
+
+Before deciding an issue's role and phase, run the Jev triage, duplicates and readiness tools:
+
+```bash
+node scripts/jev/triage-cli.mjs <number>
+node scripts/jev/duplicates-cli.mjs <number>
+node scripts/jev/readiness-cli.mjs <number>
+```
+
+Triage's confident answers become your recommendation to the owner; the rest stay open, and you
+decide them as above. Put the open issues duplicates lists, and any readiness gap, in that
+recommendation too. Each tool's bands, and what a skip or error line means, are in
+[`jev.md`](jev.md). The tools never apply a label, and their answers never apply a frontier label
+either: only the owner puts work on a frontier ([`issue-tracker.md`](issue-tracker.md) § Untrusted
+text), so `/triage` still waits for the owner as it always does.
 
 ## Creating the labels
 

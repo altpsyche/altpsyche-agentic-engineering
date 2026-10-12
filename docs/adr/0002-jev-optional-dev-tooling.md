@@ -45,3 +45,15 @@ runs on.
   injected issue text goes after, and the fake-server tests already cover CI's job.
 - **Gate on Jev where it is confident.** Rejected: a cheap judge's false positive would block work
   with no session re-deciding. Advisory bands cost one re-read in the worst case.
+
+## Amendments
+
+- **2026-10-12: the key may live in a gitignored `.env`.** "The key lives only in the owner's
+  shell" above means on the owner's machine and never in a CI secret, which still holds. Exporting
+  it in a shell profile was the only way to set it, which every new user had to work out. So a
+  tool now also reads `TYPESAFE_*` from the gitignored `.env` at the main clone's root, which
+  every worktree finds, and [`scripts/jev/set-key.sh`](../../scripts/jev/set-key.sh) writes it.
+  A key in the shell wins. How it is found is
+  [`scripts/jev/README.md`](../../scripts/jev/README.md) § The client. Recorded per
+  [#27](https://github.com/altpsyche/altpsyche-agentic-engineering/issues/27); the owner
+  signs it off by merging.

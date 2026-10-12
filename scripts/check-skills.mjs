@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Checks the agent layer: skill frontmatter, relative links, pointer integrity, and that nothing in
-// the repo is wired for one harness.
+// Checks the agent layer: skill frontmatter, relative links, pointer integrity, that nothing in the
+// repo is wired for one harness, that every eval folder names a skill, and that every Jev CLI is in
+// its registry.
 //
 // This is the repo's deterministic check for the class of mistake an agent makes most often when
 // editing skills or AGENTS.md: a renamed folder, a missing description, a pointer to a file that
@@ -306,6 +307,7 @@ export async function checkRepo(root) {
   const agentsMd = path.join(root, 'AGENTS.md');
   const docsDir = path.join(root, 'docs');
   const skillsReadme = path.join(skillsDir, 'README.md');
+  const evalsDir = path.join(root, 'evals');
 
   const errors = [];
   const warnings = [];
@@ -354,7 +356,7 @@ export async function checkRepo(root) {
   }
 
   // Every root-level .md (AGENTS.md, README.md, and GLOSSARY.md or CODING_STANDARDS.md once a skill
-  // creates them), plus everything under docs/ and the skills.
+  // creates them), plus everything under docs/, the skills and their evals.
   const rootDocs = (await readdir(root, { withFileTypes: true }))
     .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => path.join(root, e.name))
@@ -363,6 +365,7 @@ export async function checkRepo(root) {
     ...rootDocs,
     ...(await markdownFiles(docsDir)),
     ...(await markdownFiles(skillsDir)),
+    ...(await markdownFiles(evalsDir)),
   ];
   for (const file of linked) if (existsSync(file)) await checkLinks(root, file, { err });
 
@@ -374,6 +377,32 @@ export async function checkRepo(root) {
     for (const name of skillNames) {
       if (!readme.includes(`./${name}/`) && !readme.includes(`${name}/SKILL.md`)) {
         err(`.agents/skills/README.md: skill "${name}" is not indexed`);
+      }
+    }
+  }
+
+  // Every eval folder must name a skill, so a renamed or removed skill cannot leave cases that no
+  // PR ever runs (evals/README.md).
+  if (existsSync(evalsDir)) {
+    const skills = new Set(skillNames);
+    const folders = (await readdir(evalsDir, { withFileTypes: true }))
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
+    for (const name of folders) {
+      if (!skills.has(name)) err(`evals/${name}/: names no skill in .agents/skills/`);
+    }
+  }
+
+  // Every Jev CLI must be in the registry, so a step can name the tool and point there (ADR-0002).
+  const jevDir = path.join(root, 'scripts', 'jev');
+  const jevRegistry = path.join(root, 'docs', 'agents', 'jev.md');
+  if (existsSync(jevDir)) {
+    const registry = existsSync(jevRegistry) ? await readFile(jevRegistry, 'utf8') : '';
+    const clis = (await readdir(jevDir)).filter((name) => name.endsWith('-cli.mjs')).sort();
+    for (const cli of clis) {
+      if (!registry.includes(`scripts/jev/${cli}`)) {
+        err(`scripts/jev/${cli}: Jev CLI not listed in docs/agents/jev.md`);
       }
     }
   }

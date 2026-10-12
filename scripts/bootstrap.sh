@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# One-time setup for a repo made from this template: creates every label the workflow uses, so no
-# agent ever invents a near-duplicate, then protects the default branch with a ruleset. Idempotent
-# (`--force` updates labels, the ruleset is updated by name), so rerun it after adding a phase to
+# One-time setup for a repo made from this template: switches on the pre-push hook in this clone,
+# offers to save the optional Jev key, creates every label the workflow uses, so no agent ever
+# invents a near-duplicate, then protects the default branch with a ruleset. Idempotent (`--force`
+# updates labels, the ruleset is updated by name), so rerun it after adding a phase to
 # docs/idea.md § Roadmap.
 #
 #   scripts/bootstrap.sh
@@ -10,6 +11,14 @@
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
+
+# Local git config, so first: it needs no network, and a gh failure below must not skip it.
+scripts/install-hooks.sh
+
+# The optional Jev key (ADR-0002), offered on a terminal; set-key.sh --offer asks only when no key
+# is set, and always exits 0, so no answer and no failure there stops the setup below.
+if [ -t 0 ]; then scripts/jev/set-key.sh --offer || true; fi
+
 repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 echo "Creating workflow labels on $repo"
 
