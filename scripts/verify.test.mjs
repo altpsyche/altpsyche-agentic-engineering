@@ -1,5 +1,5 @@
 // Tests for scripts/verify.sh. Each case copies it into a temp tree whose checks are stand-ins that
-// pass, and runs it with a PATH that holds only the tools named.
+// pass, and runs it with a PATH that holds only the tools named, so a missing jq or gitleaks is real.
 
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
@@ -56,4 +56,19 @@ test('run by path from another git repo, it checks the tree it lives in, not tha
     const run = spawnSync(verify, [], { cwd: elsewhere, env, encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
     assert.match(run.stdout, new RegExp(`^checked ${tree}$`, 'm'));
+  }));
+
+test('without jq it says so in one line, and still passes', () =>
+  withTree([], async ({ verify, elsewhere, env }) => {
+    const run = spawnSync(verify, [], { cwd: elsewhere, env, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    const lines = run.stderr.split('\n').filter((line) => line.includes('jq'));
+    assert.deepEqual(lines, ['verify: jq not found, the tests that run it skipped (CI runs them)']);
+  }));
+
+test('with jq it prints no jq line', { skip: which('jq') ? false : 'jq not found' }, () =>
+  withTree(['jq'], async ({ verify, elsewhere, env }) => {
+    const run = spawnSync(verify, [], { cwd: elsewhere, env, encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.doesNotMatch(run.stderr, /jq/);
   }));
