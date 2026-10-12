@@ -16,6 +16,11 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Read**: `gh issue view <number> --comments`, also fetching labels:
   `gh issue view <n> --json number,title,body,labels,comments`.
 - **List**: `gh issue list --state open --json number,title,body,labels,assignees --jq '[.[] | {number, title, labels: [.labels[].name], assignees: [.assignees[].login]}]'`
+- **List the frontier**, the Implementer's issues per `/work` § 2: open `ready-for-agent` issues
+  with no assignee and no `status:blocked`, `priority:high` first, then unlabelled, then
+  `priority:low`, oldest first within each, one line each with its priority.
+  `scripts/frontier.test.mjs` runs the jq on fixture issues:
+  `gh issue list --state open --label ready-for-agent --limit 200 --json number,title,labels,assignees,createdAt --jq 'map(select(.assignees == [] and (any(.labels[]; .name == "status:blocked") | not))) | sort_by((if any(.labels[]; .name == "priority:high") then 0 elif any(.labels[]; .name == "priority:low") then 2 else 1 end), .createdAt) | .[] | {number, title, priority: ([.labels[].name | select(startswith("priority:")) | ltrimstr("priority:")] | first // "normal")}'`
 - **List PRs** for a PR frontier, open, carrying one label and unclaimed, oldest first. It asks
   GraphQL for each PR's newest comments directly, because `gh pr list --json comments` reads only
   a PR's first 100 comments, and keeps only those by this account (**Whose comments count**):
