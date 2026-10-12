@@ -97,6 +97,11 @@ test('an issue carrying both priority labels counts as high, and prints as high'
   ]);
 });
 
+test('two issues created in the same second come oldest number first, whatever order gh returns', opts, () => {
+  const tie = (n) => ({ ...issue(n), createdAt: '2026-10-04T00:00:00Z' });
+  assert.deepEqual(numbers([tie(5), tie(4)]), [4, 5]);
+});
+
 test('an empty frontier prints nothing', opts, () => {
   assert.deepEqual(frontier([]), []);
 });
