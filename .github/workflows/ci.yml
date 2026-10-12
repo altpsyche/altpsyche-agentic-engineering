@@ -16,8 +16,8 @@ permissions:
 jobs:
   # Runs scripts/verify.sh: the agent-layer check, verify.sh's own test, the pre-push hook's test,
   # bootstrap.sh's ruleset test against a stub gh, the eval case parser's test over every case in
-  # evals/, the claim read-back and frontier query tests and
-  # the Jev tools' tests against a fake server (plain Node, no packages, plus the runner's jq for
+  # evals/, the eval runner scripts' test against a stub gh, the claim read-back and frontier query
+  # tests and the Jev tools' tests against a fake server (plain Node, no packages, plus the runner's jq for
   # the query tests and the stub; no TYPESAFE_API_KEY: Jev never runs in CI, ADR-0002), the
   # gitleaks secret scan, and whatever project checks Phase 0 adds to it.
   # Update AGENTS.md § Verifying your work in the same commit.
