@@ -11,6 +11,7 @@
 # fatal: its output is evidence too. A case it cannot parse, a malformed token or a missing sandbox
 # appends nothing and exits 1.
 set -euo pipefail
+shopt -s inherit_errexit
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ $# -eq 3 ] || { echo "usage: scripts/eval-collect.sh <case> <token> <transcript>" >&2; exit 2; }

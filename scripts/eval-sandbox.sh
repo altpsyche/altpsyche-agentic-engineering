@@ -17,6 +17,7 @@
 # failure stops it: the run has no sandbox to reach, so it is void, not graded (evals/README.md
 # § Running a case). Needs gh, authenticated, git, node and openssl.
 set -euo pipefail
+shopt -s inherit_errexit # a parse that fails inside $(…) stops the script too
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [ $# -eq 1 ] || { echo "usage: scripts/eval-sandbox.sh <case>" >&2; exit 2; }
@@ -34,12 +35,12 @@ if [ -n "$(git -C "$root" status --porcelain)" ]; then
   exit 1
 fi
 
-# A step's block, run as one script in the sandbox, as the runner would type it there. It stops at
-# the first command that fails.
+# A step's block, run as one script in the sandbox, as the runner would type it there, with the
+# runner's T and S set. It stops at the first command that fails.
 step() {
   local block="${1%.}"
   [ -n "$block" ] || return 0
-  bash -e -o pipefail -c "$block" </dev/null
+  T="$T" S="$source_sha" bash -e -o pipefail -c "$block" </dev/null
 }
 
 T="$(openssl rand -hex 4)"

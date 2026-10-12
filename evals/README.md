@@ -79,9 +79,11 @@ case's Starting state blocks as written at their steps:
 <checkout>/scripts/eval-sandbox.sh evals/<skill>/<case>.md
 ```
 
-The case path is relative to the checkout's root. The script stops at the first command that
-fails, and its last lines print the token, the sandbox's path and the prompt. When a step and the
-script disagree, the step wins and the script is fixed.
+The case path is relative to the checkout's root. It reads the case through
+`scripts/eval-case.mjs`, which refuses a case it cannot parse before anything is built, and runs
+each Starting state block with `T` and `S` set, as they are when typed by hand. The script stops
+at the first command that fails, and its last lines print the token, the sandbox's path and the
+prompt. When a step and the script disagree, the step wins and the script is fixed.
 
 The runner types the steps in its own shell, so it enters the sandbox with `cd`; the run
 session's commands, and a case's Collect commands, never do.

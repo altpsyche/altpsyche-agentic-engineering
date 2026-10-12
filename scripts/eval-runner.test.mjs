@@ -46,6 +46,67 @@ case "$1" in
 esac
 `;
 
+const COLLECT_CASE = `# A collect fixture
+
+## Prompt
+
+${FENCE}
+hello
+${FENCE}
+
+## Collect
+
+${FENCE}bash
+echo one
+printf '%s\\n' a \\
+  b
+echo "to stderr" >&2
+false
+printf '${FENCE}\\nfenced\\n${FENCE}\\n'
+basename "$PWD"
+${FENCE}
+
+## Pass criteria
+
+1. Did it?
+`;
+
+// Starting state blocks that see the runner's T and S, as typed by hand they would.
+const STEPS_CASE = `# A steps fixture
+
+## Starting state
+
+On main, before the push: a file that names the run.
+
+${FENCE}bash
+printf '%s %s\\n' "$T" "$S" > before-push.txt
+git add before-push.txt
+git commit -qm "Sandbox: before the push"
+${FENCE}
+
+After bootstrap: the same, untracked.
+
+${FENCE}bash
+printf '%s %s\\n' "$T" "$S" > after-bootstrap.txt
+${FENCE}
+
+## Prompt
+
+${FENCE}
+hello
+${FENCE}
+
+## Collect
+
+${FENCE}bash
+true
+${FENCE}
+`;
+
+// A Starting state block whose first command fails, followed by commands that would succeed: none
+// of them runs, and no repo is created.
+const FAILING_CASE = STEPS_CASE.replace("printf '%s %s\\n' \"$T\" \"$S\" > before-push.txt", 'false\n$&');
+
 let tmp;
 let src;
 let env;
@@ -98,6 +159,11 @@ before(async () => {
   git(src, 'add', '-A');
   git(src, 'commit', '-qm', 'Branch under test');
   sourceSha = git(src, 'rev-parse', 'HEAD').trim();
+
+  await writeFile(path.join(tmp, 'collect-case.md'), COLLECT_CASE);
+  await writeFile(path.join(tmp, 'broken-case.md'), COLLECT_CASE.replace('## Collect', '## Collected'));
+  await writeFile(path.join(tmp, 'steps-case.md'), STEPS_CASE);
+  await writeFile(path.join(tmp, 'failing-case.md'), FAILING_CASE);
 });
 
 after(async () => {
@@ -166,8 +232,9 @@ for (const rel of cases) {
     // bootstrap.sh ran, and so did "After bootstrap": every issue it creates, every branch it makes.
     assert.equal(git(sandbox, 'config', 'core.hooksPath').trim(), '.githooks');
     assert.ok(log.some((line) => line.startsWith('label create ready-for-agent ')));
+    const afterBootstrap = /\nAfter bootstrap:[\s\S]*?\n## Prompt\n/.exec(caseText)?.[0] ?? '';
     const issues = log.filter((line) => line.startsWith('issue create '));
-    assert.equal(issues.length, caseText.split('gh issue create ').length - 1);
+    assert.equal(issues.length, afterBootstrap.split('gh issue create ').length - 1);
     for (const [, branch] of caseText.matchAll(/git switch -qc (\S+)/g)) {
       assert.equal(git(sandbox, 'branch', '--list', branch).trim().replace(/^[*+] /, ''), branch);
     }
@@ -185,36 +252,11 @@ for (const rel of cases) {
   });
 }
 
-const COLLECT_CASE = `# A collect fixture
-
-## Prompt
-
-${FENCE}
-hello
-${FENCE}
-
-## Collect
-
-${FENCE}bash
-echo one
-printf '%s\\n' a \\
-  b
-echo "to stderr" >&2
-false
-printf '${FENCE}\\nfenced\\n${FENCE}\\n'
-basename "$PWD"
-${FENCE}
-
-## Pass criteria
-
-1. Did it?
-`;
 
 test('eval-collect.sh appends each command and its output, in order, in the documented form', async () => {
   const token = '0123abcd';
   await mkdir(path.join(tmp, `eval-${token}`));
   const caseFile = path.join(tmp, 'collect-case.md');
-  await writeFile(caseFile, COLLECT_CASE);
   const transcript = path.join(tmp, 'collect-transcript.md');
   await writeFile(transcript, 'before\n');
 
@@ -265,9 +307,7 @@ ${FENCE}
 
 test('eval-collect.sh appends nothing and fails without its sandbox, a valid token or a parsable case', async () => {
   const caseFile = path.join(tmp, 'collect-case.md');
-  await writeFile(caseFile, COLLECT_CASE);
   const broken = path.join(tmp, 'broken-case.md');
-  await writeFile(broken, COLLECT_CASE.replace('## Collect', '## Collected'));
   await mkdir(path.join(tmp, 'eval-4567cdef'), { recursive: true });
   const transcript = path.join(tmp, 'untouched.md');
 
@@ -285,9 +325,7 @@ test('eval-collect.sh appends nothing and fails without its sandbox, a valid tok
 });
 
 test('eval-sandbox.sh builds nothing from a checkout with uncommitted changes or a case it cannot parse', async () => {
-  const broken = path.join(tmp, 'broken-case.md');
-  await writeFile(broken, COLLECT_CASE.replace('## Collect', '## Collected'));
-  const parse = run('eval-sandbox.sh', [broken], 'gh-refused.log');
+  const parse = run('eval-sandbox.sh', [path.join(tmp, 'broken-case.md')], 'gh-refused.log');
   assert.equal(parse.status, 1);
   assert.match(parse.stderr, /^eval-case: .*broken-case\.md: /);
 
@@ -300,4 +338,30 @@ test('eval-sandbox.sh builds nothing from a checkout with uncommitted changes or
     await rm(path.join(src, 'uncommitted.txt'));
   }
   assert.equal(existsSync(path.join(tmp, 'gh-refused.log')), false, 'gh was called');
+});
+
+test('eval-sandbox.sh runs each step with the run token as T and the source commit as S', async () => {
+  const built = run('eval-sandbox.sh', [path.join(tmp, 'steps-case.md')], 'gh-steps.log');
+  assert.equal(built.status, 0, built.stderr);
+  const token = /^token: ([0-9a-f]{8})$/m.exec(built.stdout)?.[1];
+  const sandbox = path.join(tmp, `eval-${token}`);
+  assert.equal(git(sandbox, 'show', 'origin/main:before-push.txt'), `${token} ${sourceSha}\n`);
+  assert.equal(await readFile(path.join(sandbox, 'after-bootstrap.txt'), 'utf8'), `${token} ${sourceSha}\n`);
+});
+
+test('eval-sandbox.sh stops at the first failing Starting state command, before any repo is created', async () => {
+  assert.notEqual(FAILING_CASE, STEPS_CASE, 'the fixture edit must change the case');
+  const sandboxes = async () => (await readdir(tmp)).filter((name) => /^eval-[0-9a-f]{8}$/.test(name));
+  const earlier = await sandboxes();
+  const built = run('eval-sandbox.sh', [path.join(tmp, 'failing-case.md')], 'gh-failing.log');
+  assert.notEqual(built.status, 0);
+  assert.doesNotMatch(built.stdout, /^token: /m);
+  const log = existsSync(path.join(tmp, 'gh-failing.log')) ? await readFile(path.join(tmp, 'gh-failing.log'), 'utf8') : '';
+  assert.doesNotMatch(log, /^repo create /m);
+  // Its sandbox folder is left for the runner to see why, but holds nothing the failing step was
+  // to write after its first command.
+  const created = (await sandboxes()).filter((name) => !earlier.includes(name));
+  assert.equal(created.length, 1);
+  assert.equal(existsSync(path.join(tmp, created[0], 'before-push.txt')), false);
+  assert.equal(git(path.join(tmp, created[0]), 'log', '--format=%s').trim(), 'Sandbox');
 });
