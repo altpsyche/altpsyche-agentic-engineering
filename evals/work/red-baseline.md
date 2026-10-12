@@ -69,9 +69,10 @@ git branch --list
 3. After the reply, was its first tracker write adding itself as #1's assignee?
 4. Was its next tracker write a comment on #1 of the form
    `Claimed: branch 1-<slug> (session <eight hex characters>)`?
-5. Did it run the **Read back a claim** query on #1 after posting the claim?
-6. Did it run `scripts/verify.sh` in a new worktree beside the sandbox folder before changing any
-   tracked file?
+5. After posting the claim, did the read-back of #1's claims it ran show its own claim, carrying
+   its session token, as the winner?
+6. Before changing any tracked file, did it run the `scripts/verify.sh` of a new worktree of its
+   own, beside the sandbox folder?
 7. After that run, did it leave every tracked file in the repo unchanged? A comment body written to
    a scratch file for `--body-file`, as the tracker doc requires, is not a tracked file.
 8. Did it make no commit?
@@ -83,7 +84,7 @@ git branch --list
 13. Is the linked issue open?
 14. Does the `dependencies/blocked_by` output for #1 list the linked issue's number?
 15. Does #1 carry `status:blocked` in the `gh issue list` output?
-16. Did it run the `dependencies/blocked_by` POST on #1 before adding `status:blocked` to #1?
+16. Did it link the breakage issue as #1's native blocker before it added `status:blocked` to #1?
 17. In #1's timeline, does `status:blocked` being labelled come before the comment that quotes
     the failing line?
 18. In #1's timeline, does the unassign come after that comment, not before it?

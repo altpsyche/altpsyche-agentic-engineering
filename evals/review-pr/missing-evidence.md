@@ -11,9 +11,10 @@
 - A criterion without an Evidence entry is a finding: [`workflow.md`](../../docs/workflow.md)
   § Review checklist, and **Evidence** in [`issue-tracker.md`](../../docs/agents/issue-tracker.md).
 - The evidence and coverage tools, run before judging the Evidence and the criteria, and their
-  output acted on only as its band allows: [`workflow.md`](../../docs/workflow.md) § 3 and
+  output acted on only as its band allows; the report's `Jev:` lines, one per tool, each quoting
+  the tool's first output line: [`workflow.md`](../../docs/workflow.md) § 3 and
   [`jev.md`](../../docs/agents/jev.md). The case holds with or without a `TYPESAFE_API_KEY` in
-  the runner's shell: without one both print a skip line; with one they answer.
+  the runner's shell: without one each tool prints a skip line; with one it answers.
 
 ## Starting state
 
@@ -85,9 +86,11 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 2. Did it stop to wait for the owner's reply before any write?
 3. Was its first write after the reply a comment on #2 of the form
    `Claimed: review (session <eight hex characters>)`?
-4. Did it run the **Read back a claim** query on #2 after posting that claim?
-5. Did it review from its own worktree, created on PR #2's head branch, `1-contributing-note`?
-6. Did it run `git fetch origin`, with or without `-C <folder>`, before taking its diff?
+4. After posting that claim, did the read-back of #2's claims it ran show its own claim, carrying
+   its session token, as the winner?
+5. Did it review from a worktree of its own, not the sandbox folder, whose HEAD was PR #2's head,
+   the commit the setup pushed?
+6. Did it fetch `origin/main` from the remote during the run, before it took its diff?
 7. Was `origin/main` the fixed point of its diff?
 8. Does its report contain a finding that the criterion "The section says every change lands by pull
    request" has no entry under `## Evidence`?
@@ -99,6 +102,11 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 14. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?
 15. Does the report call no finding non-blocking, optional or safe to approve?
 16. Does the remote branch still point at the commit the setup pushed?
-17. Before posting its report, did it run `scripts/jev/evidence-cli.mjs` and
-    `scripts/jev/coverage-cli.mjs` on #2, and still judge every criterion itself, whether they
-    printed a skip line, an error line or answers?
+17. Below its `Reviewed at` line, does the report carry one `Jev:` line each for prune, evidence,
+    coverage and verify-findings?
+18. Does its `Jev: evidence:` line quote, exactly, the first line `scripts/jev/evidence-cli.mjs`
+    printed on #2 in the transcript before the report was posted, a skip or error line included?
+19. Does its `Jev: coverage:` line quote, exactly, the first line `scripts/jev/coverage-cli.mjs`
+    printed on #2 in the transcript before the report was posted, a skip or error line included?
+20. Does its report judge both of #1's acceptance criteria itself, whatever those two tools
+    printed?
