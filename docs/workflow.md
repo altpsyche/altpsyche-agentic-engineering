@@ -84,9 +84,10 @@ has confirmed the spec's testing seams.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, on every diff,
-   however small: read `.agents/skills/review-pr/SKILL.md` and run it. Reading the diff yourself
-   is not the self-check. Fix what it finds; it is not the review (§ Roles).
+7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, or a sub-PR's base
+   per § 3, on every diff, however small: read `.agents/skills/review-pr/SKILL.md` and run it.
+   Reading the diff yourself is not the self-check. Fix what it finds; it is not the review
+   (§ Roles).
 8. Evals, so a skill change is proven like code: when the diff touches `.agents/skills/<name>/`,
    run every case in `evals/<name>/`; when it touches `AGENTS.md`, every case in `evals/`. Run
    each, and have another session grade it, per [`evals/README.md`](../evals/README.md). A skill
@@ -111,10 +112,10 @@ blind spots, as an author grading its own work is lenient.
 1. **Claim a PR** with `Claimed: review`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree.
 3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
-   local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base,
-   freshly fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR
-   already merged into the integration branch (§ Integration branches). On a re-review, scope new findings from
-   the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
+   local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base, freshly
+   fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR already
+   merged into the integration branch (§ Integration branches). On a re-review, scope new findings
+   from the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
      and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run the prune
@@ -159,8 +160,8 @@ and PR steps.
 2. **Check out a PR** in its own worktree, on the same branch.
 3. Before any change, run `scripts/verify.sh`. The branch carries your own work, so red here is
    yours to fix in this round. It counts as inherited only if `scripts/verify.sh` is also red on
-   `origin/main`, per **Check the base**; then § 2's clean-baseline rule applies, with the PR as
-   the item.
+   `origin/main`, or a sub-PR's base, per **Check the base**; then § 2's clean-baseline rule
+   applies, with the PR as the item.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
@@ -171,8 +172,8 @@ and PR steps.
 
 **Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
 pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
-On a red baseline that is also red on `origin/main`, done is § 2, step 3's release
-instead, with no block.
+On a red baseline that is also red on `origin/main`, or a sub-PR's base, done is § 2, step 3's
+release instead, with no block.
 
 ### 5. Merge and learn (Owner)
 
@@ -180,10 +181,10 @@ The owner merges. The default branch's ruleset, set by
 [`scripts/bootstrap.sh`](../scripts/bootstrap.sh), requires one approving review, which no session
 can give: every session shares the owner's account, and GitHub forbids approving your own PR. So
 the `status:approved` label carries the verdict, and the owner merges with the ruleset's one bypass,
-the admin role. Agents run as that account and hold the bypass too; they still never merge
-(§ Roles). Then `/retro` looks back over the session and proposes changes to the **environment**
-rather than the work: pointers in `AGENTS.md`, a deterministic check where a mistake was mechanical, a
-standard where it was a judgement call.
+the admin role. Agents run as that account and hold the bypass too; none merges on its own, only
+when the owner directs it (§ Roles). Then `/retro` looks back over the session and proposes changes
+to the **environment** rather than the work: pointers in `AGENTS.md`, a deterministic check where a
+mistake was mechanical, a standard where it was a judgement call.
 
 **Unblocking.** When an issue closes, the session closing it removes `status:blocked` from every
 issue whose native blockers are now all closed, per **Unblock** in
@@ -208,12 +209,12 @@ one branch and one PR, but that PR, a sub-PR, targets the integration branch: §
 sub-PR has merged, one PR from `integration/<name>` to `main` takes the whole effort through the
 loop, and the branch is deleted when it merges.
 
-**Protected like `main`.** The `integration-branches` ruleset that
-[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) sets covers every `integration/*` branch:
-changes land only by PR with `verify` green, and its history is never rewritten. It requires no
-approving review and has no bypass actor, so a sub-PR merges on its `status:approved` label and no
-one, agent or owner, pushes to the branch directly. It has no deletion rule, so the branch can be
-deleted after its integration PR merges.
+**Protected by a ruleset.** The `integration-branches` ruleset that
+[`scripts/bootstrap.sh`](../scripts/bootstrap.sh) sets covers every `integration/*` branch: changes
+land only by PR with `verify` green, and its history is never rewritten. It requires no approving
+review and has no bypass actor, so the owner merges an approved sub-PR, by hand or through a
+session, without one, and no one, agent or owner, pushes to the branch directly. It has no deletion
+rule, so the branch can be deleted after its integration PR merges.
 
 **Fix rounds land by PR.** A fix round on a sub-PR pushes to the sub-PR's own branch, per § 4. A
 fix round on the integration PR to `main` lands through a small PR into `integration/<name>`, like
