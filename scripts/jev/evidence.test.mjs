@@ -321,6 +321,13 @@ test('the CLI with no key prints one skip line, exits 0 and never calls gh', asy
   assert.deepEqual(ghCalls, []);
 });
 
+test('the CLI with no key prints its skip line before reading the outputs file', async () => {
+  const { status, stdout, ghCalls } = await runCli(['7', path.join(HERE, 'no-such-outputs.json')]);
+  assert.equal(status, 0);
+  assert.equal(stdout, 'jev evidence: skipped, TYPESAFE_API_KEY is not set; check every entry yourself\n');
+  assert.deepEqual(ghCalls, []);
+});
+
 test('the CLI on a failed request prints one error line and exits 0', async () => {
   const jev = await fakeJev(() => ({ status: 422, body: 'state too long' }));
   try {
