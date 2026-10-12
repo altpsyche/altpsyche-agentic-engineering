@@ -31,8 +31,9 @@ failures mean the skill misbehaved.
 
 1. As an agent in a non-interactive harness, I want every tracker command in the docs to run as
    written, so that I never improvise a substitute.
-2. As an agent, I want each GraphQL query and jq filter in a named file, so that no shell guard
-   reads its braces as shell syntax.
+2. As an agent, I want each GraphQL query in a named file and each jq filter inline without
+   braces, so that no shell guard reads braces as shell syntax or refuses a jq flag that reads a
+   file.
 3. As an agent, I want worktree commands that never `cd` before a version-control command, so that
    a guard that refuses that pattern does not block me.
 4. As a Reviewer, I want **Check out a PR** to put the PR's head in its own worktree, tracking
@@ -107,9 +108,11 @@ the PR's base, freshly fetched; `Closes #n` does not fire on a non-default base,
 merges a sub-PR closes its issue and runs **Unblock**, per § 5.
 
 **#54 (A) Guard-safe commands.**
-- GraphQL queries for **List PRs** and **Read back a claim**, and every multi-line jq filter
-  (including **List the frontier** from #55), move into files under `scripts/queries/`. The doc's
-  command names the file. `claim-readback.test.mjs` and `frontier.test.mjs` read those files.
+- GraphQL queries for **List PRs** and **Read back a claim** move into files under
+  `scripts/queries/`, and the doc's command names the file. Every jq filter (including **List the
+  frontier** from #55) stays inline in `--jq` without braces, per ADR-0003 § Amendments.
+  `claim-readback.test.mjs` and `frontier.test.mjs` read the filter from the doc's command, and
+  the GraphQL file it names.
 - **Check out a PR**: `gh pr view <n> --json headRefName`, then `git -C <main clone> fetch origin`
   and `git -C <main clone> worktree add --track -B <branch> ../<repo>-<n> origin/<branch>`. No `cd`,
   no `gh pr checkout`.
@@ -156,8 +159,8 @@ and a run on the new head, never a bare rerun.
 A good check tests behaviour at the highest seam the owner agreed, and never re-derives an expected
 value the way the code does.
 
-- **(A):** `claim-readback.test.mjs` and `frontier.test.mjs` run the query and filter files on
-  fixtures; `check-skills.test.mjs` gains a fixture that fails the brace/`cd` lint.
+- **(A):** `claim-readback.test.mjs` and `frontier.test.mjs` run the doc's filters on fixtures;
+  `check-skills.test.mjs` gains a fixture that fails the brace/`cd` lint.
 - **(B1):** a test parses every case's Starting state and Collect blocks and fails on one it cannot
   parse. No network: `gh repo create` stays untested.
 - **(B2):** a test runs the cleanup with a stubbed `gh` and proves it deletes only a marked,
