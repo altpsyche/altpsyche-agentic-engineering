@@ -41,12 +41,14 @@ fi
 
 # The Evidence section: from its heading to the next `## ` heading. Each word after `run`, split on
 # anything but letters, digits and `_`, is a candidate; only eight lowercase hex digits is a token.
+# The body is read first, so a failed read stops the script rather than reading as no runs.
+body="$(gh pr view "$pr" --json body --jq .body)"
 tokens=()
 while IFS= read -r word; do
   if [[ $word =~ ^[0-9a-f]{8}$ ]]; then tokens+=("$word"); fi
 done < <(
-  gh pr view "$pr" --json body --jq .body | tr -d '\r' |
-    awk '/^## /{ on = ($0 ~ /^## Evidence[[:space:]]*$/); next } on' |
+  printf '%s\n' "$body" | tr -d '\r' |
+    awk '/^## /{ on = ($0 ~ /^## Evidence[ \t]*$/); next } on' |
     tr -cs '[:alnum:]_' '\n' |
     awk 'prev == "run" { print } { prev = $0 }' |
     sort -u

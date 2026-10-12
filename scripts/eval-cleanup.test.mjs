@@ -31,11 +31,14 @@ const SHA = '0123456789abcdef0123456789abcdef01234567';
 const T = 'a1b2c3d4';
 const DAY = 24 * 60 * 60 * 1000;
 
-// Logs every call. Answers `api user`, `pr view <n>`, `repo view <owner>/<name>` and
+// Logs every call. A call whose arguments match the glob $STUB_FAIL fails as an unreachable API
+// does. Otherwise it answers `api user`, `pr view <n>`, `repo view <owner>/<name>` and
 // `repo list <owner>` from $STUB_DIR, through jq -r when a --jq filter is given; a repo with no
 // fixture is not found, as gh says it. `repo delete` only logs. Anything else fails loudly.
 const STUB_GH = `#!/usr/bin/env bash
 printf '%s\\n' "$*" >>"$STUB_LOG"
+# shellcheck disable=SC2053
+if [ -n "$STUB_FAIL" ] && [[ "$*" == $STUB_FAIL ]]; then echo "error connecting to api.github.com" >&2; exit 1; fi
 filter=
 args=("$@")
 for ((i = 0; i < \${#args[@]}; i++)); do
@@ -64,10 +67,8 @@ const marker = (token, sha = SHA) => `eval-sandbox run ${token} from ${sha}`;
 // A sandbox repo as `gh repo view --json` returns it, every guard holding unless overridden.
 const sandbox = (token, over = {}) => ({
   nameWithOwner: `${ME}/eval-${token}`,
-  owner: { login: ME },
   name: `eval-${token}`,
   visibility: 'PRIVATE',
-  isPrivate: true,
   description: marker(token),
   createdAt: new Date(Date.now() - DAY).toISOString(),
   ...over,
@@ -84,7 +85,7 @@ const gradeEntry = (token) => `- evals/work/red-baseline.md, run ${token}: Verdi
 //   repos:   fixtures keyed by the `<owner>/<name>` the script asks for
 //   list:    what `gh repo list` returns
 //   folders: names created beside the main clone, as folders
-async function scenario({ body, state = 'MERGED', repos = {}, list = [], folders = [], setup, mainName = 'main' }) {
+async function scenario({ body, state = 'MERGED', repos = {}, list = [], folders = [], setup, mainName = 'main', fail = '' }) {
   const tmp = await mkdtemp(path.join(tmpdir(), 'eval-cleanup-'));
   const bin = path.join(tmp, 'bin');
   const stub = path.join(tmp, 'stub');
@@ -122,6 +123,7 @@ async function scenario({ body, state = 'MERGED', repos = {}, list = [], folders
     GH_PROMPT_DISABLED: '1',
     STUB_DIR: stub,
     STUB_LOG: path.join(tmp, 'gh.log'),
+    STUB_FAIL: fail,
   });
   const git = spawnSync('git', ['init', '-q', '-b', 'main', main], { env, encoding: 'utf8' });
   assert.equal(git.status, 0, git.stderr);
@@ -188,9 +190,9 @@ const guards = [
   ['a token with a non-hex letter', { token: 'g1b2c3d4' }],
   ['a repo that resolves to another name', { repo: { nameWithOwner: `${ME}/real-project`, name: 'real-project' } }],
   ['a repo that resolves to another run', { repo: { nameWithOwner: `${ME}/eval-deadbeef`, name: 'eval-deadbeef' } }],
-  ['another owner', { repo: { nameWithOwner: `someone-else/eval-${T}`, owner: { login: 'someone-else' } } }],
-  ['a public repo', { repo: { visibility: 'PUBLIC', isPrivate: false } }],
-  ['an internal repo', { repo: { visibility: 'INTERNAL', isPrivate: true } }],
+  ['another owner', { repo: { nameWithOwner: `someone-else/eval-${T}` } }],
+  ['a public repo', { repo: { visibility: 'PUBLIC' } }],
+  ['an internal repo', { repo: { visibility: 'INTERNAL' } }],
   ['no description', { repo: { description: null } }],
   ['an empty description', { repo: { description: '' } }],
   ['a description that is not the marker', { repo: { description: 'My real project' } }],
@@ -304,21 +306,31 @@ test('keeps the folders of a listed run whose repo lookup failed for another rea
   const s = await scenario({
     body: evidenceBody(gradeEntry(T)),
     folders: [`eval-${T}`],
-    setup: async ({ tmp }) => {
-      // A lookup that fails with something other than "not found", such as no network.
-      const gh = path.join(tmp, 'bin', 'gh');
-      const text = await readFile(gh, 'utf8');
-      await writeFile(
-        gh,
-        text.replace('"repo view")', '"repo view") echo "error connecting to api.github.com" >&2; exit 1 ;;\n  "unused")'),
-      );
-    },
+    // A lookup that fails with something other than "not found", such as no network.
+    fail: 'repo view *',
   });
   try {
     // It goes on, and says so in its exit status, so the merging session sees the run it could not check.
     assert.equal(s.result.status, 1, s.result.stderr);
     assert.match(s.result.stderr, new RegExp(`eval-${T}`));
     assert.deepEqual(s.deletes, []);
+    assert.equal(s.exists(`eval-${T}`), true);
+  } finally {
+    await s.cleanup();
+  }
+});
+
+test('a PR body it cannot read stops the script, deleting nothing', opts, async () => {
+  const s = await scenario({
+    body: evidenceBody(gradeEntry(T)),
+    repos: { [`${ME}/eval-${T}`]: sandbox(T) },
+    folders: [`eval-${T}`],
+    fail: 'pr view 70 --json body*',
+  });
+  try {
+    assert.notEqual(s.result.status, 0);
+    assert.doesNotMatch(s.result.stdout, /lists no run/);
+    assert.doesNotMatch(s.log, /^repo /m);
     assert.equal(s.exists(`eval-${T}`), true);
   } finally {
     await s.cleanup();
@@ -336,8 +348,8 @@ test('lists, never deletes, other eval-* repos older than 7 days', opts, async (
       sandbox('11112222', { createdAt: old }),
       sandbox('33334444', { createdAt: old, description: null }),
       { ...sandbox('55556666'), createdAt: recent },
-      { nameWithOwner: `${ME}/project`, name: 'project', visibility: 'PRIVATE', description: null, createdAt: old },
-      { nameWithOwner: `${ME}/eval-notes`, name: 'eval-notes', visibility: 'PUBLIC', description: null, createdAt: old },
+      { nameWithOwner: `${ME}/project`, name: 'project', createdAt: old },
+      { nameWithOwner: `${ME}/eval-notes`, name: 'eval-notes', createdAt: old },
     ],
   });
   try {
@@ -361,7 +373,9 @@ test('refuses a PR argument that is not a number, calling nothing', opts, async 
     await mkdir(path.join(tmp, 'bin'));
     await writeFile(path.join(tmp, 'bin', 'gh'), `#!/usr/bin/env bash\ntouch "${path.join(tmp, 'called')}"\n`);
     await chmod(path.join(tmp, 'bin', 'gh'), 0o755);
-    const env = { ...process.env, PATH: `${path.join(tmp, 'bin')}${path.delimiter}${process.env.PATH}` };
+    const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GH_')));
+    env.PATH = `${path.join(tmp, 'bin')}${path.delimiter}${process.env.PATH}`;
+    env.GH_TOKEN = 'not-a-token';
     for (const args of [[], [''], ['70; rm -rf /'], ['-1'], ['0'], ['abc'], ['70', '71']]) {
       const r = spawnSync(SCRIPT, args, { cwd: tmp, encoding: 'utf8', env });
       assert.equal(r.status, 2, `${JSON.stringify(args)}: ${r.stderr}`);
