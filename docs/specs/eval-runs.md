@@ -128,17 +128,17 @@ block command by command and appends each with its output. `evals/README.md` poi
 keeps the manual steps as the definition. § Three sessions says the run session is any harness and
 receives replies as its own turns (#43).
 
-**#57 (B2) Cleanup on merge.** `scripts/eval-cleanup.sh <pr>` reads the run tokens from the merged PR's
-Evidence and deletes each `eval-<token>` repo only when the name matches `^eval-[0-9a-f]{8}$`, the
-owner is the logged-in account, it is private and its description carries the marker; it removes
+**#57 (B2) Cleanup on merge.** `scripts/eval-cleanup.sh <pr>` reads the run tokens from the merged
+PR's Evidence and deletes each `eval-<token>` repo only when the name matches `^eval-[0-9a-f]{8}$`,
+the owner is the logged-in account, it is private and its description carries the marker; it removes
 only local folders matching that name with an optional `-<n>` suffix, beside the main clone. It
 lists, never deletes, other `eval-*` repos older than 7 days. § 5 adds the step; **Evidence** says
-every run of a case is listed by token; `evals/README.md` § Sandbox replaces "only the owner
-deletes it" with this script.
+every run of a case is listed by token; `evals/README.md` § Sandbox replaces "only the owner deletes
+it" with this script.
 
-**#56 (C) Review-step evidence line.** § 3's report gains a `Jev:` line per tool run, quoting its first
-output line. `docs/agents/jev.md` documents that `evidence-cli` skips without a key before reading
-its outputs file, so running it costs nothing when Jev is off.
+**#56 (C) Review-step evidence line.** § 3's report gains a `Jev:` line per tool run, quoting its
+first output line. `docs/agents/jev.md` documents that `evidence-cli` skips without a key before
+reading its outputs file, so running it costs nothing when Jev is off.
 
 **#58 (D) Outcome criteria.** Each case's criteria about mechanics are reworded to outcomes, per
 ADR-0003; criteria about behaviour are unchanged. Each rewrite says, in the PR, which criterion it
