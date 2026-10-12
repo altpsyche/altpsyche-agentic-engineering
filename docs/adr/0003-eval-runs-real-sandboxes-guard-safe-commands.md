@@ -71,3 +71,20 @@ strictest guard seen rather than written for one harness.
 
 Related decisions: #44 (an inherited eval failure does not block approval) and #45 (a full run
 before a Phase closes) are recorded on those issues and unchanged by this ADR.
+
+## Amendments
+
+- **2026-10-12: jq filters stay inline, without braces; only GraphQL queries live in files.**
+  Headless Claude Code (2.1.280) refuses `jq -f`, `--from-file` and `--rawfile` with "jq command
+  contains dangerous flags that could execute code or read arbitrary files", so a filter passed by
+  file cannot run as written. GraphQL queries still live in files under `scripts/queries/`,
+  passed with `-F query=@<file>`. Each jq filter stays inline in the command's `--jq` and carries
+  no braces: it builds objects with `pick()` and `|=`. `claim-readback.test.mjs` and
+  `frontier.test.mjs` read the filter from the tracker doc's own command, so doc and test still
+  cannot drift. This corrects two Consequences above. **Queries and filters live in files** now
+  holds for GraphQL queries only: no command uses `jq -f <file>`, and `check-skills.mjs` also fails
+  on a jq flag that reads a file. **`jq` is a required tool** no longer holds for the commands,
+  which use `gh --jq`. Standalone `jq` is needed only by the local query tests, and `verify.sh`
+  says so in one line when it is missing. Recorded per
+  [#54](https://github.com/altpsyche/altpsyche-agentic-engineering/issues/54); the owner signs it
+  off by merging the final eval-runs PR.

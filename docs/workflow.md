@@ -56,8 +56,9 @@ has confirmed the spec's testing seams.
 2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`, or
    `origin/integration/<name>` for a ticket in an integration effort (§ Integration branches).
    Nothing is committed to `main` or to an integration branch.
-3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
-   breakage you inherit is never mistaken for yours. If it is red, do not start. Find the issue for
+3. Clean baseline: before any change, run the fresh worktree's `scripts/verify.sh` by path, per
+   the Conventions in [`docs/agents/issue-tracker.md`](agents/issue-tracker.md), so breakage you
+   inherit is never mistaken for yours. If it is red, do not start. Find the issue for
    the breakage; when none exists, file one per **Create**, labelled `needs-triage`. The fix is
    its own ticket, not part of this one. Then, in this order, per **Block** and **Release a
    claim**: link the breakage issue as the item's native blocker, add `status:blocked`, then
@@ -80,7 +81,7 @@ has confirmed the spec's testing seams.
    The failing check that loop ends with becomes the first `/tdd` slice.
    - Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
      code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
-   - `scripts/verify.sh` runs regularly, and once more at the end.
+   - The worktree's `scripts/verify.sh`, run by path, runs regularly, and once more at the end.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
@@ -114,7 +115,8 @@ blind spots, as an author grading its own work is lenient.
 3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
    local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base, freshly
    fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR already
-   merged into the integration branch (§ Integration branches). On a re-review, scope new findings
+   merged into the integration branch (§ Integration branches). Its git commands take
+   `git -C <worktree>`, per **Check out a PR**. On a re-review, scope new findings
    from the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
@@ -158,10 +160,11 @@ and PR steps.
 
 1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree, on the same branch.
-3. Before any change, run `scripts/verify.sh`. The branch carries your own work, so red here is
-   yours to fix in this round. It counts as inherited only if `scripts/verify.sh` is also red on
-   `origin/main`, or a sub-PR's base, per **Check the base**; then § 2's clean-baseline rule
-   applies, with the PR as the item.
+3. Before any change, run the worktree's `scripts/verify.sh` by path, per § 2, step 3. The
+   branch carries your own work, so red here is yours to fix in this round. It counts as
+   inherited only if the base's `scripts/verify.sh` is also red on `origin/main`, or a sub-PR's
+   base, run in its own worktree per **Check the base**; then § 2's clean-baseline rule applies,
+   with the PR as the item.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found

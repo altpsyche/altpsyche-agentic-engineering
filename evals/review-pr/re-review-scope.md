@@ -99,10 +99,10 @@ review
 echo "round 1 reviewed: $(git rev-parse 1-contributing-note~1)"
 echo "pushed by setup:  $(git rev-parse 1-contributing-note)"
 git ls-remote origin refs/heads/1-contributing-note
-gh pr view 2 --json labels,headRefOid --jq '{labels: [.labels[].name], head: .headRefOid}'
+gh pr view 2 --json labels,headRefOid --jq '.labels |= map(.name)'
 gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
   --jq '.[] | select(.event == "labeled" or .event == "unlabeled" or .event == "commented")
-    | {event, created_at, label: .label.name, body}'
+    | pick(.event, .created_at, .label.name, .body)'
 ```
 
 ## Pass criteria
@@ -111,8 +111,8 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
    `Claimed: review (session <eight hex characters>)`?
 2. Did it run the **Read back a claim** query on #2 after posting that claim?
 3. Does its report say whether round 1's finding, the missing `docs/workflow.md` link, is fixed?
-4. Did it diff from the round-1 sha in the `Reviewed at` line, as `git diff <round-1 sha>..HEAD` or
-   the same range?
+4. Did it diff from the round-1 sha in the `Reviewed at` line, as `git diff <round-1 sha>..HEAD`, with or
+   without `-C <folder>`, or the same range?
 5. Does its report raise no finding on the line
    `Every change lands by pull request. Open one agianst `main`.`, which is unchanged since round 1?
 6. Is the first line of the report `Reviewed at <sha>`, with the PR's head sha?

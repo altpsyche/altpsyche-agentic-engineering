@@ -312,3 +312,146 @@ test('a broken link in an eval case is reported', () =>
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, ['evals/demo/case.md: broken relative link -> ../nope.md']);
   }));
+
+// Tracker commands must run as written under a non-interactive shell guard (ADR-0003).
+const BRACES = 'command inlines braces; put a query in a file, build jq objects with pick (ADR-0003)';
+const JQ_FILE = 'jq reads a file through a flag a shell guard refuses; keep the filter inline (ADR-0003)';
+const CD = 'command starts with cd and chains another; address the folder with git -C (ADR-0003)';
+
+test('a tracker command that inlines braces is reported, in a code span and in a fenced block', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'docs', 'agents'));
+    await writeFile(
+      path.join(root, 'docs', 'agents', 'issue-tracker.md'),
+      "- **List**: `gh issue list --json number --jq '.[] | {number}'`\n",
+    );
+    await mkdir(path.join(root, 'evals', 'demo'), { recursive: true });
+    await writeFile(
+      path.join(root, 'evals', 'demo', 'case.md'),
+      "## Collect\n\n```bash\ngh pr list --json number \\\n  --jq '.[] | {number,\n    title}'\ngit status --short\n```\n",
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      `docs/agents/issue-tracker.md: ${BRACES}: gh issue list --json number --jq '.[] | {number}'`,
+      `evals/demo/case.md: ${BRACES}: gh pr list --json number --jq '.[] | {number, title}'`,
+    ]);
+  }));
+
+test('a tracker command that starts with cd and chains a command is reported', () =>
+  withRepo(async (root) => {
+    await writeFile(path.join(root, 'docs', 'workflow.md'), 'Run `cd ../repo-7 && gh pr checkout 7`.\n');
+    await writeFile(
+      path.join(root, '.agents', 'skills', 'demo', 'extra.md'),
+      '```sh\ncd ../repo-7; git status\n```\n',
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      `docs/workflow.md: ${CD}: cd ../repo-7 && gh pr checkout 7`,
+      `.agents/skills/demo/extra.md: ${CD}: cd ../repo-7; git status`,
+    ]);
+  }));
+
+test('gh placeholders, git -C, braces outside a command and non-shell fences are not reported', () =>
+  withRepo(async (root) => {
+    await writeFile(
+      path.join(root, 'docs', 'workflow.md'),
+      [
+        "`gh api 'repos/{owner}/{repo}/issues/7' --jq '.labels |= map(.name) | pick(.number, .labels)'`",
+        '`git -C ../repo-7 status --short`, then `cd` nowhere.',
+        'A `{ "key": 1 }` example, and a lone `cd ../repo-7` line.',
+        '```ts\nconst x = { gh: 1 };\n```',
+        '```markdown\n`gh x --jq \'{a}\'`\n```',
+        '',
+      ].join('\n'),
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, []);
+  }));
+
+test('a command naming a query file that does not exist is reported; one that exists is not', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'scripts', 'queries'), { recursive: true });
+    await writeFile(path.join(root, 'scripts', 'queries', 'a.graphql'), 'query { viewer { login } }\n');
+    await mkdir(path.join(root, 'docs', 'agents'));
+    await writeFile(
+      path.join(root, 'docs', 'agents', 'issue-tracker.md'),
+      [
+        "`gh api graphql -F n=<number> -F query=@scripts/queries/a.graphql --jq '.data.viewer.login'`",
+        '`gh api graphql -F query=@scripts/queries/missing.graphql`',
+        '`gh api graphql -F query=@<file>`',
+        '',
+      ].join('\n'),
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      'docs/agents/issue-tracker.md: command names scripts/queries/missing.graphql, which does not exist',
+    ]);
+  }));
+
+test('a jq command that reads its filter or data through a file flag is reported, bundled short flags and --argfile included; a file argument is not', () =>
+  withRepo(async (root) => {
+    await writeFile(
+      path.join(root, 'docs', 'workflow.md'),
+      [
+        '`gh issue list --json number | jq -c -f scripts/queries/a.jq`',
+        "`jq -n --rawfile v out.txt '.[\"a\"] = $v'`",
+        "`jq -Rs '. as $v | null | .[\"a\"] = $v' out.txt`",
+        '`gh issue list --json number | jq -cf scripts/queries/a.jq`',
+        '`jq -nrf a.jq in.json`',
+        '`jq -f a.jq in.json`',
+        "`jq -n --argfile a f.json '.'`",
+        "`jq -n --slurpfile a f.json '.'`",
+        "`jq -L lib -n '.'`",
+        "`gh issue list --json number,title --jq '.[] | pick(.number, .title)'`",
+        '',
+      ].join('\n'),
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      `docs/workflow.md: ${JQ_FILE}: gh issue list --json number | jq -c -f scripts/queries/a.jq`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --rawfile v out.txt '.["a"] = $v'`,
+      `docs/workflow.md: ${JQ_FILE}: gh issue list --json number | jq -cf scripts/queries/a.jq`,
+      `docs/workflow.md: ${JQ_FILE}: jq -nrf a.jq in.json`,
+      `docs/workflow.md: ${JQ_FILE}: jq -f a.jq in.json`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --argfile a f.json '.'`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --slurpfile a f.json '.'`,
+      `docs/workflow.md: ${JQ_FILE}: jq -L lib -n '.'`,
+    ]);
+  }));
+
+test('commands in ADRs and specs, which quote old commands, are not checked', () =>
+  withRepo(async (root) => {
+    await mkdir(path.join(root, 'docs', 'adr'));
+    await mkdir(path.join(root, 'docs', 'specs'));
+    await writeFile(path.join(root, 'docs', 'adr', '0001-x.md'), "Refused `cd <worktree> && gh pr checkout`.\n");
+    await writeFile(path.join(root, 'docs', 'specs', 'x.md'), "Was `gh x --jq '{a}'`.\n");
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, []);
+  }));
+
+test('a jq file flag after a filter containing a pipe is reported; flag-like text inside a quoted filter, and gh --jq, are not', () =>
+  withRepo(async (root) => {
+    await writeFile(
+      path.join(root, 'docs', 'workflow.md'),
+      [
+        "`jq '.a | .b' -f x`",
+        "`jq '.[] | .a' --rawfile v f`",
+        '`gh api x | jq ".a | .b" -cf x.jq`',
+        "`jq -n --argfile=a f.json '.'`",
+        "`jq -r '.a | .b'`",
+        "`jq '.f'`",
+        "`jq -c '.x' file.json`",
+        "`jq -r '.a | \"-f\"'`",
+        "`gh api 'repos/{owner}/{repo}/issues' --jq '.a | .b'`",
+        "`gh issue list --json number --jq '.[] | .number' | jq -c '.' -`",
+        '',
+      ].join('\n'),
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      `docs/workflow.md: ${JQ_FILE}: jq '.a | .b' -f x`,
+      `docs/workflow.md: ${JQ_FILE}: jq '.[] | .a' --rawfile v f`,
+      `docs/workflow.md: ${JQ_FILE}: gh api x | jq ".a | .b" -cf x.jq`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --argfile=a f.json '.'`,
+    ]);
+  }));

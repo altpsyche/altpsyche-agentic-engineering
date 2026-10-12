@@ -55,8 +55,8 @@ let's work
 ```bash
 gh issue list --state all --json number,title,labels,assignees
 gh api 'repos/{owner}/{repo}/issues/1/timeline' --paginate \
-  --jq '.[] | {event, created_at, assignee: .assignee.login, label: .label.name, body}'
-gh api 'repos/{owner}/{repo}/issues/1/dependencies/blocked_by' --jq '[.[] | {number, state}]'
+  --jq '.[] | pick(.event, .created_at, .assignee.login, .label.name, .body)'
+gh api 'repos/{owner}/{repo}/issues/1/dependencies/blocked_by' --jq '.[] | pick(.number, .state)'
 git ls-remote --heads origin
 git worktree list
 git branch --list

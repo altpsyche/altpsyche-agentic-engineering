@@ -33,7 +33,10 @@ A case has these sections, in this order:
 - **`## Owner replies`**: each scripted reply and the moment it is given. To anything else the
   run session asks, the runner gives the fallback reply in § Running a case, and nothing more.
 - **`## Collect`**: commands the runner runs in the sandbox after the run. Their output goes to the
-  grader with the transcript.
+  grader with the transcript. Like every command in the docs, they inline no braces, so a jq
+  filter keeps fields with `pick(…)` and `|=`, read no jq filter from a file, and never chain onto
+  a `cd`; `scripts/check-skills.mjs` fails on each, per
+  [ADR-0003](../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md).
 - **`## Pass criteria`**: numbered yes/no questions, each ending in `?`.
 
 A pass criterion:
@@ -61,6 +64,9 @@ gh repo create "eval-$T" --private --source . --remote origin --push
 scripts/bootstrap.sh </dev/null   # no terminal, so no Jev key prompt
 # Then: the case's "After bootstrap" commands.
 ```
+
+The runner types this in its own shell, so it enters the sandbox with `cd`; the run session's
+commands, and a case's Collect commands, never do.
 
 No history comes with the tree, so no commit or object in the sandbox holds a case: the run
 session cannot read the pass criteria there. This file stays, since the docs link it. The run
