@@ -53,15 +53,51 @@ else
   done <<<"$phases"
 fi
 
+# Rulesets, each created or updated by name. One list call, and an id comes only from a list that
+# succeeded: a refused call prints its error body on stdout, which is not an id. If the API refuses
+# the list (a private repo on a plan without rulesets, auth, network), this warns once with gh's
+# message and sets no ruleset, so only the prose rules hold. No bypass actors on any of them: every
+# agent session runs as the owner's account, so an owner bypass would exempt agents too.
+rulesets_err="$(mktemp)"
+trap 'rm -f "$rulesets_err"' EXIT
+if rulesets="$(gh api "repos/$repo/rulesets" --jq '.[] | "\(.id) \(.name)"' 2>"$rulesets_err")"; then
+  rulesets_listed=1
+else
+  rulesets_listed=0
+  message="$(tr -s '\n' ' ' <"$rulesets_err")"
+  message="${message% }"
+  echo "Could not list rulesets, so no branch is protected: ${message:-gh gave no message}." \
+    "On a private repo, a plan without rulesets is the usual cause." >&2
+fi
+
+# ruleset <name> <what it protects> <json>: PUTs the ruleset the list names <name>, else POSTs a new
+# one. After a refused list it does nothing, since the warning above said why. A refused write
+# warns for that ruleset and the setup goes on. Every ruleset goes through here, so each gets this
+# guard.
+ruleset() {
+  local name="$1" what="$2" json="$3" id method endpoint
+  [ "$rulesets_listed" = 1 ] || return 0
+  id="$(awk -v name="$name" '{ id = $1; sub(/^[^ ]+ /, ""); if ($0 == name) { print id; exit } }' \
+    <<<"$rulesets")"
+  if [ -n "$id" ]; then
+    method=PUT endpoint="repos/$repo/rulesets/$id"
+  else
+    method=POST endpoint="repos/$repo/rulesets"
+  fi
+  if gh api -X "$method" "$endpoint" --input - <<<"$json" >/dev/null; then
+    echo "Ruleset $name: $what takes changes only by PR with verify green"
+  else
+    echo "Could not set ruleset $name; $what is unprotected. The gh error above says why; on a" >&2
+    echo "private repo, a plan without rulesets is the usual cause." >&2
+  fi
+}
+
 # Protect the default branch: changes land only through a PR with `verify` green, and its history is
-# never rewritten or deleted. Prose says "never commit to main"; this makes it true. No bypass
-# actors: every agent session runs as the owner's account, so an owner bypass would exempt agents
-# too. If the API refuses (a private repo on a plan without rulesets, auth, network), this warns
-# with gh's error, and only the prose rule holds.
-ruleset_name="default-branch"
-ruleset="$(cat <<JSON
+# never rewritten or deleted. Prose says "never commit to main"; this makes it true.
+default_branch_name="default-branch"
+default_branch_ruleset="$(cat <<JSON
 {
-  "name": "$ruleset_name",
+  "name": "$default_branch_name",
   "target": "branch",
   "enforcement": "active",
   "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
@@ -82,15 +118,4 @@ ruleset="$(cat <<JSON
 }
 JSON
 )"
-existing="$(gh api "repos/$repo/rulesets" --jq ".[] | select(.name == \"$ruleset_name\") | .id" 2>/dev/null || true)"
-if [ -n "$existing" ]; then
-  method=PUT endpoint="repos/$repo/rulesets/$existing"
-else
-  method=POST endpoint="repos/$repo/rulesets"
-fi
-if gh api -X "$method" "$endpoint" --input - <<<"$ruleset" >/dev/null; then
-  echo "Ruleset $ruleset_name: the default branch takes changes only by PR with verify green"
-else
-  echo "Could not set ruleset $ruleset_name; main is unprotected. The gh error above says why; on a" >&2
-  echo "private repo, a plan without rulesets is the usual cause." >&2
-fi
+ruleset "$default_branch_name" "the default branch" "$default_branch_ruleset"
