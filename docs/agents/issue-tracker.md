@@ -23,6 +23,13 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Block** an item on another issue, as on a red baseline per [`docs/workflow.md`](../workflow.md)
+  § 2, step 3. The link takes the blocker's id, not its number:
+  `gh api 'repos/{owner}/{repo}/issues/<blocker>' --jq .id`, then
+  `gh api -X POST 'repos/{owner}/{repo}/issues/<item>/dependencies/blocked_by' -F issue_id=<id>`,
+  then `gh issue edit <item> --add-label status:blocked`. **Link first, then label**: a label with
+  no native blocker behind it is never removed by **Unblock**, so the item stays off the frontier
+  after the breakage is fixed.
 - **Unblock**, straight after an issue closes, per [`docs/workflow.md`](../workflow.md) § 5. List
   the open issues it was blocking:
   `gh api 'repos/{owner}/{repo}/issues/<closed>/dependencies/blocking' --jq '.[] | select(.state == "open") | .number'`.
