@@ -69,9 +69,9 @@ The owner owns priorities ([`workflow.md`](../workflow.md) § Roles), and two la
 | `priority:low` | Picked after every normal one |
 
 An issue carries at most one. Only the owner applies, changes or removes one: triage recommends
-it, per § Suggesting a label, and waits, as for a frontier label. The Implementer frontier reads
-them through **List the frontier** in [`issue-tracker.md`](issue-tracker.md), oldest first within
-each level. `scripts/bootstrap.sh` creates both.
+it, per § Suggesting a label, and waits, as for a frontier label. **List the frontier** in
+[`issue-tracker.md`](issue-tracker.md) is where the Implementer frontier reads them.
+`scripts/bootstrap.sh` creates both.
 
 ## PR review state
 
