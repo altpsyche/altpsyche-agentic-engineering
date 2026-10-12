@@ -90,6 +90,13 @@ test('each line names the number, the title and the priority', opts, () => {
   ]);
 });
 
+test('an issue carrying both priority labels counts as high, and prints as high', opts, () => {
+  assert.deepEqual(frontier([issue(1), issue(2, ['priority:low', 'priority:high'])]), [
+    { number: 2, title: 'Issue 2', priority: 'high' },
+    { number: 1, title: 'Issue 1', priority: 'normal' },
+  ]);
+});
+
 test('an empty frontier prints nothing', opts, () => {
   assert.deepEqual(frontier([]), []);
 });
