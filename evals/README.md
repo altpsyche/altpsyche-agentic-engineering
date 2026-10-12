@@ -13,8 +13,13 @@ byte-identical to upstream. `scripts/check-skills.mjs` fails if `<skill>` names 
 
 - **Runner**: the Implementer whose PR needs the case, or the owner. It builds the sandbox, starts
   the run session, plays the owner from the case's script, and collects the result.
-- **Run session**: a fresh session, in any harness, on any model, started in the sandbox. Of the
-  case it sees only the prompt and the scripted replies, and it is not told it is an eval.
+- **Run session**: a fresh session, in any harness, interactive or headless, on any model,
+  started in the sandbox. Of the case it sees only the prompt and the scripted replies, and it is
+  not told it is an eval. Each reply reaches it as its own user turn, never relayed through
+  another agent: a session rightly takes no agent's message as the owner's approval. So a subagent
+  whose replies arrive from the agent that started it cannot be the run session. A separate
+  interactive session qualifies, and so does a headless session resumed with each reply as its
+  next prompt.
 - **Grader**: a fresh session that is neither of the other two, on a different model when one is
   available, for the reason in [`docs/workflow.md`](../docs/workflow.md) § 3. It sees only the case
   file and the transcript.
