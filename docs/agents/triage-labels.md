@@ -34,6 +34,9 @@ recommendation too. Each tool's bands, and what a skip or error line means, are 
 either: only the owner puts work on a frontier ([`issue-tracker.md`](issue-tracker.md) § Untrusted
 text), so `/triage` still waits for the owner as it always does.
 
+For an issue headed for `ready-for-agent`, also recommend a priority, per § Priority, with a
+one-line reason: what goes wrong, or what waits, while it stays open.
+
 ## Creating the labels
 
 The five role labels are created **before** `/triage` first runs, so it applies existing labels
@@ -54,6 +57,21 @@ the roadmap gains a phase, create its label the same way:
 ```bash
 gh label create "phase:<N>" --force
 ```
+
+## Priority
+
+The owner owns priorities ([`workflow.md`](../workflow.md) § Roles), and two labels record them:
+
+| Label | Meaning |
+| --- | --- |
+| `priority:high` | Picked before every other ready issue |
+| _(none)_ | Normal, the default |
+| `priority:low` | Picked after every normal one |
+
+An issue carries at most one. Only the owner applies, changes or removes one: triage recommends
+it, per § Suggesting a label, and waits, as for a frontier label. **List the frontier** in
+[`issue-tracker.md`](issue-tracker.md) is where the Implementer frontier reads them.
+`scripts/bootstrap.sh` creates both.
 
 ## PR review state
 

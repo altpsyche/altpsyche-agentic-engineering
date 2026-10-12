@@ -239,6 +239,7 @@ care work. -->
 | Changes requested | `status:changes-requested` |
 | Approved, not merged | `status:approved` |
 | Blocked by another item | `status:blocked` + a native blocking dependency |
+| Owner priority | `priority:high` or `priority:low`; none means normal |
 | Phase | one `phase:N` label, mirroring `docs/idea.md` § Roadmap |
 
 Label definitions and creation commands: [`docs/agents/triage-labels.md`](agents/triage-labels.md).
