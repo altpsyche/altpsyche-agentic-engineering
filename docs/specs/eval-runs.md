@@ -174,3 +174,10 @@ Prior art: `claim-readback.test.mjs` (doc-read fixtures), `install-hooks.test.mj
 - An `EVAL_AGENT_CMD` adapter that drives a run session; any harness's CLI may be used by hand.
 - #44's inherited-failure rule and #45's full run before a Phase closes: their own tickets.
 - Jev threshold retuning (#37).
+
+## Further Notes
+
+- The first proposal, tracker verbs plus a fake tracker, was reviewed adversarially before the
+  grilling session. Its failure modes are why ADR-0003 defers both, with reopening triggers.
+- The PR #55 eval runs that prompted this are on that PR: every grade, the reruns that broke
+  `evals/README.md`'s no-rerun rule, and the inheritance check on `origin/main`.
