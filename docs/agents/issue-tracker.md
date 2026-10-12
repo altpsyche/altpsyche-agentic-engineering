@@ -104,10 +104,15 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   which is a second guard against two sessions on one branch.
 - **Branch**: `git fetch origin` then
   `git worktree add -b <number>-<slug> ../<repo>-<number> origin/main`, and `cd` into it. Branch
-  from `origin/main`, not a local `main` that may be stale.
+  from `origin/main`, not a local `main` that may be stale. A ticket in an integration effort, per
+  [`docs/workflow.md`](../workflow.md) § Integration branches, branches from
+  `origin/integration/<name>` in place of `origin/main`.
 - **Open a PR**: `git push -u origin HEAD` then
   `gh pr create --title "..." --body-file <file> --label status:in-review`. The body contains
-  `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**.
+  `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**. A
+  sub-PR in an integration effort adds `--base integration/<name>`. GitHub closes an issue from
+  `Closes #<number>` only on a merge into the default branch, so a sub-PR's issue is closed by the
+  session that merges it, per [`docs/workflow.md`](../workflow.md) § 5.
 - **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
   Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
   criterion of the issue the body closes, in the issue's order, and no other criterion entry. A

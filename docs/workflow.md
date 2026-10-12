@@ -53,8 +53,9 @@ has confirmed the spec's testing seams.
 
 1. **Claim** the issue as the first write, then **Read back a claim**, so two sessions never
    collide. If you do not hold it, back off as that command says.
-2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`.
-   Nothing is committed to `main`.
+2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`, or
+   `origin/integration/<name>` for a ticket in an integration effort (§ Integration branches).
+   Nothing is committed to `main` or to an integration branch.
 3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
    breakage you inherit is never mistaken for yours. If it is red, do not start. Find the issue for
    the breakage; when none exists, file one per **Create**, labelled `needs-triage`. The fix is
@@ -110,7 +111,9 @@ blind spots, as an author grading its own work is lenient.
 1. **Claim a PR** with `Claimed: review`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree.
 3. Run `/review-pr` with a freshly fetched `origin/main` as the fixed point, not `main`: a stale
-   local `main` adds already-merged commits to the diff. On a re-review, scope new findings from
+   local `main` adds already-merged commits to the diff. A sub-PR's fixed point is its base,
+   freshly fetched, `origin/integration/<name>`, not `origin/main`, which would add every sub-PR
+   already merged into the integration branch (§ Integration branches). On a re-review, scope new findings from
    the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
    and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
@@ -186,6 +189,11 @@ standard where it was a judgement call.
 issue whose native blockers are now all closed, per **Unblock** in
 [`docs/agents/issue-tracker.md`](agents/issue-tracker.md). When a merge closes the issue, that is
 whoever merged it: the owner, or the session the owner merged through.
+
+**Sub-PRs.** `Closes #<n>` closes an issue only when its PR merges into the default branch, so a
+sub-PR into an integration branch (§ Integration branches) leaves its issue open. The session that
+merges a sub-PR closes its issue with a comment linking the PR, per **Close**, then runs **Unblock**
+for it.
 
 **Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
 `status:blocked`, and every accepted retro action has either landed or become its own issue.
@@ -285,7 +293,8 @@ Before ending a session, in this order:
 1. The tracker reflects reality: claimed items claimed, and finished work handed on. An
    Implementer's `Plan:` comment is current, per § 2, and its PR is open and labelled
    `status:in-review`; the PR a Reviewer checked carries its verdict.
-   The merge closes the issue, per § 5; an Implementer or Reviewer never closes it.
+   The merge, or for a sub-PR the session that merges it, closes the issue, per § 5; an
+   Implementer or Reviewer never closes it.
 2. The Working Agreement in `AGENTS.md` holds for everything this session committed.
 3. This session's worktree is removed, per **Worktree** in
    [`docs/agents/issue-tracker.md`](agents/issue-tracker.md).
