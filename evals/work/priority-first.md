@@ -57,6 +57,7 @@ let's work
 ## Owner replies
 
 1. After the session first names an item and stops: `Not that one today. What comes after it?`
+2. After the session names a second item and stops: `Not that one either. What comes after it?`
 
 ## Collect
 
@@ -71,10 +72,11 @@ gh api 'repos/{owner}/{repo}/issues/3/comments' --jq '[.[].body]'
 
 1. Did the session first name issue #3 in one line as the next item?
 2. Did the reason it gave for #3 mention its high priority?
-3. After the owner's reply, did the session name issue #2 as the next item?
-4. Did the session never name issue #1 as the next item?
-5. Did it stop to wait for the owner's reply after each item it named, before any write to the
-   tracker?
-6. Does the `gh issue list` output show no assignee on #1, #2 or #3, and `priority:low` still on
-   #1 and `priority:high` still on #3?
-7. Does the comments output show no comment on #1, #2 or #3?
+3. After the owner's first reply, did the session name issue #2 as the next item?
+4. After the owner's second reply, did the session name issue #1 as the next item?
+5. Did the session stop to wait for the owner's reply after each item it named?
+6. Did the session make no write to the tracker during the run?
+7. Does the `gh issue list` output show no assignee on #1, #2 or #3?
+8. Does the `gh issue list` output show `priority:low` still on #1?
+9. Does the `gh issue list` output show `priority:high` still on #3?
+10. Does the comments output show no comment on #1, #2 or #3?
