@@ -81,7 +81,7 @@ has confirmed the spec's testing seams.
    The failing check that loop ends with becomes the first `/tdd` slice.
    - Red before green. One slice at a time: one check, the minimal work that passes it, repeat. For
      code the check is a test; elsewhere it is whatever the spec agreed proves the slice done.
-   - `scripts/verify.sh` runs regularly, and once more at the end.
+   - The worktree's `scripts/verify.sh`, run by path, runs regularly, and once more at the end.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
@@ -160,10 +160,11 @@ and PR steps.
 
 1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree, on the same branch.
-3. Before any change, run `scripts/verify.sh`. The branch carries your own work, so red here is
-   yours to fix in this round. It counts as inherited only if `scripts/verify.sh` is also red on
-   `origin/main`, or a sub-PR's base, per **Check the base**; then § 2's clean-baseline rule
-   applies, with the PR as the item.
+3. Before any change, run the worktree's `scripts/verify.sh` by path, per § 2, step 3. The
+   branch carries your own work, so red here is yours to fix in this round. It counts as
+   inherited only if the base's `scripts/verify.sh` is also red on `origin/main`, or a sub-PR's
+   base, run in its own worktree per **Check the base**; then § 2's clean-baseline rule applies,
+   with the PR as the item.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
