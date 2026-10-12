@@ -2,8 +2,10 @@
 
 ## Exercises
 
-- The Implementer frontier, which skips an issue labelled `status:blocked`:
+- The Implementer frontier, which takes the first line of **List the frontier**:
   [`work`](../../.agents/skills/work/SKILL.md) § 2.
+- **List the frontier**, which skips an issue labelled `status:blocked`:
+  [`issue-tracker.md`](../../docs/agents/issue-tracker.md).
 - `/work` confirm-and-stop: [`work`](../../.agents/skills/work/SKILL.md) § 2.
 - The state a red baseline leaves behind, a native blocker plus `status:blocked`: **Block** in
   [`issue-tracker.md`](../../docs/agents/issue-tracker.md).
