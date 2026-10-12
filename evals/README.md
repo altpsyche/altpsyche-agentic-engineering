@@ -35,7 +35,8 @@ A case has these sections, in this order:
 - **`## Collect`**: commands the runner runs in the sandbox after the run. Their output goes to the
   grader with the transcript. Like every command in the docs, they inline no braces, so a jq
   filter keeps fields with `pick(…)` and `|=`, read no jq filter from a file, and never chain onto
-  a `cd`, per [ADR-0003](../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md).
+  a `cd`; `scripts/check-skills.mjs` fails on each, per
+  [ADR-0003](../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md).
 - **`## Pass criteria`**: numbered yes/no questions, each ending in `?`.
 
 A pass criterion:

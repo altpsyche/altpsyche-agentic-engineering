@@ -55,6 +55,11 @@ pinned commit above.
    `disable-model-invocation` and `argument-hint` frontmatter keys stay: any agent can read them,
    and the first says the owner, not the model, starts that skill.
 
+`scripts/check-skills.mjs` also fails on a skill command a non-interactive shell guard refuses,
+per [ADR-0003](../../docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md): inline
+braces, a jq flag that reads a file, or a `cd` chained to another command. None does at the pinned
+commit; if an update brings one in, rewrite it and list the rewrite above as a local change.
+
 **Known upstream wording, deliberately not patched:**
 
 - `retro` and `writing-for-agents` still name `CLAUDE.md` beside `AGENTS.md`, which this repo

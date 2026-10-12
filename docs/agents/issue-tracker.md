@@ -22,6 +22,7 @@ and refuses `jq -f`, which reads a file. No command enters another folder. It na
 `git -C <worktree> …` for git and `<worktree>/scripts/verify.sh` for a script, because a guard
 refuses a `cd` chained to another command. `<main clone>` and `<worktree>` are absolute paths; a
 relative path after `git -C <main clone>` resolves from the main clone.
+`scripts/check-skills.mjs` fails on a command that breaks any of these rules.
 
 - **Create**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read**: `gh issue view <number> --comments`, also fetching labels:
