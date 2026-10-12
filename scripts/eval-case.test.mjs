@@ -107,6 +107,11 @@ EOF
   });
 });
 
+test('a Collect line ending in an escaped backslash is whole', () => {
+  const parsed = parseCase(FIXTURE.replace('echo "head: $(git rev-parse HEAD)"', 'echo a\\\\'));
+  assert.equal(parsed.collect[0], 'echo a\\\\');
+});
+
 test('a step that is absent parses as an empty block', () => {
   const noBefore = FIXTURE.replace(/On main, before the push:[\s\S]*?(?=After bootstrap:)/, '');
   const parsed = parseCase(noBefore);
@@ -118,6 +123,7 @@ test('a step that is absent parses as an empty block', () => {
 const BROKEN = [
   ['a Starting state block with no step before it', FIXTURE.replace('After bootstrap: one issue.', 'Then: one issue.'), /no step/],
   ['a step given twice', FIXTURE.replace('After bootstrap: one issue.', 'On main, before the push: again.'), /twice/],
+  ['a step given twice before its block', FIXTURE.replace('On main, before the push: a spec', 'On main, before the push: a spec.\n\nOn main, before the push: a spec'), /twice/],
   ['a Starting state block bash cannot parse', FIXTURE.replace('git add docs/specs/x.md', 'if true; then'), /cannot parse/],
   ['no Prompt section', FIXTURE.replace('## Prompt\n\n```\n', '## Prompts\n\n```\n'), /Prompt/],
   ['a Prompt with two blocks', FIXTURE.replace("let's work\n```\n", "let's work\n```\n\n```\nagain\n```\n"), /Prompt/],
@@ -126,6 +132,7 @@ const BROKEN = [
   ['a Collect quote left open', FIXTURE.replace(`echo "head: $(git rev-parse HEAD)"`, `echo 'head`), /cannot parse/],
   ['a Collect heredoc left open', FIXTURE.replace('echo "head: $(git rev-parse HEAD)"', 'cat <<EOF'), /cannot parse/],
   ['a Collect line ending in a continuation', FIXTURE.replace('done\n```', 'done \\\n```'), /cannot parse/],
+  ['a Collect line ending in an escaped backslash then a continuation', FIXTURE.replace('done\n```', 'done \\\\\\\n```'), /cannot parse/],
   ['a fence left open', FIXTURE.replace(/```\n\n## Pass criteria/, '\n## Pass criteria'), /fence/],
 ];
 

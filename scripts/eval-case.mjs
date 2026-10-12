@@ -59,7 +59,7 @@ function sections(markdown) {
 // warns on an unclosed heredoc, so any message counts against it. A trailing backslash continues
 // the command on the next line, though bash accepts it at the end of input.
 function whole(source) {
-  if (/\\$/.test(source)) return false;
+  if (/(?:^|[^\\])(?:\\\\)*\\$/.test(source)) return false; // an odd run of backslashes at the end
   const result = spawnSync('bash', ['-n'], { input: source, encoding: 'utf8' });
   if (result.error) throw new Error(`cannot run bash to parse commands: ${result.error.message}`);
   return result.status === 0 && result.stderr === '';
@@ -67,13 +67,15 @@ function whole(source) {
 
 function startingState(items) {
   const blocks = { beforePush: '', afterBootstrap: '' };
+  const named = new Set();
   let step = null;
   for (const item of items ?? []) {
     if (!item.fence) {
-      const named = Object.keys(STEPS).find((label) => item.prose.startsWith(`${label}:`));
-      if (named) {
-        if (blocks[STEPS[named]]) throw new Error(`Starting state gives "${named}" twice`);
-        step = STEPS[named];
+      const label = Object.keys(STEPS).find((l) => item.prose.startsWith(`${l}:`));
+      if (label) {
+        if (named.has(label)) throw new Error(`Starting state gives "${label}" twice`);
+        named.add(label);
+        step = STEPS[label];
       }
       continue;
     }
@@ -90,8 +92,8 @@ function startingState(items) {
 }
 
 function onlyBlock(items, name) {
-  const blocks = (items ?? []).filter((item) => item.fence);
   if (!items) throw new Error(`no "## ${name}" section`);
+  const blocks = items.filter((item) => item.fence);
   if (blocks.length !== 1) throw new Error(`"## ${name}" holds ${blocks.length} fenced blocks, not one`);
   return blocks[0].body;
 }
