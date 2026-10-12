@@ -82,7 +82,9 @@ Each of these is decided and load-bearing. Sources are authoritative; read them 
 Read the full ADR when it governs your work; the file is the authority, this is an index.
 
 - **Accepted:** [0001](docs/adr/0001-agentic-development-workflow.md) agentic development workflow;
-  [0002](docs/adr/0002-jev-optional-dev-tooling.md) Jev for closed-set questions, optional
+  [0002](docs/adr/0002-jev-optional-dev-tooling.md) Jev for closed-set questions, optional;
+  [0003](docs/adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md) eval runs: real sandboxes,
+  guard-safe commands, outcome criteria
 - **Pending:** the open questions in [`docs/idea.md`](docs/idea.md) § Open Questions stay there until
   one is decided. A decided question gets a number here and a file in `docs/adr/`.
 
