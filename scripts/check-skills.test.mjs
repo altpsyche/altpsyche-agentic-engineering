@@ -428,3 +428,30 @@ test('commands in ADRs and specs, which quote old commands, are not checked', ()
     const { errors } = await checkRepo(root);
     assert.deepEqual(errors, []);
   }));
+
+test('a jq file flag after a filter containing a pipe is reported; flag-like text inside a quoted filter, and gh --jq, are not', () =>
+  withRepo(async (root) => {
+    await writeFile(
+      path.join(root, 'docs', 'workflow.md'),
+      [
+        "`jq '.a | .b' -f x`",
+        "`jq '.[] | .a' --rawfile v f`",
+        '`gh api x | jq ".a | .b" -cf x.jq`',
+        "`jq -n --argfile=a f.json '.'`",
+        "`jq -r '.a | .b'`",
+        "`jq '.f'`",
+        "`jq -c '.x' file.json`",
+        "`jq -r '.a | \"-f\"'`",
+        "`gh api 'repos/{owner}/{repo}/issues' --jq '.a | .b'`",
+        "`gh issue list --json number --jq '.[] | .number' | jq -c '.' -`",
+        '',
+      ].join('\n'),
+    );
+    const { errors } = await checkRepo(root);
+    assert.deepEqual(errors, [
+      `docs/workflow.md: ${JQ_FILE}: jq '.a | .b' -f x`,
+      `docs/workflow.md: ${JQ_FILE}: jq '.[] | .a' --rawfile v f`,
+      `docs/workflow.md: ${JQ_FILE}: gh api x | jq ".a | .b" -cf x.jq`,
+      `docs/workflow.md: ${JQ_FILE}: jq -n --argfile=a f.json '.'`,
+    ]);
+  }));
