@@ -132,8 +132,14 @@ blind spots, as an author grading its own work is lenient.
 4. Before posting, check each draft finding against its cited source with the verify-findings
    tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
    **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
-   "Re-reviews converge" below. Every finding names its source and quotes the line it is about.
-   The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
+   "Re-reviews converge" below. Below that line comes one `Jev:` line per tool this review runs:
+   prune, evidence, coverage and verify-findings. Each names the tool and quotes its first output
+   line exactly as printed, a skip or error line included, as in
+   `Jev: evidence: jev evidence: skipped, TYPESAFE_API_KEY is not set; check every entry yourself`.
+   A tool that did not run has no line to quote, so a missing line shows it. With no draft
+   findings there is nothing to check, so verify-findings does not run and its line reads
+   `Jev: verify-findings: no findings`. Every finding names its source and quotes the line it is
+   about. The Reviewer never pushes to the branch. A finding that stays in the chat does not exist.
 
 **The verdict is strict.** `status:approved` means the report has zero open findings. Any finding at
 all, including a judgement call, a low-severity edge case or a nit, sets `status:changes-requested`.
@@ -150,8 +156,8 @@ the loop is not converging, and the owner decides whether to merge, rescope or c
 number is one more than the count of earlier reports on the PR.
 
 **Done when:** the PR carries the verdict label this section sets, and the report, opening with
-`Reviewed at <sha>`, is posted on the PR after it, every finding naming its source and quoting its
-line.
+`Reviewed at <sha>` and its `Jev:` lines, is posted on the PR after it, every finding naming its
+source and quoting its line.
 
 ### 4. Fix rounds (Implementer)
 
