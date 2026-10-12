@@ -12,7 +12,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 # test, the pre-push hook's own test, bootstrap.sh's ruleset step against a stub gh, the eval
 # case parser over every case in evals/ and the eval runner scripts, which build and collect every
 # case's sandbox against a stub gh and a local remote. Plain Node, no packages; the query tests and
-# the stub's list cases also run jq, and skip without it outside CI, saying so in one line. Without Node on this machine it is skipped here; CI always runs it.
+# the stub's list cases also run jq, and skip without it outside CI, saying so in one line. Without
+# Node on this machine it is skipped here; CI always runs it.
 if command -v node >/dev/null; then
   command -v jq >/dev/null || echo "verify: jq not found, the tests that run it skipped (CI runs them)" >&2
   node scripts/check-skills.mjs

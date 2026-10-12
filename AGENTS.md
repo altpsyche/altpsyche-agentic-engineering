@@ -49,9 +49,9 @@ eval folders that name a skill, this file's budget, the tracker's claim read-bac
 queries), tests itself, the pre-push hook, `bootstrap.sh`'s ruleset step against a stub `gh`, the
 eval case parser over every case in `evals/`, the eval runner scripts against a stub `gh`, and the
 Jev tools in [`scripts/jev/`](scripts/jev/README.md), the latter against a fake server, and scans
-every commit for secrets with gitleaks. Phase 0 adds the project's own checks to it. Update this block and
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires them. An
-Implementer also runs it before changing anything, per [`docs/workflow.md`](docs/workflow.md) § 2,
+every commit for secrets with gitleaks. Phase 0 adds the project's own checks to it. Update this
+block and [`.github/workflows/ci.yml`](.github/workflows/ci.yml) in the same commit that wires them.
+An Implementer also runs it before changing anything, per [`docs/workflow.md`](docs/workflow.md) § 2,
 step 3.
 
 A pre-push hook, [`.githooks/pre-push`](.githooks/pre-push), runs it before every push and blocks
