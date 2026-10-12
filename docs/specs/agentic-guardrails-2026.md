@@ -67,7 +67,8 @@ Every agent, in every harness, on every model, gets the same base, now with:
 10. As an Implementer, I want `scripts/verify.sh` run in a fresh worktree before I change anything,
     so that breakage I inherit is never mistaken for mine.
 11. As an Implementer whose baseline is red, I want to stop, report the failing line on the item,
-    release the claim and point at an issue for the breakage, so that the fix is its own ticket.
+    block it on an issue for the breakage and release the claim, so that the fix is its own ticket
+    and the next session does not re-pick the item while the breakage stands (#29).
 12. As an Implementer, I want a pre-push hook that runs `scripts/verify.sh`, so that red work never
     leaves my machine.
 13. As the owner, I want agents never to pass `--no-verify`, while I still may, so that the hook
@@ -202,7 +203,8 @@ ADR-0001 records that as an amendment, which the owner signs off by merging that
 **Clean baseline.** `docs/workflow.md` § 2: after the worktree is created from `origin/main` and
 before any change, run `scripts/verify.sh`. If it is red, stop, as in user story 11. In a fix round
 (§ 4) the branch carries the Implementer's own work, so red there is theirs to fix. It counts as
-inherited, and story 11 applies, only if `scripts/verify.sh` is also red on `origin/main`.
+inherited, and story 11 applies, only if `scripts/verify.sh` is also red on `origin/main`. On a
+PR, story 11 skips the block: **List PRs** does not read `status:blocked`.
 
 **`Plan:` comment.** One per issue, posted after the claim and before the first commit. Format:
 `Plan:` on the first line, then checkbox steps, each naming its check. Sessions edit it in place.

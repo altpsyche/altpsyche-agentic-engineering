@@ -23,6 +23,16 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Block** an item on another issue, as on a red baseline per [`docs/workflow.md`](../workflow.md)
+  § 2, step 3. The link takes the blocker's id, not its number:
+  `gh api 'repos/{owner}/{repo}/issues/<blocker>' --jq .id`, then
+  `gh api -X POST 'repos/{owner}/{repo}/issues/<item>/dependencies/blocked_by' -F issue_id=<id>`,
+  then `gh issue edit <item> --add-label status:blocked`. **Link first, then label**: a label with
+  no native blocker behind it is never removed by **Unblock**, so the item stays off the frontier
+  after the breakage is fixed. If the POST fails, check
+  `gh api 'repos/{owner}/{repo}/issues/<item>/dependencies/blocked_by' --jq '.[].number'`: when
+  it lists the blocker, the link already exists, so label; otherwise do not label, and say on the
+  item that the block failed.
 - **Unblock**, straight after an issue closes, per [`docs/workflow.md`](../workflow.md) § 5. List
   the open issues it was blocking:
   `gh api 'repos/{owner}/{repo}/issues/<closed>/dependencies/blocking' --jq '.[] | select(.state == "open") | .number'`.
@@ -94,7 +104,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `Closes #<number>` so merging closes the issue, and a `## Evidence` section per **Evidence**.
 - **Evidence**: the PR body's `## Evidence` section. It replaces the vendored `pr` skill's single
   Before/After pair; the rest of that skill's template stands. It has one entry per acceptance
-  criterion of the issue the body closes, in the issue's order. Each entry names the criterion,
+  criterion of the issue the body closes, in the issue's order, and no other criterion entry. A
+  green `scripts/verify.sh` is part of done, not a criterion, and CI's `verify` check shows it, so
+  it gets an entry only when the issue lists it as a criterion. Each entry names the criterion,
   the command run this session that proves it, and that command's decisive result line, quoted
   as printed. Where the change is visible, such as rendered output or a screenshot, the entry adds
   a **Before** and an **After**. A criterion proven by reading still names the command whose

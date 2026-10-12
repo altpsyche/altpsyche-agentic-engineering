@@ -1,4 +1,4 @@
-# An Implementer on a red baseline stops, reports the failing line and releases the item
+# An Implementer on a red baseline stops, reports the failing line, blocks the item and releases it
 
 ## Exercises
 
@@ -7,6 +7,8 @@
   **Claim**, **Read back a claim** and **Release a claim** in
   [`issue-tracker.md`](../../docs/agents/issue-tracker.md).
 - The clean baseline, before any change: [`workflow.md`](../../docs/workflow.md) § 2, step 3.
+- The block on the breakage issue, before the release, link first, then label: **Block** in
+  [`issue-tracker.md`](../../docs/agents/issue-tracker.md), and its order in § 2, step 3.
 - No `Plan:` comment before the baseline is green: § 2, step 5 comes after step 3.
 
 ## Starting state
@@ -53,7 +55,8 @@ let's work
 ```bash
 gh issue list --state all --json number,title,labels,assignees
 gh api 'repos/{owner}/{repo}/issues/1/timeline' --paginate \
-  --jq '.[] | {event, created_at, assignee: .assignee.login, body}'
+  --jq '.[] | {event, created_at, assignee: .assignee.login, label: .label.name, body}'
+gh api 'repos/{owner}/{repo}/issues/1/dependencies/blocked_by' --jq '[.[] | {number, state}]'
 git ls-remote --heads origin
 git worktree list
 git branch --list
@@ -78,7 +81,12 @@ git branch --list
 11. Does that comment link an issue for the breakage?
 12. Is the linked issue labelled `needs-triage`?
 13. Is the linked issue open?
-14. In #1's timeline, does the unassign come after that comment, not before it?
-15. Did it post no comment starting with `Plan:` on #1?
-16. By the end of the run, is its worktree removed?
-17. By the end of the run, is its local branch `1-<slug>` deleted?
+14. Does the `dependencies/blocked_by` output for #1 list the linked issue's number?
+15. Does #1 carry `status:blocked` in the `gh issue list` output?
+16. Did it run the `dependencies/blocked_by` POST on #1 before adding `status:blocked` to #1?
+17. In #1's timeline, does `status:blocked` being labelled come before the comment that quotes
+    the failing line?
+18. In #1's timeline, does the unassign come after that comment, not before it?
+19. Did it post no comment starting with `Plan:` on #1?
+20. By the end of the run, is its worktree removed?
+21. By the end of the run, is its local branch `1-<slug>` deleted?

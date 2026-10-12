@@ -56,10 +56,15 @@ has confirmed the spec's testing seams.
 2. **Branch** as `<n>-<slug>` in a new **Worktree** based on a freshly fetched `origin/main`.
    Nothing is committed to `main`.
 3. Clean baseline: in the fresh worktree, before any change, run `scripts/verify.sh`, so
-   breakage you inherit is never mistaken for yours. If it is red, do not start. Give up the item
-   per **Release a claim**, with a comment that quotes the failing line and links an issue for the
-   breakage. When none exists, file one per **Create**, labelled `needs-triage`. The fix is its
-   own ticket, not part of this one.
+   breakage you inherit is never mistaken for yours. If it is red, do not start. Find the issue for
+   the breakage; when none exists, file one per **Create**, labelled `needs-triage`. The fix is
+   its own ticket, not part of this one. Then, in this order, per **Block** and **Release a
+   claim**: link the breakage issue as the item's native blocker, add `status:blocked`, then
+   release the claim with a comment that quotes the failing line and links the breakage issue.
+   `/work`'s frontier skips an issue labelled `status:blocked`, so the next session does not pick
+   it, hit the same red and release it again; **Unblock** in § 5 returns it when the breakage
+   issue closes. When the item is a PR, as in § 4, step 3, skip the block: **List PRs** does not
+   read `status:blocked`. Only the release applies.
 4. Read `AGENTS.md` and the ADRs that touch the area. To find them, run the prune tool on the
    issue first, per [`docs/agents/jev.md`](agents/jev.md).
 5. **Plan**: post the `Plan:` comment before the first commit, so intent is reviewable before the
@@ -78,8 +83,9 @@ has confirmed the spec's testing seams.
    - Look at the real result for anything a person will see or use. A green check is not evidence
      it works in front of them.
    - Commit to the branch; one concern per commit.
-7. Self-check: `/implement` closes with `/review-pr` against `origin/main`. Fix what it finds;
-   it is not the review (§ Roles).
+7. Self-check: `/implement` closes with `/review-pr` against `origin/main`, on every diff,
+   however small: read `.agents/skills/review-pr/SKILL.md` and run it. Reading the diff yourself
+   is not the self-check. Fix what it finds; it is not the review (§ Roles).
 8. Evals, so a skill change is proven like code: when the diff touches `.agents/skills/<name>/`,
    run every case in `evals/<name>/`; when it touches `AGENTS.md`, every case in `evals/`. Run
    each, and have another session grade it, per [`evals/README.md`](../evals/README.md). A skill
@@ -93,7 +99,7 @@ has confirmed the spec's testing seams.
 `scripts/verify.sh` is green, every eval case step 8 requires has passed with its grade in that
 `## Evidence`, every source you made stale is corrected in the same commit, and a PR whose body
 says `Closes #<n>` is open and labelled `status:in-review`. On a red baseline, done is
-step 3's release instead.
+step 3's block and release instead.
 
 ### 3. Review (Reviewer) — `/review-pr`
 
@@ -162,7 +168,8 @@ and PR steps.
 
 **Done when:** every finding is fixed or disputed, `scripts/verify.sh` is green, the branch is
 pushed, the PR is back on `status:in-review`, and the answering comment is posted after the label.
-On a red baseline that is also red on `origin/main`, done is step 3's release instead.
+On a red baseline that is also red on `origin/main`, done is § 2, step 3's release
+instead, with no block.
 
 ### 5. Merge and learn (Owner)
 
