@@ -118,7 +118,7 @@ blind spots, as an author grading its own work is lenient.
    merged into the integration branch (§ Integration branches). Its git commands take
    `git -C <worktree>`, per **Check out a PR**. On a re-review, scope new findings
    from the last report's sha, per "Re-reviews converge" below. Two axes, run as parallel sub-agents
-   and reported side by side:
+   where the harness allows, per the paragraph after them, and reported side by side:
    - **Standards** — does the diff follow `AGENTS.md`, the checklist below, the ADRs that touch it,
      and `CODING_STANDARDS.md` once `/retro` has created it? To find those ADRs, run the prune
      tool on the PR first, per [`docs/agents/jev.md`](agents/jev.md). The checklist is applied in
@@ -129,6 +129,13 @@ blind spots, as an author grading its own work is lenient.
      the PR body, say so in the report, and flag the missing issue as a finding; do not stop to
      ask. Before judging the criteria, run the coverage tool on the PR, per
      [`docs/agents/jev.md`](agents/jev.md), and check the criteria it flags first.
+
+   Both axis reports are in hand before step 4 starts: no finding is verified or posted while an
+   axis is still running. A Reviewer that delegates the axes waits for both, running them in the
+   foreground where its harness offers the choice. When its harness cannot run sub-agents, or
+   cannot wait for them, the Reviewer runs both axes itself, one after the other, and says so in
+   the report. A Reviewer never stops while it holds a claim with no report: if it must stop
+   before posting, it releases the claim per **Release a claim**.
 4. Before posting, check each draft finding against its cited source with the verify-findings
    tool, per [`docs/agents/jev.md`](agents/jev.md). Then set the verdict and post the report, per
    **Post a review**. The report is a PR comment that opens with `Reviewed at <sha>`, per
@@ -168,7 +175,8 @@ rescope or close. A round's number is one more than the count of earlier reports
 
 **Done when:** the PR carries the verdict label this section sets, and the report, opening with
 `Reviewed at <sha>` and its `Jev:` lines, is posted on the PR after it, every finding naming its
-source and quoting its line.
+source and quoting its line. A Reviewer that must stop before posting is done when it has released
+the claim, per step 3.
 
 ### 4. Fix rounds (Implementer)
 
