@@ -9,15 +9,17 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Agent layer: skill frontmatter, doc links, commands a shell guard refuses, no harness-specific
 # files, AGENTS.md budget, the tracker's claim read-back and frontier queries, this script's own
-# test, the pre-push hook's own test and bootstrap.sh's ruleset step against a stub gh. Plain Node,
-# no packages; the query tests and the stub's list cases also run jq, and skip without it outside
-# CI, saying so in one line. Without Node on this machine it is skipped here; CI always runs it.
+# test, the pre-push hook's own test, bootstrap.sh's ruleset step against a stub gh, the eval
+# case parser over every case in evals/ and the eval runner scripts, which build and collect every
+# case's sandbox against a stub gh and a local remote. Plain Node, no packages; the query tests and
+# the stub's list cases also run jq, and skip without it outside CI, saying so in one line. Without
+# Node on this machine it is skipped here; CI always runs it.
 if command -v node >/dev/null; then
   command -v jq >/dev/null || echo "verify: jq not found, the tests that run it skipped (CI runs them)" >&2
   node scripts/check-skills.mjs
   node --test scripts/check-skills.test.mjs scripts/claim-readback.test.mjs \
     scripts/frontier.test.mjs scripts/verify.test.mjs scripts/install-hooks.test.mjs \
-    scripts/bootstrap.test.mjs
+    scripts/bootstrap.test.mjs scripts/eval-case.test.mjs scripts/eval-runner.test.mjs
   # Jev tools (ADR-0002), against a fake local server: no key, no network.
   node --test scripts/jev/*.test.mjs
 else
