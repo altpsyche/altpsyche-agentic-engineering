@@ -3,17 +3,20 @@
 #
 #   scripts/verify.sh
 set -euo pipefail
-cd "$(git rev-parse --show-toplevel)"
+# The tree this script lives in, whatever folder it is run from: a worktree's verify.sh checks that
+# worktree when run by path from the main clone (docs/agents/issue-tracker.md § Conventions).
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Agent layer: skill frontmatter, doc links, no harness-specific files, AGENTS.md budget, the
-# tracker's claim read-back and frontier queries, the pre-push hook's own test and bootstrap.sh's
-# ruleset step against a stub gh. Plain Node, no packages; the query tests and the stub's list
-# cases also run jq, and skip without it outside CI. Without Node on this machine it is skipped
-# here; CI always runs it.
+# tracker's claim read-back and frontier queries, this script's own test, the pre-push hook's own
+# test and bootstrap.sh's ruleset step against a stub gh. Plain Node, no packages; the query tests
+# and the stub's list cases also run jq, and skip without it outside CI. Without Node on this
+# machine it is skipped here; CI always runs it.
 if command -v node >/dev/null; then
   node scripts/check-skills.mjs
   node --test scripts/check-skills.test.mjs scripts/claim-readback.test.mjs \
-    scripts/frontier.test.mjs scripts/install-hooks.test.mjs scripts/bootstrap.test.mjs
+    scripts/frontier.test.mjs scripts/verify.test.mjs scripts/install-hooks.test.mjs \
+    scripts/bootstrap.test.mjs
   # Jev tools (ADR-0002), against a fake local server: no key, no network.
   node --test scripts/jev/*.test.mjs
 else
