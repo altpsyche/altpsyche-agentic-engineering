@@ -123,8 +123,7 @@ test('a clean tree with a green verify.sh lets the push through', () =>
 test('a tracked change blocks the push with one line, before verify.sh runs', () =>
   withClone(async ({ clone, remote }) => {
     install(clone);
-    const verify = path.join(clone, 'scripts', 'verify.sh');
-    await writeFile(verify, '#!/usr/bin/env bash\necho "stand-in verify"\n');
+    await setVerify(clone, 1);
     assertBlockedDirty(push(clone), remote);
   }));
 
