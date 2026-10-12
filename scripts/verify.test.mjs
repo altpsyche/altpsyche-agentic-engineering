@@ -12,8 +12,12 @@ import { fileURLToPath } from 'node:url';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PASSING_TEST = "import { test } from 'node:test';\ntest('stand-in', () => {});\n";
 
+// The caller's environment without GIT_*: verify.sh runs this test inside the real pre-push hook,
+// whose GIT_DIR would otherwise point every git command here, `git init` included, at the real repo.
+const ENV = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+
 function which(tool) {
-  const found = spawnSync('sh', ['-c', `command -v ${tool}`], { encoding: 'utf8' });
+  const found = spawnSync('sh', ['-c', `command -v ${tool}`], { env: ENV, encoding: 'utf8' });
   return found.status === 0 ? found.stdout.trim() : null;
 }
 
@@ -44,7 +48,7 @@ async function withTree(tools, fn) {
     }
     const elsewhere = path.join(root, 'elsewhere');
     await mkdir(elsewhere);
-    await fn({ tree, verify, elsewhere, env: { ...process.env, PATH: bin } });
+    await fn({ tree, verify, elsewhere, env: { ...ENV, PATH: bin } });
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -52,7 +56,7 @@ async function withTree(tools, fn) {
 
 test('run by path from another git repo, it checks the tree it lives in, not that repo', () =>
   withTree(['git'], async ({ tree, verify, elsewhere, env }) => {
-    assert.equal(spawnSync('git', ['init', '-q', elsewhere]).status, 0);
+    assert.equal(spawnSync('git', ['init', '-q', elsewhere], { env: ENV }).status, 0);
     const run = spawnSync(verify, [], { cwd: elsewhere, env, encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
     assert.match(run.stdout, new RegExp(`^checked ${tree}$`, 'm'));
