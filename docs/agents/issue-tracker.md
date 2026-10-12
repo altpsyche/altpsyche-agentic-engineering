@@ -12,20 +12,30 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 
 ## Conventions
 
+Every command here runs from the main clone's root, where a session starts: `gh` infers the repo
+from `git remote -v` there, and the `scripts/queries/` paths resolve. A non-interactive shell
+guard refuses some shapes of command, so these never use them
+([ADR-0003](../adr/0003-eval-runs-real-sandboxes-guard-safe-commands.md)). A GraphQL query lives
+in a file passed with `-F query=@<file>`. A jq filter stays inline, in `--jq`, and carries no
+braces: it builds objects with `pick(…)` and `|=`, since a guard reads braces as shell expansion
+and refuses `jq -f`, which reads a file.
+
 - **Create**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read**: `gh issue view <number> --comments`, also fetching labels:
   `gh issue view <n> --json number,title,body,labels,comments`.
-- **List**: `gh issue list --state open --json number,title,body,labels,assignees --jq '[.[] | {number, title, labels: [.labels[].name], assignees: [.assignees[].login]}]'`
+- **List**: `gh issue list --state open --json number,title,labels,assignees --jq '.[] | .labels |= map(.name) | .assignees |= map(.login)'`
 - **List the frontier**, the Implementer's issues per `/work` § 2: open `ready-for-agent` issues
   with no assignee and no `status:blocked`, `priority:high` first, then unlabelled, then
   `priority:low`, oldest first within each (by number on a tie), one line each with its
   priority. An issue carrying both priority labels counts as high. `gh` returns the newest issues
-  first, so past the limit the oldest would drop silently. `scripts/frontier.test.mjs` runs the jq on fixture issues:
-  `gh issue list --state open --label ready-for-agent --limit 1000 --json number,title,labels,assignees,createdAt --jq 'map(select(.assignees == [] and (any(.labels[]; .name == "status:blocked") | not)) | .rank = (if any(.labels[]; .name == "priority:high") then 0 elif any(.labels[]; .name == "priority:low") then 2 else 1 end)) | sort_by(.rank, .createdAt, .number) | .[] | {number, title, priority: ["high", "normal", "low"][.rank]}'`
+  first, so past the limit the oldest would drop silently. `scripts/frontier.test.mjs` runs this
+  command's filter on fixture issues:
+  `gh issue list --state open --label ready-for-agent --limit 1000 --json number,title,labels,assignees,createdAt --jq 'map(select(.assignees == [] and (any(.labels[]; .name == "status:blocked") | not)) | .rank = (if any(.labels[]; .name == "priority:high") then 0 elif any(.labels[]; .name == "priority:low") then 2 else 1 end)) | sort_by(.rank, .createdAt, .number) | .[] | .priority = ["high", "normal", "low"][.rank] | pick(.number, .title, .priority)'`
 - **List PRs** for a PR frontier, open, carrying one label and unclaimed, oldest first. It asks
   GraphQL for each PR's newest comments directly, because `gh pr list --json comments` reads only
-  a PR's first 100 comments, and keeps only those by this account (**Whose comments count**):
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -f query='query($owner:String!,$repo:String!,$label:String!){viewer{login} repository(owner:$owner,name:$repo){pullRequests(states:OPEN,labels:[$label],first:100,orderBy:{field:CREATED_AT,direction:ASC}){nodes{number title comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.pullRequests.nodes[] | select([.comments.nodes[] | select(.author.login == $me)] | last | (.body // "") | startswith("Claimed:") | not) | {number, title}'`
+  a PR's first 100 comments, and keeps only those by this account (**Whose comments count**). The
+  query is a file:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F label=<label> -F query=@scripts/queries/list-prs.graphql --jq '.data.viewer.login as $me | .data.repository.pullRequests.nodes[] | select([.comments.nodes[] | select(.author.login == $me)] | last | (.body // "") | startswith("Claimed:") | not) | pick(.number, .title)'`
 - **Comment**: `gh issue comment <number> --body "..."`
 - **Label**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
@@ -75,8 +85,9 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
 - **Read back a claim**, straight after posting it, for an issue or a PR alike. Among counted
   comments, skipping those that start with `Plan:`, the claims that count are the `Claimed:` ones
   after the newest one that is not, and the earliest of them wins. This prints the winner and the
-  item's labels, and `scripts/claim-readback.test.mjs` runs it on fixture comment lists:
-  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -f query='query($owner:String!,$repo:String!,$n:Int!){viewer{login} repository(owner:$owner,name:$repo){issueOrPullRequest(number:$n){... on Issue{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}} ... on PullRequest{labels(first:20){nodes{name}} comments(last:100){nodes{body author{login}}}}}}}' --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | {labels: [.labels.nodes[].name], winner: ([.comments.nodes[] | select(.author.login == $me) | .body | select(startswith("Plan:") | not)] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first)}'`
+  item's labels. The query is a file, and `scripts/claim-readback.test.mjs` runs this command's
+  filter on fixture comment lists:
+  `gh api graphql -F owner='{owner}' -F repo='{repo}' -F n=<number> -F query=@scripts/queries/claim-readback.graphql --jq '.data.viewer.login as $me | .data.repository.issueOrPullRequest | .labels = [.labels.nodes[].name] | .winner = ([.comments.nodes[] | select(.author.login == $me) | .body | select(startswith("Plan:") | not)] | .[((map(startswith("Claimed:") | not) | rindex(true)) // -1) + 1:] | first) | pick(.labels, .winner)'`
   The session holds the item only if the winner carries its token and the item still carries the
   label that put it on the frontier. Otherwise it backs off: it deletes its own claim with
   `gh api -X DELETE 'repos/{owner}/{repo}/issues/comments/<id>'`, where `<id>` is the number
@@ -94,7 +105,7 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   Post it from a file with `gh issue comment <number> --body-file <file>`. Edit it with
   `gh api -X PATCH 'repos/{owner}/{repo}/issues/comments/<id>' -F body=@<file>`, where `<id>` is
   the number after `issuecomment-` in the URL that posting it printed. A later session finds it
-  with `gh api 'repos/{owner}/{repo}/issues/<number>/comments' --paginate --jq '.[] | select(.body | startswith("Plan:")) | {id, author: .user.login}'`
+  with `gh api 'repos/{owner}/{repo}/issues/<number>/comments' --paginate --jq '.[] | select(.body | startswith("Plan:")) | pick(.id, .user.login)'`
   and keeps the one by this account, per **Whose comments count**. Claim logic skips it, per
   **Read back a claim**. A plan lives on the issue only, never on a PR.
 - **Worktree**: one item, one worktree, one branch. Sessions run in parallel, and two sessions in
@@ -149,8 +160,6 @@ anything else to a GitHub issue. If the two ever disagree, the promoted copy win
   `gh pr edit <number> --remove-label status:changes-requested --add-label status:in-review`, then
   `gh pr comment <number> --body-file <file>` with the answer to each finding, in that order per
   **Claim a PR**.
-
-`gh` infers the repo from `git remote -v` when run inside the clone.
 
 ## Untrusted text
 
