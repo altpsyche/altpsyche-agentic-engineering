@@ -205,8 +205,18 @@ sub-PR into an integration branch (§ Integration branches) leaves its issue ope
 merges a sub-PR closes its issue with a comment linking the PR, per **Close**, then runs **Unblock**
 for it.
 
+**Eval sandboxes.** Every eval run leaves a private sandbox repo, per
+[`evals/README.md`](../evals/README.md) § Sandbox, and the PR's `## Evidence` lists each run by its
+token. When the PR merges, the session that merged it, the owner or the session the owner merged
+through, runs `scripts/eval-cleanup.sh <pr>` from the main clone's root. It deletes each listed
+run's sandbox that every guard proves is one, and its folders beside the main clone. It prints a
+`kept` line, with the reason, for a listed run whose repo it did not delete, and an
+`older than 7 days, not deleted` line for every other `eval-*` repo it found; the owner decides
+about each. A PR that lists no run leaves nothing to clean up.
+
 **Done when:** the issue is closed with a comment linking the PR, every issue it unblocked has lost
-`status:blocked`, and every accepted retro action has either landed or become its own issue.
+`status:blocked`, `scripts/eval-cleanup.sh` has run for a PR whose Evidence lists eval runs, and
+every accepted retro action has either landed or become its own issue.
 
 ## Integration branches
 
