@@ -99,10 +99,10 @@ review
 echo "round 1 reviewed: $(git rev-parse 1-contributing-note~1)"
 echo "pushed by setup:  $(git rev-parse 1-contributing-note)"
 git ls-remote origin refs/heads/1-contributing-note
-gh pr view 2 --json labels,headRefOid --jq '{labels: [.labels[].name], head: .headRefOid}'
+gh pr view 2 --json labels,headRefOid --jq '.labels |= map(.name)'
 gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
   --jq '.[] | select(.event == "labeled" or .event == "unlabeled" or .event == "commented")
-    | {event, created_at, label: .label.name, body}'
+    | pick(.event, .created_at, .label.name, .body)'
 ```
 
 ## Pass criteria

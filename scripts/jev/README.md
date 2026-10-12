@@ -195,7 +195,7 @@ writes it:
 { "scripts/verify.sh": "…everything it printed…" }
 ```
 
-One way to build it: `jq -n --rawfile v out.txt '{"scripts/verify.sh": $v}' > outputs.json`.
+One way to build it: `jq -Rs '. as $v | null | .["scripts/verify.sh"] = $v' out.txt > outputs.json`.
 
 Then, per claim, cheapest first:
 

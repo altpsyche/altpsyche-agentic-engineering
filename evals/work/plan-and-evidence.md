@@ -47,10 +47,9 @@ let's work
 ## Collect
 
 ```bash
-gh api 'repos/{owner}/{repo}/issues/1/comments' --jq '.[] | {created_at, updated_at, body}'
+gh api 'repos/{owner}/{repo}/issues/1/comments' --jq '.[] | pick(.created_at, .updated_at, .body)'
 gh pr list --state all --json number,body,labels,headRefName,commits \
-  --jq '.[] | {number, body, labels: [.labels[].name], headRefName,
-    commits: [.commits[] | {committedDate, messageHeadline}]}'
+  --jq '.[] | .labels |= map(.name) | .commits |= map(pick(.committedDate, .messageHeadline))'
 ```
 
 ## Pass criteria
