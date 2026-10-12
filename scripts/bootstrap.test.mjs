@@ -143,8 +143,15 @@ test('a refused write still warns for that ruleset and the script goes on', need
   const run = await bootstrap({ list: [], set: 'refused' });
   assert.equal(run.status, 0, run.stderr);
   assert.equal(writes(run.calls).length, 2);
-  assert.match(run.stderr, /Could not set ruleset main;/);
-  assert.match(run.stderr, /Could not set ruleset integration-branches;/);
+  // Whole lines, so a warning that reads wrong around the ruleset's description fails here.
+  assert.deepEqual(lines(run.stderr).filter((l) => !l.startsWith('gh: ')), [
+    'Could not set ruleset main, so this does not hold: the default branch takes changes only by PR' +
+      ' with verify green and one approval, admin bypass aside.',
+    'The gh error above says why; on a private repo, a plan without rulesets is the usual cause.',
+    'Could not set ruleset integration-branches, so this does not hold: every integration/* branch' +
+      ' takes changes only by PR with verify green, no bypass.',
+    'The gh error above says why; on a private repo, a plan without rulesets is the usual cause.',
+  ]);
 });
 
 test('the integration-branches ruleset takes changes only by PR with verify green, and has no bypass', needsJq, async () => {

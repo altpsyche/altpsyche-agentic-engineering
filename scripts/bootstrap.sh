@@ -69,10 +69,10 @@ else
     "On a private repo, a plan without rulesets is the usual cause." >&2
 fi
 
-# ruleset <name> <what it does> <json>: PUTs the ruleset the list names <name>, else POSTs a new
-# one. After a refused list it does nothing, since the warning above said why. A refused write
-# warns for that ruleset and the setup goes on. Every ruleset goes through here, so each gets this
-# guard.
+# ruleset <name> <what it does, as a sentence with no final stop> <json>: PUTs the ruleset the list
+# names <name>, else POSTs a new one. After a refused list it does nothing, since the warning above
+# said why. A refused write warns for that ruleset and the setup goes on. Every ruleset goes through
+# here, so each gets this guard.
 ruleset() {
   local name="$1" what="$2" json="$3" id method endpoint
   [ "$rulesets_listed" = 1 ] || return 0
@@ -86,8 +86,9 @@ ruleset() {
   if gh api -X "$method" "$endpoint" --input - <<<"$json" >/dev/null; then
     echo "Ruleset $name: $what"
   else
-    echo "Could not set ruleset $name; $what is unprotected. The gh error above says why; on a" >&2
-    echo "private repo, a plan without rulesets is the usual cause." >&2
+    echo "Could not set ruleset $name, so this does not hold: $what." >&2
+    echo "The gh error above says why; on a private repo," \
+      "a plan without rulesets is the usual cause." >&2
   fi
 }
 
