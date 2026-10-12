@@ -10,24 +10,28 @@ unrelated issues.
 
 **So the template's ADRs ship, in `docs/adr/template/`, and its specs do not.** Every ADR the
 template records goes in `docs/adr/template/`, numbered on its own; a child's ADRs start at
-`docs/adr/0001`. `scripts/bootstrap.sh` removes `docs/specs/` from a new child in one local commit.
+`docs/adr/0001`. `scripts/bootstrap.sh` removes the template's specs from a new child in one local
+commit, keeping `docs/specs/README.md` so the folder and the links to it survive.
 Issue refs in a template ADR name the template repo: `altpsyche/altpsyche-agentic-engineering#55`.
 
 ## Consequences
 
-- **Porting never collides.** The template keeps adding ADRs and a child ports them by hand
-  (README § Keeping it in sync). With one shared numbering, a child that wrote its own 0004 could
-  not take the template's 0004; in separate folders both keep their numbers.
+- **Porting never collides.** The template keeps adding ADRs, and a child may copy a later one in
+  by hand; nothing links the two repos. With one shared numbering, a child that wrote its own 0004
+  could not take the template's 0004; in separate folders both keep their numbers.
 - **A child may supersede a template ADR, never edit it.** It writes its own ADR naming the one it
   supersedes and leaves the inherited file as it came, so a later port applies cleanly. The
   precedence rule in `AGENTS.md` treats both folders as ADRs; the superseding one wins.
 - **Removal is gated on a sentinel.** Bootstrap is rerun after adding a phase, and by then the
   child has specs of its own. The template ships `docs/specs/.from-template`; bootstrap removes
-  `docs/specs/` only while that file exists, and the removal deletes it, so every rerun is a no-op.
-  Bootstrap also skips the removal when the repo is the template itself. It commits before it sets
-  the rulesets, and the owner pushes that commit with the admin bypass.
+  every file in `docs/specs/` but its `README.md` only while that file exists, and the removal
+  deletes it, so every rerun is a no-op. Bootstrap also skips the removal when the repo is the
+  template itself. It commits before it sets the rulesets, and the owner pushes that commit with
+  the admin bypass. If the commit fails, bootstrap restores what it removed, sentinel included, so
+  the tree is clean and a rerun tries again.
 - **Links into the removed specs become absolute.** A file that ships and links a template spec,
-  such as ADR-0001's link to the guardrails spec, links the template repo on GitHub instead.
+  such as ADR-0001's link to the guardrails spec, links the template repo on GitHub instead. Links
+  to the folder itself stay, since its `README.md` keeps it in git.
 - **`check-skills.mjs` fails on a bare issue ref under `docs/adr/template/`.** A child writes there
   only when porting, so the check has no false hits; the specs need no check, since they never
   reach a child.
