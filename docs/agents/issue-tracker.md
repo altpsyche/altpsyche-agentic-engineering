@@ -155,7 +155,11 @@ relative path after `git -C <main clone>` resolves from the main clone.
   After the criteria comes one entry per eval case that [`docs/workflow.md`](../workflow.md) § 2
   requires: the case's path, the run's token and the grade's `Verdict:` line, with the whole grade
   beneath it in a `<details>` block. The grade is defined in
-  [`evals/README.md`](../../evals/README.md) § Grading a case.
+  [`evals/README.md`](../../evals/README.md) § Grading a case. Every run of a case is listed, pass,
+  fail or void, each by its token written as `run <T>`, as in
+  `- evals/work/red-baseline.md, run 1a2b3c4d: Verdict: pass 3/3`, so reruns are visible. That is
+  the form `scripts/eval-cleanup.sh` reads when the PR merges, per
+  [`docs/workflow.md`](../workflow.md) § 5: a run left out keeps its sandbox.
 - **Check out a PR** for review or a fix round, in its own worktree on the PR's head branch,
   tracking `origin`: `gh pr view <number> --json headRefName --jq .headRefName` prints its
   `<branch>`, then `git -C <main clone> fetch origin` and

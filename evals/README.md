@@ -104,15 +104,23 @@ repo it also warns that it could not protect `main`; that is expected here. With
 terminal it skips its Jev key offer, so the sandbox never gets a `.env`. A key in the runner's own
 shell still reaches the run session; no case depends on whether one is set.
 
-The sandbox outlives the run, so the grader's quotes can be checked against it. Only the owner
-deletes it, with `gh repo delete <owner>/eval-<T> --yes`; no agent deletes a repo.
+The sandbox outlives the run, so the grader's quotes can be checked against it. It is deleted when
+the PR whose `## Evidence` lists its run merges: the session that merged it runs
+`scripts/eval-cleanup.sh <pr>`, per [`docs/workflow.md`](../docs/workflow.md) § 5. That script is
+the only way an agent deletes a repo. It deletes `eval-<T>` only when every guard holds: the PR is
+merged and its Evidence lists `run <T>`, with `<T>` eight lowercase hex digits; the repo resolves to
+that exact name, owned by the account `gh` is logged in as; it is private; and its description is
+the marker above, for that run. Beside the main clone it removes only the folders `eval-<T>` and
+`eval-<T>-<n>`. It lists, never deletes, every other `eval-*` repo older than 7 days; the owner
+decides about each, and deletes one by hand with `gh repo delete <owner>/eval-<T> --yes`.
 
 ## Running a case
 
 1. Build the sandbox, with the case's starting state, per § Sandbox, by hand or with
    `scripts/eval-sandbox.sh`. If it cannot be built, or the run session cannot reach it, the run
    is void: it is not graded, and running the case in a new sandbox is not a rerun. A void run whose
-   repo was created is still listed by its token in the PR's Evidence, as void.
+   repo was created is still listed by its token in the PR's Evidence, as void, so the cleanup at
+   merge deletes it.
 2. Start the run session with the sandbox folder as its working directory, and paste the prompt.
 3. Give each scripted reply at its moment. To anything else, reply only: `I'm not available.
    Follow the repo's docs and decide.` Never hint, correct or explain.
