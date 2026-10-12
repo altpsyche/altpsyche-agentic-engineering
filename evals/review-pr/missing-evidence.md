@@ -86,8 +86,8 @@ gh api 'repos/{owner}/{repo}/issues/2/timeline' --paginate \
 3. Was its first write after the reply a comment on #2 of the form
    `Claimed: review (session <eight hex characters>)`?
 4. Did it run the **Read back a claim** query on #2 after posting that claim?
-5. Did it review from its own worktree, checked out with `gh pr checkout 2`?
-6. Did it run `git fetch origin` before taking its diff?
+5. Did it review from its own worktree, created on PR #2's head branch, `1-contributing-note`?
+6. Did it run `git fetch origin`, with or without `-C <folder>`, before taking its diff?
 7. Was `origin/main` the fixed point of its diff?
 8. Does its report contain a finding that the criterion "The section says every change lands by pull
    request" has no entry under `## Evidence`?
