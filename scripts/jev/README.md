@@ -206,9 +206,10 @@ Then, per claim, cheapest first:
    fails to match `not-in-output`. ADR-0002 checks text exactly before asking Jev about it, so a
    quote that is not there is never argued over.
 2. **One Choice per matched claim**, all in one `ask`, the claim and its full output in the
-   question: `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias lands
-   on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged
-   `too-large` unasked.
+   question, quoted as JSON and named as data, since Jev can be swayed by injected text
+   (ADR-0002): `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias
+   lands on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is
+   flagged `too-large` unasked.
 
 Bands are in the registry. The line output lists flags first, then notes, each in Evidence order.
 A body with no Evidence entries, outputs that are not an object of strings, or a choice that is not
@@ -231,8 +232,11 @@ no issue is an error line, as the Spec axis then reviews against the PR body.
 
 Per criterion, two questions go in one `ask`, over the hunks and tests as state: a Choice of the
 one hunk or test that most directly covers it, `none` first so Jev's first-option bias lands on a
-flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". A criterion whose
-questions do not fit beside the state, by `fitsBesideState`, is flagged `too-large` unasked.
+flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". The criterion,
+and each option's file, hunk header or test name, is quoted as JSON and named as data, and the
+state names the hunks and tests as data, since Jev can be swayed by injected text (ADR-0002). A
+criterion whose questions do not fit beside the state, by `fitsBesideState`, is flagged
+`too-large` unasked.
 
 Bands are in the registry. The line output lists flags first, each with the closest line Jev
 picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
