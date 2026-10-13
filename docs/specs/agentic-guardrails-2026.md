@@ -207,7 +207,8 @@ signs off by merging that ticket's PR.
 **Clean baseline.** `docs/workflow.md` § 2: after the worktree is created from `origin/main` and
 before any change, run `scripts/verify.sh`. If it is red, stop, as in user story 11. In a fix round
 (§ 4) the branch carries the Implementer's own work, so red there is theirs to fix. It counts as
-inherited, and story 11 applies, only if `scripts/verify.sh` is also red on `origin/main`. On a
+inherited, and story 11 applies, only if `scripts/verify.sh` on `origin/main` prints every
+failing line the branch's prints (#30); a `main` red for another reason leaves the red theirs. On a
 PR, story 11 skips the block: **List PRs** does not read `status:blocked`.
 
 **`Plan:` comment.** One per issue, posted after the claim and before the first commit. Format:

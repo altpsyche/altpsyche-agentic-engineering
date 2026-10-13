@@ -168,12 +168,15 @@ relative path after `git -C <main clone>` resolves from the main clone.
   `HEAD`, so its git commands take `git -C <worktree>`: in the main clone, `HEAD` is `main` and
   the diff is empty.
 - **Check the base**, when a fix round's branch is red before any change, in a second worktree,
-  so the branch's own never moves. First save the branch's failing line, as
-  [`docs/workflow.md`](../workflow.md) § 4, step 3 defines it, to a file in `.scratch/`. Then
+  so the branch's own never moves. First save the branch's failing lines, as
+  [`docs/workflow.md`](../workflow.md) § 4, step 3 defines them, to
+  `<worktree>/.scratch/branch-failing-lines.txt` in the branch's worktree, written with a file
+  tool rather than a shell redirect, so they outlive the base worktree. Then
   `git -C <main clone> fetch origin`, then
   `git -C <main clone> worktree add --detach ../<repo>-<number>-base origin/main` (for a sub-PR,
   `origin/integration/<name>`), run that worktree's `scripts/verify.sh` by path, and compare its
-  failing line with the saved one: the red is inherited only when the two match. Then remove it
+  failing lines with the saved ones: the red is inherited only when the base prints every saved
+  line. Then remove it
   per **Worktree**.
 - **Post a review**:
   `gh pr edit <number> --remove-label status:in-review --add-label <verdict>`, where `<verdict>`
