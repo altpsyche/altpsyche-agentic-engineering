@@ -232,8 +232,11 @@ no issue is an error line, as the Spec axis then reviews against the PR body.
 
 Per criterion, two questions go in one `ask`, over the hunks and tests as state: a Choice of the
 one hunk or test that most directly covers it, `none` first so Jev's first-option bias lands on a
-flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". A criterion whose
-questions do not fit beside the state, by `fitsBesideState`, is flagged `too-large` unasked.
+flag, and a Noul, "does the diff, with the tests it adds, cover this criterion?". The criterion,
+and each option's file, hunk header or test name, is quoted as JSON and named as data, and the
+state names the hunks and tests as data, since Jev can be swayed by injected text (ADR-0002). A
+criterion whose questions do not fit beside the state, by `fitsBesideState`, is flagged
+`too-large` unasked.
 
 Bands are in the registry. The line output lists flags first, each with the closest line Jev
 picked, then notes, each with the line that covers it. An issue with no criteria, a diff with no
