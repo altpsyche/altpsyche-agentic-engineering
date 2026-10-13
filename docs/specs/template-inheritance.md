@@ -86,8 +86,8 @@ the child's own unrelated issues.
   `docs/workflow.md` § 1, and the vendored `domain-modeling` skill's ADR format, whose Numbering
   section scans the folder the ADR goes in. That skill edit is listed under Local changes in
   `.agents/skills/README.md`.
-- **The Jev prune tool** finds ADRs in `docs/adr/` and `docs/adr/template/`, both in `AGENTS.md`'s
-  precedence order, and its README says so. Today its pattern matches only the top folder, so it
+- **The Jev prune tool** finds ADRs in `docs/adr/` and `docs/adr/template/` alike, and its README
+  says so. Today its pattern matches only the top folder, so it
   already misses ADR-0004 and would miss every ADR after the move, without an error.
 - **Qualified refs.** Each bare issue ref in a template ADR becomes
   `altpsyche/altpsyche-agentic-engineering` followed by the hash and number. ADR-0001's link to the
@@ -95,8 +95,8 @@ the child's own unrelated issues.
 - **`check-skills.mjs`: bare refs.** A file under `docs/adr/template/` fails on an issue ref not
   preceded by an `owner/repo` qualifier. Text in code spans and fenced blocks is ignored, as other
   checks there do. A ref that is the text of a link with an absolute URL target passes, since the
-  URL names the repo; ADR-0002 and ADR-0003 already carry refs of that form. The checker's existing exclusions for ADRs (old commands quoted) cover the new
-  folder too.
+  URL names the repo; ADR-0002 and ADR-0003 already carry refs of that form. The checker's
+  existing exclusions for ADRs (old commands quoted) cover the new folder too.
 - **`check-skills.mjs`: spec links.** While `docs/specs/.from-template` exists, a relative link to
   a file under `docs/specs/` other than its `README.md`, from a file outside `docs/specs/`, fails,
   naming the file. A link to the folder itself or its `README.md` passes: those survive bootstrap.
@@ -124,8 +124,9 @@ owner would see: files present or gone, commits made, the exit status and the me
 assert how the script does it.
 
 - **`scripts/bootstrap.test.mjs`**, extending its temp repo and stub `gh`:
-  - with the sentinel and a non-template `nameWithOwner`, `docs/specs/` is gone, in exactly one new
-    commit, made before the first ruleset call;
+  - with the sentinel and a non-template `nameWithOwner`, every file in `docs/specs/` but its
+    `README.md` is gone, sentinel included, in exactly one new commit, made before the first
+    ruleset call;
   - without the sentinel, no commit is made and `docs/specs/` is untouched;
   - with `nameWithOwner` the template, no commit is made and `docs/specs/` is untouched;
   - after removal, `docs/specs/README.md` is still there;
@@ -150,8 +151,9 @@ assert how the script does it.
 - A link from a child back to the template, or any automatic port. Porting stays by hand.
 - Bare issue refs in shipped files outside `docs/adr/template/` (skills, scripts, tests). The ones
   there today are examples or test history; qualifying them is a later cleanup if they mislead.
-- An end-to-end test that makes a child and runs `verify.sh` in it; the owner chose the two
-  existing seams.
+- An end-to-end test that makes a child and runs `verify.sh` in it. The owner chose the existing
+  seams instead: `bootstrap.test.mjs` and `check-skills.test.mjs` in the grilling session, and
+  `prune.test.mjs` when the review of #78 added it, both on 2026-10-13.
 
 ## Further Notes
 
