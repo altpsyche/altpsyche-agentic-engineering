@@ -186,10 +186,19 @@ and PR steps.
 1. **Claim a PR** with `Claimed: fix round`, then **Read back a claim**.
 2. **Check out a PR** in its own worktree, on the same branch.
 3. Before any change, run the worktree's `scripts/verify.sh` by path, per § 2, step 3. The
-   branch carries your own work, so red here is yours to fix in this round. It counts as
-   inherited only if the base's `scripts/verify.sh` is also red on `origin/main`, or a sub-PR's
-   base, run in its own worktree per **Check the base**; then § 2's clean-baseline rule applies,
-   with the PR as the item.
+   branch carries your own work, so red here is yours to fix in this round, unless it is
+   inherited. To tell, run the base's `scripts/verify.sh`, on `origin/main` or a sub-PR's base, in
+   its own worktree per **Check the base**, and compare failing lines. A failing line is a line of
+   the output, stdout or stderr, that starts with `✖` (a failed test) or `error` (a
+   `check-skills.mjs` error), minus what differs between runs: a leading time of day such as
+   `6:25AM`, which gitleaks prints, and a trailing parenthesised duration such as `(0.68ms)`,
+   which Node's test runner adds. Order does not count, and a `warning` or `skipped` line is not
+   one. A red run that prints none, as a gitleaks finding does, takes its last line as its failing
+   line. A branch failing line the base does not print is yours, whatever else is red on the
+   base; when all of them are yours, fix them in this round. When the base prints any of them,
+   that red is inherited, and the branch cannot go green until the base is fixed, so § 2's
+   clean-baseline rule applies, with the PR as the item: the release comment quotes the shared
+   lines and lists the branch's other failing lines, which the next round fixes.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
@@ -207,8 +216,8 @@ and PR steps.
 **Done when:** every finding is fixed, disputed or answered with a relayed owner ruling,
 `scripts/verify.sh` is green, the branch is pushed, the PR is back on `status:in-review`, and the
 answering comment is posted after the label.
-On a red baseline that is also red on `origin/main`, or a sub-PR's base, done is § 2, step 3's
-release instead, with no block.
+On a red baseline that step 3 counts as inherited, done is § 2, step 3's release instead, with
+no block.
 
 ### 5. Merge and learn (Owner)
 
