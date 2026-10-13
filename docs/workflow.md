@@ -187,9 +187,13 @@ and PR steps.
 2. **Check out a PR** in its own worktree, on the same branch.
 3. Before any change, run the worktree's `scripts/verify.sh` by path, per § 2, step 3. The
    branch carries your own work, so red here is yours to fix in this round. It counts as
-   inherited only if the base's `scripts/verify.sh` is also red on `origin/main`, or a sub-PR's
-   base, run in its own worktree per **Check the base**; then § 2's clean-baseline rule applies,
-   with the PR as the item.
+   inherited only if the base's `scripts/verify.sh`, on `origin/main` or a sub-PR's base, run in
+   its own worktree per **Check the base**, prints the same failing line as the branch's. The
+   failing line is the first line `scripts/verify.sh` prints that reports a failure, minus a
+   trailing duration such as `(12.3ms)`, which Node's test runner adds and which differs between
+   runs. A base red for any other reason leaves the branch's red yours. When the lines match,
+   § 2's clean-baseline rule applies, with the PR as the item, and the release comment quotes that
+   line.
 4. Address every finding, whatever its severity. A finding may be disputed, with a reason and a
    source; "it works" and "it is minor" are not disputes. The reviewer either accepts the dispute,
    which closes the finding, or holds it, which keeps the PR in changes requested. Scope creep found
@@ -207,7 +211,7 @@ and PR steps.
 **Done when:** every finding is fixed, disputed or answered with a relayed owner ruling,
 `scripts/verify.sh` is green, the branch is pushed, the PR is back on `status:in-review`, and the
 answering comment is posted after the label.
-On a red baseline that is also red on `origin/main`, or a sub-PR's base, done is § 2, step 3's
+On a red baseline whose failing line the base prints too, per step 3, done is § 2, step 3's
 release instead, with no block.
 
 ### 5. Merge and learn (Owner)
