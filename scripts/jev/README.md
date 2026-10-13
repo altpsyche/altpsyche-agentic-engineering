@@ -206,8 +206,9 @@ Then, per claim, cheapest first:
    fails to match `not-in-output`. ADR-0002 checks text exactly before asking Jev about it, so a
    quote that is not there is never argued over.
 2. **One Choice per matched claim**, all in one `ask`, the claim and its full output in the
-   question: `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias lands
-   on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged
+   question, quoted as JSON and named as data, since Jev can be swayed by injected text
+   (ADR-0002): `contradicts`, `silent` or `supports`, in that order so Jev's first-option bias
+   lands on a flag. A claim whose output does not fit beside the state, by `fitsBesideState`, is flagged
    `too-large` unasked.
 
 Bands are in the registry. The line output lists flags first, then notes, each in Evidence order.
