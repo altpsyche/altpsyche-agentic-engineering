@@ -24,11 +24,11 @@ Issue refs in a template ADR name the template repo: `altpsyche/altpsyche-agenti
   precedence rule in `AGENTS.md` treats both folders as ADRs; the superseding one wins.
 - **Removal is gated on a sentinel.** Bootstrap is rerun after adding a phase, and by then the
   child has specs of its own. The template ships `docs/specs/.from-template`; bootstrap removes
-  every file in `docs/specs/` but its `README.md` only while that file exists, and the removal
-  deletes it, so every rerun is a no-op. Bootstrap also skips the removal when the repo is the
-  template itself. It commits before it sets the rulesets, and the owner pushes that commit with
-  the admin bypass. If the commit fails, bootstrap restores what it removed, sentinel included, so
-  the tree is clean and a rerun tries again.
+  every file in `docs/specs/` but its `README.md` only while the sentinel exists, and the removal
+  deletes the sentinel, so every rerun is a no-op. Bootstrap also skips the removal when the repo
+  is the template itself. It commits before it sets the rulesets, and the owner pushes that commit
+  with the admin bypass. If the commit fails, bootstrap restores what it removed, sentinel
+  included, so the tree is clean and a rerun tries again.
 - **Links into the removed specs become absolute.** A file that ships and links a template spec,
   such as ADR-0001's link to the guardrails spec, links the template repo on GitHub instead. Links
   to the folder itself stay, since its `README.md` keeps it in git.
